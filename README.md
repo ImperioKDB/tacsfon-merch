@@ -10,7 +10,7 @@
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Foundation | ✅ Done |
-| 2 | Auth | ⬜ Pending |
+| 2 | Auth | ✅ Done |
 | 3 | Products & Catalogue | ⬜ Pending |
 | 4 | Cart | ⬜ Pending |
 | 5 | Orders | ⬜ Pending |
@@ -41,23 +41,51 @@ curl http://localhost:3000/api/health
 # Expected header: X-Request-ID: <uuid>
 ```
 
+## Phase 2 Test
+
+```bash
+# 1. Get session (with valid token)
+curl http://localhost:3000/api/auth/session \
+  -H "Authorization: Bearer YOUR_JWT"
+# Expected: { success: true, data: { id, email, full_name, role, ... } }
+
+# 2. Sign out
+curl -X POST http://localhost:3000/api/auth/signout \
+  -H "Authorization: Bearer YOUR_JWT"
+# Expected: { success: true, message: "Signed out successfully." }
+
+# 3. Hit session without token
+curl http://localhost:3000/api/auth/session
+# Expected: 401 { success: false, error: { code: "UNAUTHORIZED", ... } }
+
+# 4. OAuth callback — test by initiating Google OAuth from frontend
+# On success: redirects to /
+# On failure: redirects to /login?error=oauth_failed
+```
+
 ## Architecture
 
 ```
 lib/
-  supabase.js          — anon + service-role Supabase clients
-  requestId.js         — UUID request ID attachment
-  responseFormatter.js — standard success/error envelope
-  errorCodes.js        — Postgres → API error code map
-  errorHandler.js      — central error handler + ApiError class
-  validate.js          — UUID validation, method guards
+  supabase.js              — anon + service-role Supabase clients
+  requestId.js             — UUID request ID attachment
+  responseFormatter.js     — standard success/error envelope
+  errorCodes.js            — Postgres → API error code map
+  errorHandler.js          — central error handler + ApiError class
+  validate.js              — UUID validation, method guards
+  auth/
+    profileUtils.js        — getProfile(), isAdmin() helpers
   middleware/
-    logger.js          — structured JSON logging
-    cors.js            — CORS with origin allowlist
-    auth.js            — JWT validation via Supabase
-    roleGuard.js       — admin role check via is_admin() RPC
-    withMiddleware.js  — middleware stack composer
+    logger.js              — structured JSON logging
+    cors.js                — CORS with origin allowlist
+    auth.js                — JWT validation via Supabase
+    roleGuard.js           — admin role check via is_admin() RPC
+    withMiddleware.js      — middleware stack composer
 
 pages/api/
-  health.js            — GET /api/health (Phase 1 smoke test)
+  health.js                — GET /api/health (Phase 1 smoke test)
+  auth/
+    session.js             — GET  /api/auth/session
+    signout.js             — POST /api/auth/signout
+    callback.js            — GET  /api/auth/callback (Google OAuth redirect)
 ```
