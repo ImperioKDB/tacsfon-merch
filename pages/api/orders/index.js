@@ -5,7 +5,6 @@
  * GET  — List current user's orders (Phase 5)
  */
 import { withMiddleware }     from '../../../lib/middleware/withMiddleware.js'
-import { authMiddleware }     from '../../../lib/middleware/auth.js'
 import { sendSuccess }        from '../../../lib/responseFormatter.js'
 import { ApiError }           from '../../../lib/errorHandler.js'
 import { supabaseAdmin }      from '../../../lib/supabase.js'
@@ -143,4 +142,4 @@ async function handler(req, res) {
   return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Use GET or POST.' } })
 }
 
-export default withMiddleware(handler, [authMiddleware])
+export default withMiddleware(handler, { requireAuth: true })
