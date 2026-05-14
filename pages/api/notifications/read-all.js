@@ -5,7 +5,6 @@
  * Useful for a "Mark all as read" button in the frontend.
  */
 import { withMiddleware } from '../../../lib/middleware/withMiddleware.js'
-import { authMiddleware } from '../../../lib/middleware/auth.js'
 import { sendSuccess }    from '../../../lib/responseFormatter.js'
 import { supabaseAdmin }  from '../../../lib/supabase.js'
 
@@ -29,4 +28,4 @@ async function handler(req, res) {
   return sendSuccess(res, null, 'All notifications marked as read.')
 }
 
-export default withMiddleware(handler, [authMiddleware])
+export default withMiddleware(handler, { requireAuth: true })
