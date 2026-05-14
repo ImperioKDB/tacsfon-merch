@@ -5,7 +5,6 @@
  * Notification must belong to the authenticated user.
  */
 import { withMiddleware } from '../../../../lib/middleware/withMiddleware.js'
-import { authMiddleware } from '../../../../lib/middleware/auth.js'
 import { sendSuccess }    from '../../../../lib/responseFormatter.js'
 import { ApiError }       from '../../../../lib/errorHandler.js'
 import { supabaseAdmin }  from '../../../../lib/supabase.js'
@@ -44,4 +43,4 @@ async function handler(req, res) {
   return sendSuccess(res, updated, 'Notification marked as read.')
 }
 
-export default withMiddleware(handler, [authMiddleware])
+export default withMiddleware(handler, { requireAuth: true })
