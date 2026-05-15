@@ -1,25 +1,27 @@
 /**
  * /api/orders
  *
- * POST — Place a new order from cart (Phase 5 + Phase 10 Telegram)
- * GET  — List current user's orders (Phase 5)
+ * GET  — List current user's orders
+ * POST — Place a new order from cart (+ Telegram notification)
  */
-import { withMiddleware }     from '../../../lib/middleware/withMiddleware.js'
-import { sendSuccess }        from '../../../lib/responseFormatter.js'
-import { ApiError }           from '../../../lib/errorHandler.js'
-import { supabaseAdmin }      from '../../../lib/supabase.js'
+import { withMiddleware }      from '../../../lib/middleware/withMiddleware.js'
+import { sendSuccess }         from '../../../lib/responseFormatter.js'
+import { ApiError }            from '../../../lib/errorHandler.js'
+import { supabaseAdmin }       from '../../../lib/supabase.js'
 import { calculateOrderTotal } from '../../../lib/orders/orderUtils.js'
-import { notifyAdmins }       from '../../../lib/telegram/sendTelegram.js'
+import { notifyAdmins }        from '../../../lib/telegram/sendTelegram.js'
 import { buildNewOrderMessage } from '../../../lib/telegram/orderMessage.js'
 
 async function handler(req, res) {
-  // ── GET /api/orders ───────────────────────────────────────────────────────
+
+  // ── GET /api/orders ───────────────────────────────────────────────────
   if (req.method === 'GET') {
+    // FIX: total_amount → total | removed delivery_method
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
-        id, status, payment_status, total_amount,
-        delivery_method, delivery_address, created_at,
+        id, status, payment_status, total,
+        delivery_address, created_at,
         order_items (
           id, quantity, unit_price,
           product_variants (
@@ -35,10 +37,11 @@ async function handler(req, res) {
     return sendSuccess(res, data)
   }
 
-  // ── POST /api/orders ──────────────────────────────────────────────────────
+  // ── POST /api/orders ──────────────────────────────────────────────────
   if (req.method === 'POST') {
     const userId = req.user.id
-    const { delivery_method, delivery_address, phone, notes } = req.body
+    // FIX: removed delivery_method and notes (neither column exists in DB)
+    const { delivery_address, phone } = req.body
 
     // 1. Fetch cart items
     const { data: cart, error: cartErr } = await supabaseAdmin
@@ -72,18 +75,18 @@ async function handler(req, res) {
     const cartItems = cart.cart_items.map(i => ({ variant_id: i.variant_id, quantity: i.quantity }))
     const { total, lineItems } = await calculateOrderTotal(cartItems)
 
-    // 4. Create order (transaction: order + order_items + clear cart)
+    // 4. Create order
+    // FIX: total_amount → total | removed delivery_method, notes
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .insert({
         user_id:          userId,
+        type:             'online',
         status:           'pending_payment',
         payment_status:   'unpaid',
-        total_amount:     total,
-        delivery_method:  delivery_method || 'delivery',
+        total,
         delivery_address: delivery_address || null,
-        phone:            phone || null,
-        notes:            notes || null,
+        phone:            phone            || null,
         created_at:       new Date().toISOString(),
         updated_at:       new Date().toISOString(),
       })
@@ -93,11 +96,12 @@ async function handler(req, res) {
     if (orderErr) throw new Error(`Failed to create order: ${orderErr.message}`)
 
     // 5. Insert order items
+    // FIX: product_variant_id → variant_id (actual FK column in order_items)
     const orderItems = lineItems.map(li => ({
-      order_id:           order.id,
-      product_variant_id: li.variant_id,
-      quantity:           li.quantity,
-      unit_price:         li.unit_price,
+      order_id:   order.id,
+      variant_id: li.variant_id,
+      quantity:   li.quantity,
+      unit_price: li.unit_price,
     }))
 
     const { error: itemsErr } = await supabaseAdmin
@@ -114,10 +118,11 @@ async function handler(req, res) {
     await supabaseAdmin.from('cart_items').delete().eq('cart_id', cart.id)
 
     // 7. Fetch full order for Telegram message
+    // FIX: total_amount → total | removed delivery_method
     const { data: fullOrder } = await supabaseAdmin
       .from('orders')
       .select(`
-        id, total_amount, delivery_method, delivery_address, phone,
+        id, total, delivery_address, phone,
         profiles ( full_name, phone ),
         order_items (
           quantity,
