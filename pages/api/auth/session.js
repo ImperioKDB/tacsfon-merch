@@ -12,22 +12,23 @@ import { assertMethod } from '../../../lib/validate.js'
  *
  * Response data shape:
  * {
- *   id, email, full_name, role, avatar_url, created_at
+ *   id, email, full_name, phone, role, created_at
  * }
+ *
+ * NOTE: avatar_url is not included — column does not exist in profiles table.
  */
 async function handler(req, res) {
   assertMethod(req, ['GET'])
 
-  // req.user is attached by withMiddleware when requireAuth: true
+  // FIX: removed avatar_url — column does not exist in DB
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, role, avatar_url, created_at')
+    .select('id, email, full_name, phone, role, created_at')
     .eq('id', req.user.id)
     .single()
 
   if (error || !profile) {
-    // User exists in auth.users but has no profile row — this shouldn't happen
-    // in normal flow, but handle it gracefully.
+    // User exists in auth.users but has no profile row — handle gracefully.
     return sendError(
       res,
       'PROFILE_NOT_FOUND',
