@@ -5,6 +5,7 @@
  * Body: { payment_status: 'paid' | 'incomplete' }
  *
  * If 'paid':
+ *   - Validates order is in 'payment_submitted' state (transition guard)
  *   - order.status        → 'confirmed'
  *   - order.payment_status → 'paid'
  *   - creates notification for student
@@ -15,11 +16,15 @@
  *   - order.payment_status → 'incomplete'
  *   - creates notification for student
  *   - logs to admin_logs
+ *
+ * FIX: added assertValidTransition() guard to prevent double-confirming orders
+ *      that are already confirmed, dispatched, or received.
  */
 import { withMiddleware }        from '../../../../../lib/middleware/withMiddleware.js'
 import { sendSuccess }           from '../../../../../lib/responseFormatter.js'
 import { ApiError }              from '../../../../../lib/errorHandler.js'
 import { supabaseAdmin }         from '../../../../../lib/supabase.js'
+import { assertValidTransition } from '../../../../../lib/orders/orderUtils.js'
 import { logAdminAction }        from '../../../../../lib/admin/adminLogger.js'
 import { createNotification, NotificationMessages } from '../../../../../lib/notifications/notificationUtils.js'
 import { buildAndStoreReceipt }  from '../../../../../lib/receipts/index.js'
@@ -31,9 +36,9 @@ async function handler(req, res) {
     return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Use PATCH.' } })
   }
 
-  const { id: orderId }        = req.query
-  const adminId                 = req.user.id
-  const { payment_status }      = req.body
+  const { id: orderId }   = req.query
+  const adminId            = req.user.id
+  const { payment_status } = req.body
 
   // 1. Validate input
   if (!ALLOWED_PAYMENT_STATUSES.includes(payment_status)) {
@@ -57,6 +62,13 @@ async function handler(req, res) {
 
   if (!order.proof_url) {
     throw new ApiError('PROOF_NOT_FOUND', 'Cannot update payment: no proof uploaded for this order.', 400)
+  }
+
+  // FIX: guard against double-confirming an order that has already moved past payment_submitted.
+  // assertValidTransition throws INVALID_STATUS_CHANGE (400) if the transition is not allowed.
+  // payment_submitted → confirmed is valid; confirmed/dispatched/received → confirmed is not.
+  if (payment_status === 'paid') {
+    assertValidTransition(order.status, 'confirmed')
   }
 
   // 3. Build update payload
