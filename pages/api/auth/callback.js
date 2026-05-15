@@ -16,11 +16,6 @@ import { assertMethod } from '../../../lib/validate.js'
  *   5. This route exchanges the code for a session
  *   6. On success → redirect to /
  *   7. On failure → redirect to /login?error=oauth_failed
- *
- * Note: Supabase also supports a PKCE flow where the code exchange happens
- * client-side. This server-side handler is for SSR/cookie-based auth.
- * If your frontend uses the client-side Supabase SDK for the full flow,
- * this route still acts as the redirect landing page.
  */
 async function handler(req, res) {
   assertMethod(req, ['GET'])
@@ -45,7 +40,7 @@ async function handler(req, res) {
     return res.redirect(`${appUrl}/login?error=oauth_failed`)
   }
 
-  // Exchange the code for a session via the admin client
+  // Exchange the code for a session
   const { data, error: exchangeError } = await supabaseAdmin.auth.exchangeCodeForSession(code)
 
   if (exchangeError || !data?.session) {
@@ -61,8 +56,7 @@ async function handler(req, res) {
 
   const { access_token, refresh_token } = data.session
 
-  // Set auth cookies so SSR pages can read the session server-side
-  // Secure flag only in production; HttpOnly so JS can't read the token
+  // Set auth cookies for SSR pages
   const isProd = process.env.NODE_ENV === 'production'
   const cookieFlags = `Path=/; HttpOnly; SameSite=Lax${isProd ? '; Secure' : ''}`
 
@@ -71,22 +65,21 @@ async function handler(req, res) {
     `sb-refresh-token=${refresh_token}; ${cookieFlags}; Max-Age=604800`,
   ])
 
-  // Ensure the user has a profile row (new OAuth users may not have one yet)
-  // The DB trigger should handle this, but we upsert here as a safety net.
+  // Safety-net profile upsert for new OAuth users
+  // (DB trigger handles this, but we upsert here as a fallback)
+  // FIX: removed avatar_url — column does not exist in profiles table
   await supabaseAdmin
     .from('profiles')
     .upsert(
       {
-        id: data.user.id,
-        email: data.user.email,
+        id:        data.user.id,
+        email:     data.user.email,
         full_name: data.user.user_metadata?.full_name || null,
-        avatar_url: data.user.user_metadata?.avatar_url || null,
-        role: 'student', // default role; admins are upgraded manually
+        role:      'student',   // default; admins are upgraded manually
       },
       { onConflict: 'id', ignoreDuplicates: true }
     )
     .catch((err) => {
-      // Non-fatal — log and continue
       console.error(JSON.stringify({
         timestamp: new Date().toISOString(),
         level: 'error',
@@ -97,9 +90,8 @@ async function handler(req, res) {
       }))
     })
 
-  // Success — redirect to home
   return res.redirect(`${appUrl}/`)
 }
 
-// No auth middleware needed — this is the endpoint that creates the session
+// No auth middleware — this endpoint creates the session
 export default withMiddleware(handler)
