@@ -4,19 +4,18 @@
  * GET  — List current user's orders
  * POST — Place a new order from cart (+ Telegram notification)
  */
-import { withMiddleware }      from '../../../lib/middleware/withMiddleware.js'
-import { sendSuccess }         from '../../../lib/responseFormatter.js'
-import { ApiError }            from '../../../lib/errorHandler.js'
-import { supabaseAdmin }       from '../../../lib/supabase.js'
-import { calculateOrderTotal } from '../../../lib/orders/orderUtils.js'
-import { notifyAdmins }        from '../../../lib/telegram/sendTelegram.js'
+import { withMiddleware }       from '../../../lib/middleware/withMiddleware.js'
+import { sendSuccess }          from '../../../lib/responseFormatter.js'
+import { ApiError }             from '../../../lib/errorHandler.js'
+import { supabaseAdmin }        from '../../../lib/supabase.js'
+import { calculateOrderTotal }  from '../../../lib/orders/orderUtils.js'
+import { notifyAdmins }         from '../../../lib/telegram/sendTelegram.js'
 import { buildNewOrderMessage } from '../../../lib/telegram/orderMessage.js'
 
 async function handler(req, res) {
 
-  // ── GET /api/orders ───────────────────────────────────────────────────
+  // ── GET /api/orders ──────────────────────────────────────────────────
   if (req.method === 'GET') {
-    // FIX: total_amount → total | removed delivery_method
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
@@ -37,13 +36,12 @@ async function handler(req, res) {
     return sendSuccess(res, data)
   }
 
-  // ── POST /api/orders ──────────────────────────────────────────────────
+  // ── POST /api/orders ─────────────────────────────────────────────────
   if (req.method === 'POST') {
     const userId = req.user.id
-    // FIX: removed delivery_method and notes (neither column exists in DB)
     const { delivery_address, phone } = req.body
 
-    // 1. Fetch cart items
+    // 1. Fetch cart items (include products.id so we can write product_id to order_items)
     const { data: cart, error: cartErr } = await supabaseAdmin
       .from('carts')
       .select(`
@@ -71,12 +69,18 @@ async function handler(req, res) {
       }
     }
 
-    // 3. Recalculate total server-side
+    // 3. Build variant_id → product_id lookup from cart data
+    // FIX: used below to populate product_id on each order_items row
+    const variantProductMap = {}
+    for (const item of cart.cart_items) {
+      variantProductMap[item.variant_id] = item.product_variants?.products?.id || null
+    }
+
+    // 4. Recalculate total server-side
     const cartItems = cart.cart_items.map(i => ({ variant_id: i.variant_id, quantity: i.quantity }))
     const { total, lineItems } = await calculateOrderTotal(cartItems)
 
-    // 4. Create order
-    // FIX: total_amount → total | removed delivery_method, notes
+    // 5. Create order row
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -95,11 +99,12 @@ async function handler(req, res) {
 
     if (orderErr) throw new Error(`Failed to create order: ${orderErr.message}`)
 
-    // 5. Insert order items
-    // FIX: product_variant_id → variant_id (actual FK column in order_items)
+    // 6. Insert order items
+    // FIX: include product_id (nullable FK) so order_items rows are fully populated
     const orderItems = lineItems.map(li => ({
       order_id:   order.id,
       variant_id: li.variant_id,
+      product_id: variantProductMap[li.variant_id] || null,
       quantity:   li.quantity,
       unit_price: li.unit_price,
     }))
@@ -114,11 +119,10 @@ async function handler(req, res) {
       throw new Error(`Failed to insert order items: ${itemsErr.message}`)
     }
 
-    // 6. Clear cart
+    // 7. Clear cart
     await supabaseAdmin.from('cart_items').delete().eq('cart_id', cart.id)
 
-    // 7. Fetch full order for Telegram message
-    // FIX: total_amount → total | removed delivery_method
+    // 8. Fetch full order for Telegram message
     const { data: fullOrder } = await supabaseAdmin
       .from('orders')
       .select(`
@@ -135,7 +139,7 @@ async function handler(req, res) {
       .eq('id', order.id)
       .single()
 
-    // 8. Notify admins via Telegram (async, non-blocking)
+    // 9. Notify admins via Telegram (async, non-blocking)
     if (fullOrder) {
       const message = buildNewOrderMessage(fullOrder)
       notifyAdmins(message)
