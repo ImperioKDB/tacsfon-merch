@@ -1,23 +1,20 @@
 /**
- * POST /api/orders/:id/proof
- * Upload payment proof image.
- *
+ * POST /api/orders/:id/proof — upload payment proof
  * Phase 12: rate limit 'upload' + magic byte validation
  */
-import { withMiddleware }         from '../../../../lib/middleware/withMiddleware.js'
-import { sendSuccess }            from '../../../../lib/responseFormatter.js'
-import { ApiError }               from '../../../../lib/errorHandler.js'
-import { supabaseAdmin }          from '../../../../lib/supabase.js'
-import { validateUUID }           from '../../../../lib/validate.js'
-import { assertValidFileMagic }   from '../../../../lib/middleware/magicBytes.js'
-import { uploadProof }            from '../../../../lib/storage/storageHelpers.js'
+import { withMiddleware }       from '../../../../lib/middleware/withMiddleware.js'
+import { sendSuccess }          from '../../../../lib/responseFormatter.js'
+import { ApiError }             from '../../../../lib/errorHandler.js'
+import { supabaseAdmin }        from '../../../../lib/supabase.js'
+import { validateUUID }         from '../../../../lib/validate.js'
+import { assertValidFileMagic } from '../../../../lib/middleware/magicBytes.js'
+import { uploadProof }          from '../../../../lib/storage/storageHelpers.js'
 import { createNotification, NotificationMessages } from '../../../../lib/notifications/notificationUtils.js'
 
-// Disable Next.js default body parser — we need raw bytes for magic byte check
 export const config = { api: { bodyParser: false } }
 
 const ALLOWED_PROOF_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE        = 5 * 1024 * 1024
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -27,7 +24,6 @@ async function handler(req, res) {
   const { id: orderId } = req.query
   validateUUID(orderId, 'order id')
 
-  // Verify order belongs to user and is in correct state
   const { data: order, error: orderErr } = await supabaseAdmin
     .from('orders')
     .select('id, status, user_id')
@@ -40,7 +36,6 @@ async function handler(req, res) {
     throw new ApiError('INVALID_STATUS', 'Proof can only be uploaded for orders awaiting payment.', 400)
   }
 
-  // Read raw body for magic byte inspection
   const chunks = []
   for await (const chunk of req) chunks.push(chunk)
   const fileBuffer = Buffer.concat(chunks)
@@ -49,30 +44,19 @@ async function handler(req, res) {
     throw new ApiError('FILE_TOO_LARGE', 'File must be under 5MB.', 400)
   }
 
-  // Phase 12: validate actual file content, not just claimed MIME type
   assertValidFileMagic(fileBuffer, ALLOWED_PROOF_MIMES, 'proof file')
 
-  // Upload to storage
   const proofUrl = await uploadProof(orderId, fileBuffer)
 
-  // Update order
   const { error: updateErr } = await supabaseAdmin
     .from('orders')
-    .update({
-      proof_url:      proofUrl,
-      status:         'payment_submitted',
-      updated_at:     new Date().toISOString(),
-    })
+    .update({ proof_url: proofUrl, status: 'payment_submitted', updated_at: new Date().toISOString() })
     .eq('id', orderId)
 
   if (updateErr) throw new Error(`Failed to update order proof: ${updateErr.message}`)
 
-  // Notify student (non-blocking)
   const shortId = orderId.slice(0, 8).toUpperCase()
-  createNotification(
-    req.user.id,
-    NotificationMessages.proofReceived(shortId)
-  ).catch(() => {})
+  createNotification(req.user.id, NotificationMessages.proofReceived(shortId)).catch(() => {})
 
   return sendSuccess(res, { orderId, proofUrl }, 'Payment proof uploaded successfully.')
 }
