@@ -1,179 +1,64 @@
-import { withMiddleware } from '../../../../lib/middleware/withMiddleware.js'
-import { sendSuccess } from '../../../../lib/responseFormatter.js'
-import { ApiError } from '../../../../lib/errorHandler.js'
-import { supabaseAdmin } from '../../../../lib/supabase.js'
-import { assertMethod, validateUUID } from '../../../../lib/validate.js'
-
 /**
  * POST /api/cart/items
+ * Add an item to the cart (or increment quantity if variant already exists).
  *
- * Body: { product_id, variant_id, quantity }
- *
- * - Creates cart if this is the user's first item
- * - If product+variant already in cart → increments quantity (UPSERT)
- * - Validates product exists, is available, variant belongs to product
- * - Validates stock when stock_type is 'stock' or 'both'
- * - Returns the full updated cart
- *
- * Phase 4 — Cart
+ * Phase 12: rate limit 'cart' + zod validation
  */
+import { withMiddleware } from '../../../../lib/middleware/withMiddleware.js'
+import { sendSuccess }    from '../../../../lib/responseFormatter.js'
+import { ApiError }       from '../../../../lib/errorHandler.js'
+import { supabaseAdmin }  from '../../../../lib/supabase.js'
+import { validateBody }   from '../../../../lib/middleware/validate.js'
+import { AddCartItemSchema } from '../../../../lib/schemas/cartSchemas.js'
+
 async function handler(req, res) {
-  assertMethod(req, ['POST'])
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Use POST.' } })
+  }
 
   const userId = req.user.id
-  const { product_id, variant_id = null, quantity } = req.body ?? {}
+  // Phase 12: validate body with zod
+  const { variant_id, quantity } = validateBody(req, AddCartItemSchema)
 
-  // ── Input validation ─────────────────────────
-  if (!product_id) {
-    throw new ApiError('VALIDATION_ERROR', "'product_id' is required.", 400)
-  }
-  validateUUID(product_id, 'product_id')
-  if (variant_id) validateUUID(variant_id, 'variant_id')
-
-  const qty = parseInt(quantity, 10)
-  if (!qty || qty < 1) {
-    throw new ApiError('VALIDATION_ERROR', "'quantity' must be a positive integer.", 400)
-  }
-
-  // ── Fetch product ────────────────────────────
-  const { data: product, error: productError } = await supabaseAdmin
-    .from('products')
-    .select('id, name, base_price, is_available, stock_type')
-    .eq('id', product_id)
+  // Verify variant exists and product is available
+  const { data: variant, error: vErr } = await supabaseAdmin
+    .from('product_variants')
+    .select('id, stock_qty, stock_type, products(id, name, is_available)')
+    .eq('id', variant_id)
     .single()
 
-  if (productError || !product) {
-    throw new ApiError('NOT_FOUND', 'Product not found.', 404)
+  if (vErr || !variant) throw new ApiError('VARIANT_NOT_FOUND', 'Variant not found.', 404)
+  if (!variant.products?.is_available) {
+    throw new ApiError('PRODUCT_UNAVAILABLE', `"${variant.products.name}" is no longer available.`, 400)
   }
 
-  if (!product.is_available) {
-    throw new ApiError('PRODUCT_UNAVAILABLE', 'This product is currently unavailable.', 400)
+  if (variant.stock_type === 'stock' && variant.stock_qty < quantity) {
+    throw new ApiError('INSUFFICIENT_STOCK', `Only ${variant.stock_qty} unit(s) available.`, 400)
   }
 
-  // ── Fetch variant (if provided) ──────────────
-  let variant = null
-  if (variant_id) {
-    const { data, error: variantError } = await supabaseAdmin
-      .from('product_variants')
-      .select('id, size, color, stock_qty, price_override, product_id')
-      .eq('id', variant_id)
-      .single()
+  // Get or create cart
+  let { data: cart } = await supabaseAdmin
+    .from('carts').select('id').eq('user_id', userId).single()
 
-    if (variantError || !data) {
-      throw new ApiError('NOT_FOUND', 'Variant not found.', 404)
-    }
-    if (data.product_id !== product_id) {
-      throw new ApiError('VALIDATION_ERROR', 'Variant does not belong to this product.', 400)
-    }
-    variant = data
+  if (!cart) {
+    const { data: newCart, error: cErr } = await supabaseAdmin
+      .from('carts').insert({ user_id: userId }).select().single()
+    if (cErr) throw new Error(`Failed to create cart: ${cErr.message}`)
+    cart = newCart
   }
 
-  // ── Stock check ──────────────────────────────
-  if (['stock', 'both'].includes(product.stock_type)) {
-    const stockQty = variant?.stock_qty ?? 0
-    if (stockQty < qty) {
-      throw new ApiError(
-        'INSUFFICIENT_STOCK',
-        `Only ${stockQty} unit(s) available for this item.`,
-        400
-      )
-    }
-  }
-  // preorder → no stock check
-
-  // ── Get or create cart ───────────────────────
-  let cartId
-  const { data: existingCart } = await supabaseAdmin
-    .from('carts')
-    .select('id')
-    .eq('user_id', userId)
-    .single()
-
-  if (existingCart) {
-    cartId = existingCart.id
-  } else {
-    const { data: newCart, error: cartError } = await supabaseAdmin
-      .from('carts')
-      .insert({ user_id: userId })
-      .select('id')
-      .single()
-
-    if (cartError) throw cartError
-    cartId = newCart.id
-  }
-
-  // ── Check if item already exists (same product + variant) ────
-  const { data: existingItem } = await supabaseAdmin
+  // Upsert cart item (increment on conflict)
+  const { data: item, error: iErr } = await supabaseAdmin
     .from('cart_items')
-    .select('id, quantity')
-    .eq('cart_id', cartId)
-    .eq('product_id', product_id)
-    .eq('variant_id', variant_id ?? null)   // null-safe equality
-    .maybeSingle()
-
-  if (existingItem) {
-    // Increment quantity
-    const newQty = existingItem.quantity + qty
-
-    // Re-check stock with combined quantity
-    if (['stock', 'both'].includes(product.stock_type)) {
-      const stockQty = variant?.stock_qty ?? 0
-      if (stockQty < newQty) {
-        throw new ApiError(
-          'INSUFFICIENT_STOCK',
-          `Cannot add ${qty} more. Only ${stockQty} unit(s) available and you already have ${existingItem.quantity} in your cart.`,
-          400
-        )
-      }
-    }
-
-    const { error: updateError } = await supabaseAdmin
-      .from('cart_items')
-      .update({ quantity: newQty })
-      .eq('id', existingItem.id)
-
-    if (updateError) throw updateError
-  } else {
-    // Insert new cart item
-    const { error: insertError } = await supabaseAdmin
-      .from('cart_items')
-      .insert({
-        cart_id:    cartId,
-        product_id,
-        variant_id: variant_id ?? null,
-        quantity:   qty,
-      })
-
-    if (insertError) throw insertError
-  }
-
-  // ── Return updated cart ──────────────────────
-  const { data: items, error: fetchError } = await supabaseAdmin
-    .from('cart_items')
-    .select(
-      `id, quantity, created_at, updated_at,
-       products ( id, name, base_price, image_url, is_available, stock_type ),
-       product_variants ( id, size, color, stock_qty, price_override )`
+    .upsert(
+      { cart_id: cart.id, variant_id, quantity },
+      { onConflict: 'cart_id,variant_id', ignoreDuplicates: false }
     )
-    .eq('cart_id', cartId)
-    .order('created_at', { ascending: true })
+    .select().single()
 
-  if (fetchError) throw fetchError
+  if (iErr) throw new Error(`Failed to add cart item: ${iErr.message}`)
 
-  const enriched = (items ?? []).map((item) => {
-    const unitPrice =
-      item.product_variants?.price_override ?? item.products?.base_price ?? 0
-    return { ...item, unit_price: unitPrice, line_total: unitPrice * item.quantity }
-  })
-
-  const subtotal = enriched.reduce((sum, i) => sum + i.line_total, 0)
-
-  return sendSuccess(
-    res,
-    { cart: { id: cartId }, items: enriched, subtotal },
-    'Item added to cart.',
-    existingItem ? 200 : 201
-  )
+  return sendSuccess(res, item, 'Item added to cart.', 201)
 }
 
-export default withMiddleware(handler, { requireAuth: true })
+export default withMiddleware(handler, { requireAuth: true, rateLimit: 'cart' })
