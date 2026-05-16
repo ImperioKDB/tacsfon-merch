@@ -1,8 +1,7 @@
 /**
- * GET  /api/orders  — list user's orders
- * POST /api/orders  — place new order from cart
- *
- * Phase 12: rate limit 'order' on POST + zod validation
+ * GET  /api/orders — list user's orders
+ * POST /api/orders — place new order from cart
+ * Phase 12: rate limit + zod validation
  */
 import { withMiddleware }       from '../../../lib/middleware/withMiddleware.js'
 import { sendSuccess }          from '../../../lib/responseFormatter.js'
@@ -21,8 +20,7 @@ async function handler(req, res) {
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
-        id, status, payment_status, total,
-        delivery_address, created_at,
+        id, status, payment_status, total, delivery_address, created_at,
         order_items (
           id, quantity, unit_price,
           product_variants ( size, color, products ( name, image_url ) )
@@ -35,10 +33,7 @@ async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    // Phase 12: stricter rate limit for order creation
     checkRateLimit(req.user.id, 'order')
-
-    // Phase 12: validate body
     const { delivery_address, phone } = validateBody(req, PlaceOrderSchema)
     const userId = req.user.id
 
@@ -89,11 +84,9 @@ async function handler(req, res) {
     if (orderErr) throw new Error(`Failed to create order: ${orderErr.message}`)
 
     const orderItems = lineItems.map(li => ({
-      order_id: order.id,
-      variant_id: li.variant_id,
+      order_id: order.id, variant_id: li.variant_id,
       product_id: variantProductMap[li.variant_id] || null,
-      quantity: li.quantity,
-      unit_price: li.unit_price,
+      quantity: li.quantity, unit_price: li.unit_price,
     }))
 
     const { error: itemsErr } = await supabaseAdmin.from('order_items').insert(orderItems)
@@ -114,7 +107,6 @@ async function handler(req, res) {
       .eq('id', order.id).single()
 
     if (fullOrder) notifyAdmins(buildNewOrderMessage(fullOrder))
-
     return sendSuccess(res, order, 'Order placed successfully.', 201)
   }
 
