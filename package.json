@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p $PORT",
     "lint": "next lint"
   },
   "dependencies": {
@@ -15,7 +15,8 @@
     "pdfkit": "^0.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
