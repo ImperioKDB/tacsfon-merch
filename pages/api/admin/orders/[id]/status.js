@@ -12,7 +12,8 @@ import { ApiError }              from '../../../../../lib/errorHandler.js'
 import { supabaseAdmin }         from '../../../../../lib/supabase.js'
 import { assertValidTransition } from '../../../../../lib/orders/orderUtils.js'
 import { logAdminAction }        from '../../../../../lib/admin/adminLogger.js'
-import { createNotification }    from '../../../../../lib/notifications/notificationUtils.js'
+// FIX: import NotificationMessages so dispatch wording stays in sync with the template
+import { createNotification, NotificationMessages } from '../../../../../lib/notifications/notificationUtils.js'
 
 const ADMIN_ALLOWED_STATUSES = ['dispatched']
 
@@ -61,8 +62,9 @@ async function handler(req, res) {
   }
 
   // 5. Notify student (non-blocking)
+  // FIX: use NotificationMessages.orderDispatched() — single source of wording truth
   const shortId = orderId.slice(0, 8).toUpperCase()
-  const message = `Great news! Your order #${shortId} is on its way. Expected within 48 hours.`
+  const message = NotificationMessages.orderDispatched(shortId)
 
   createNotification(order.user_id, message).catch((err) => {
     console.error(JSON.stringify({ event: 'notification_failed', orderId, err: err.message }))
