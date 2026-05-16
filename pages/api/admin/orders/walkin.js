@@ -41,7 +41,10 @@ async function handler(req, res) {
     }
 
     const { data: product, error: pErr } = await supabaseAdmin
-      .from('products').select('id, name, base_price, is_available').eq('id', product_id).single()
+      .from('products')
+      .select('id, name, base_price, is_available')
+      .eq('id', product_id)
+      .single()
 
     if (pErr || !product) throw new ApiError('PRODUCT_NOT_FOUND', `Product ${product_id} not found.`, 404)
     if (!product.is_available) {
@@ -49,7 +52,10 @@ async function handler(req, res) {
     }
 
     const { data: variant, error: vErr } = await supabaseAdmin
-      .from('product_variants').select('id, price_override, product_id').eq('id', variant_id).single()
+      .from('product_variants')
+      .select('id, price_override, product_id')
+      .eq('id', variant_id)
+      .single()
 
     if (vErr || !variant || variant.product_id !== product_id) {
       throw new ApiError('VARIANT_NOT_FOUND', `Variant ${variant_id} not found for this product.`, 404)
@@ -58,7 +64,9 @@ async function handler(req, res) {
     const unitPrice = variant.price_override ?? product.base_price
     const qty       = Number(quantity)
     total += unitPrice * qty
-    enrichedItems.push({ variant_id, quantity: qty, unit_price: unitPrice })
+
+    // FIX: include product_id — it's already in scope and the DB column exists
+    enrichedItems.push({ product_id, variant_id, quantity: qty, unit_price: unitPrice })
   }
 
   const { data: order, error: orderErr } = await supabaseAdmin
@@ -90,7 +98,10 @@ async function handler(req, res) {
   }
 
   await logAdminAction(adminId, 'CREATE_WALKIN_ORDER', {
-    order_id: order.id, customer_name: customer_name.trim(), total, item_count: enrichedItems.length,
+    order_id:      order.id,
+    customer_name: customer_name.trim(),
+    total,
+    item_count:    enrichedItems.length,
   })
 
   return sendSuccess(res, order, 'Walk-in order recorded successfully.', 201)
