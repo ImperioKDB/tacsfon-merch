@@ -20,7 +20,7 @@ export interface Category {
 /**
  * Maps to product_variants table.
  * size: 'S' | 'M' | 'L' | 'XL' | 'One Size' | null
- * color: 'White' | 'Black' | 'Red' | 'Yellow' | ... | null
+ * color: 'White' | 'Black' | 'Maroon' | 'Red' | ... | null
  * price_override: null means use product.base_price
  */
 export interface ProductVariant {
@@ -69,8 +69,25 @@ export interface Cart {
 
 // ── Orders ───────────────────────────────────────────────────────────────────
 
-export type OrderStatus = 'pending' | 'confirmed' | 'dispatched' | 'completed' | 'cancelled'
-export type PaymentStatus = 'pending' | 'confirmed' | 'rejected'
+/**
+ * FIX (audit): corrected to match DB CHECK constraint values exactly.
+ * DB orders.status: 'pending' | 'confirmed' | 'dispatched' | 'received'
+ * Previous wrong value 'completed' removed; 'received' added.
+ */
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'dispatched'
+  | 'received'
+  | 'cancelled'
+
+/**
+ * FIX (audit): corrected to match DB CHECK constraint values exactly.
+ * DB orders.payment_status: 'unpaid' | 'paid' | 'incomplete'
+ * Previous values ('pending' | 'confirmed' | 'rejected') were all wrong.
+ */
+export type PaymentStatus = 'unpaid' | 'paid' | 'incomplete'
+
 export type OrderType = 'online' | 'walkin'
 
 export interface OrderItem {
@@ -88,9 +105,13 @@ export interface Order {
   status: OrderStatus
   type: OrderType
   payment_status: PaymentStatus
-  total_amount: number
+  total: number
   delivery_address: string | null
+  phone: string | null
+  customer_name: string | null
+  proof_url: string | null
   created_at: string
+  updated_at: string
   items?: OrderItem[]
   profile?: Profile
 }
