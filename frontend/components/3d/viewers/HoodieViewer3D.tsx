@@ -2,9 +2,12 @@
 
 /**
  * Procedural pullover hoodie viewer — Three.js r128.
- * Body is taller than the tee, sleeves are longer/thicker,
- * hood is visible behind the collar as a rounded flap,
- * kangaroo pocket sits on the lower front.
+ *
+ * Logo spec (cross IS the T in TACSFON):
+ *   Vertical bar:   fillRect(44, 4, 30, 140)
+ *   Crossbar:       fillRect(4, 28, 110, 30)
+ *   "ACSFON":       x=122, baseline=144
+ *   Subtitle:       centred at y=188
  */
 
 import { useEffect, useRef } from 'react'
@@ -44,7 +47,7 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: Props) {
 
       const shirtColor = new THREE.Color(color)
 
-      // ── Hoodie body (taller + thicker sleeves than tee) ──────────────────
+      // ── Hoodie body ───────────────────────────────────────────────────────
       const bodyShape = new THREE.Shape()
       bodyShape.moveTo(-0.53,  0.52)
       bodyShape.lineTo(-0.53,  0.30)
@@ -67,7 +70,7 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: Props) {
       const bodyMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.90, metalness: 0 })
       const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat)
 
-      // ── Hood (rounded flap behind collar) ────────────────────────────────
+      // ── Hood ──────────────────────────────────────────────────────────────
       const hoodShape = new THREE.Shape()
       hoodShape.moveTo(-0.20, 0)
       hoodShape.lineTo( 0.20, 0)
@@ -78,25 +81,19 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: Props) {
         steps: 1, depth: 0.04, bevelEnabled: false,
       })
       hoodGeo.center()
-      const hoodMat = new THREE.MeshStandardMaterial({
-        color: shirtColor, roughness: 0.90, metalness: 0,
-      })
+      const hoodMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.90, metalness: 0 })
       const hoodMesh = new THREE.Mesh(hoodGeo, hoodMat)
-      // Position behind collar area
       hoodMesh.position.set(0, 0.28, -0.06)
 
-      // ── Kangaroo pocket ──────────────────────────────────────────────────
+      // ── Kangaroo pocket ───────────────────────────────────────────────────
       const pocketGeo = new THREE.BoxGeometry(0.38, 0.14, 0.015)
       const pocketMat = new THREE.MeshStandardMaterial({
-        color: shirtColor,
-        roughness: 0.88, metalness: 0,
-        // Slightly darker shade for pocket contrast
+        color: shirtColor, roughness: 0.88, metalness: 0,
         emissive: new THREE.Color(0x000000),
       })
       const pocketMesh = new THREE.Mesh(pocketGeo, pocketMat)
       pocketMesh.position.set(0, -0.34, 0.048)
 
-      // Pocket seam line
       const seamGeo = new THREE.BoxGeometry(0.38, 0.004, 0.002)
       const seamMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 })
       const seamTop = new THREE.Mesh(seamGeo, seamMat)
@@ -104,20 +101,23 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: Props) {
       const seamBot = new THREE.Mesh(seamGeo, seamMat)
       seamBot.position.set(0, -0.41, 0.058)
 
-      // ── TACSFON logo ─────────────────────────────────────────────────────
+      // ── TACSFON logo — cross IS the T ─────────────────────────────────────
       const cvs = document.createElement('canvas')
       cvs.width = 512; cvs.height = 252
       const ctx = cvs.getContext('2d')!
       ctx.clearRect(0, 0, 512, 252)
       ctx.fillStyle = '#FFFFFF'
-      ctx.fillRect(38, 8, 34, 130)
-      ctx.fillRect(6, 40, 100, 34)
+
+      ctx.fillRect(44, 4, 30, 140)     // vertical bar (T-stem + cross top)
+      ctx.fillRect(4, 28, 110, 30)     // crossbar at cap-height
+
       ctx.font = 'bold 82px "Arial Black", Arial'
       ctx.textBaseline = 'alphabetic'
-      ctx.fillText('ACSFON', 113, 126)
-      ctx.font = 'bold 21px Arial'
+      ctx.fillText('ACSFON', 122, 144)
+
+      ctx.font = 'bold 20px Arial'
       const sub = 'SHARING THE LOVE OF CHRIST'
-      ctx.fillText(sub, (512 - ctx.measureText(sub).width) / 2, 172)
+      ctx.fillText(sub, (512 - ctx.measureText(sub).width) / 2, 188)
 
       const logoTex = new THREE.CanvasTexture(cvs)
       logoTex.encoding = THREE.sRGBEncoding
@@ -127,7 +127,6 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: Props) {
       )
       logoMesh.position.set(0, 0.06, 0.090)
 
-      // ── Group ────────────────────────────────────────────────────────────
       const group = new THREE.Group()
       group.add(hoodMesh, bodyMesh, pocketMesh, seamTop, seamBot, logoMesh)
       scene.add(group)
