@@ -88,6 +88,7 @@ export default async function ProductDetailPage({ params }: Props) {
               imageUrl={product.image_url}
               modelUrl={product.model_url}
               productName={product.name}
+              categoryName={product.category?.name ?? null}
             />
           </div>
 
