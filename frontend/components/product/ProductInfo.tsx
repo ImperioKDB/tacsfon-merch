@@ -13,17 +13,22 @@
  *   → calls POST /api/cart/items
  *   → increments Zustand cart count on success
  *   → shows toast on success/error
+ *
+ * 3D integration:
+ * - Writes selectedVariant.color to useSelectedProductStore on every variant change
+ * - ProductViewer reads this store to update the procedural 3D viewer colour reactively
  */
 'use client'
 
-import { useState, useMemo }  from 'react'
-import { ShoppingCart }       from 'lucide-react'
-import { toast }              from 'sonner'
-import type { Product, ProductVariant } from '@/types'
-import { apiFetch }           from '@/lib/api/fetch'
-import { useCartStore }       from '@/store/cart'
-import VariantSelector        from './VariantSelector'
-import QuantitySelector       from './QuantitySelector'
+import { useState, useMemo, useEffect } from 'react'
+import { ShoppingCart }                  from 'lucide-react'
+import { toast }                         from 'sonner'
+import type { Product, ProductVariant }  from '@/types'
+import { apiFetch }                      from '@/lib/api/fetch'
+import { useCartStore }                  from '@/store/cart'
+import { useSelectedProductStore }       from '@/store/selected-product'
+import VariantSelector                   from './VariantSelector'
+import QuantitySelector                  from './QuantitySelector'
 
 const ERROR_MESSAGES: Record<string, string> = {
   CART_EMPTY:          "Your cart is empty. Add some items first!",
@@ -41,11 +46,11 @@ function mapError(code: string): string {
 interface Props { product: Product }
 
 export default function ProductInfo({ product }: Props) {
-  const variants = product.variants ?? product.product_variants ?? []
+  const variants = product.variants ?? (product as any).product_variants ?? []
 
   // Pre-select first in-stock variant, or first variant if all out of stock
   const defaultVariant = useMemo(
-    () => variants.find(v => v.stock_qty > 0) ?? variants[0] ?? null,
+    () => variants.find((v: ProductVariant) => v.stock_qty > 0) ?? variants[0] ?? null,
     [variants]
   )
 
@@ -54,19 +59,27 @@ export default function ProductInfo({ product }: Props) {
   const [expanded,  setExpanded]  = useState(false)
   const [adding,    setAdding]    = useState(false)
 
-  const increment = useCartStore(s => s.increment)
+  const increment        = useCartStore(s => s.increment)
+  const setVariantColor  = useSelectedProductStore(s => s.setVariantColor)
+  const resetProductStore = useSelectedProductStore(s => s.reset)
+
+  // Seed the 3D viewer with the default variant's colour on mount
+  useEffect(() => {
+    setVariantColor(defaultVariant?.color ?? null)
+    // Reset when leaving the page
+    return () => resetProductStore()
+  }, [defaultVariant, setVariantColor, resetProductStore])
 
   // Price — variant override takes precedence
-  const price = selected?.price_override ?? product.base_price
+  const price    = selected?.price_override ?? product.base_price
   const stockQty = selected?.stock_qty ?? 0
-
-  // "Only X left!" warning
   const lowStock = stockQty > 0 && stockQty <= 5
 
-  // Clamp quantity when variant changes
+  // Clamp quantity when variant changes + update 3D viewer colour
   function handleVariantChange(v: ProductVariant) {
     setSelected(v)
     setQuantity(q => Math.min(q, v.stock_qty || 1))
+    setVariantColor(v.color ?? null)   // ← drives the 3D viewer reactively
   }
 
   async function handleAddToCart() {
@@ -90,7 +103,6 @@ export default function ProductInfo({ product }: Props) {
     } catch (err: any) {
       const code = err?.code ?? ''
       if (code === 'UNAUTHORIZED') {
-        // Redirect to login preserving current URL
         if (typeof window !== 'undefined') {
           window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
         }
@@ -104,14 +116,13 @@ export default function ProductInfo({ product }: Props) {
 
   // Stock type badge
   const stockBadge = (() => {
-    if (product.stock_type === 'preorder') return { label: 'Pre-order', color: 'var(--color-gold)', bg: 'var(--color-gold-muted)' }
-    if (stockQty === 0)                    return { label: 'Out of Stock', color: 'var(--color-error)', bg: 'rgba(217,79,79,0.12)' }
-    return { label: 'In Stock', color: 'var(--color-success)', bg: 'rgba(45,158,107,0.12)' }
+    if (product.stock_type === 'preorder') return { label: 'Pre-order',    color: 'var(--color-gold)',    bg: 'var(--color-gold-muted)' }
+    if (stockQty === 0)                    return { label: 'Out of Stock', color: 'var(--color-error)',   bg: 'rgba(217,79,79,0.12)' }
+    return                                        { label: 'In Stock',     color: 'var(--color-success)', bg: 'rgba(45,158,107,0.12)' }
   })()
 
   const description = product.description ?? ''
-  const descLines   = description.split('\n').filter(Boolean)
-  const isLong      = descLines.length > 3 || description.length > 200
+  const isLong      = description.split('\n').filter(Boolean).length > 3 || description.length > 200
 
   return (
     <div className="space-y-6">
@@ -134,7 +145,11 @@ export default function ProductInfo({ product }: Props) {
         </span>
         <span
           className="rounded-full px-3 py-1 text-xs font-semibold"
-          style={{ color: stockBadge.color, background: stockBadge.bg, border: `1px solid ${stockBadge.color}40` }}
+          style={{
+            color:       stockBadge.color,
+            background:  stockBadge.bg,
+            border:      `1px solid ${stockBadge.color}40`,
+          }}
         >
           {stockBadge.label}
         </span>
