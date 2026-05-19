@@ -2,17 +2,19 @@
 
 /**
  * Procedural crew-neck t-shirt viewer — Three.js r128.
- * Renders the TACSFON merch t-shirt exactly as photographed:
- *   • Maroon (#7B1A2E) or black body  (colour prop)
- *   • White cross + "ACSFON" + "SHARING THE LOVE OF CHRIST" print
- * No .glb files needed — zero storage cost.
+ *
+ * Logo spec (cross IS the T in TACSFON):
+ *   Vertical bar:   fillRect(44, 4, 30, 140)   — full T-stem, top extends above crossbar
+ *   Crossbar:       fillRect(4, 28, 110, 30)    — at cap-height, making it a cross
+ *   "ACSFON":       x=122, baseline=144         — flush right of cross-T
+ *   Subtitle:       centred at y=188
  */
 
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
 interface Props {
-  color?:   string   // hex — e.g. '#7B1A2E' or '#1C1C1C'
+  color?:   string
   onError?: () => void
 }
 
@@ -23,7 +25,6 @@ export default function TShirtViewer3D({ color = '#7B1A2E', onError }: Props) {
     const mount = ref.current
     if (!mount) return
     try {
-      // ── Scene ────────────────────────────────────────────────────────────
       const scene = new THREE.Scene()
       scene.background = new THREE.Color(0x13131A)
 
@@ -38,33 +39,27 @@ export default function TShirtViewer3D({ color = '#7B1A2E', onError }: Props) {
       renderer.outputEncoding = THREE.sRGBEncoding
       mount.appendChild(renderer.domElement)
 
-      // ── Lights ───────────────────────────────────────────────────────────
       scene.add(new THREE.AmbientLight(0xffffff, 0.75))
       const key = new THREE.DirectionalLight(0xfff5e0, 1.2)
-      key.position.set(3, 4, 5)
-      scene.add(key)
+      key.position.set(3, 4, 5); scene.add(key)
       const fill = new THREE.DirectionalLight(0xc9a84c, 0.28)
-      fill.position.set(-3, -2, -3)
-      scene.add(fill)
+      fill.position.set(-3, -2, -3); scene.add(fill)
       const rim = new THREE.DirectionalLight(0xffffff, 0.35)
-      rim.position.set(0, -4, -4)
-      scene.add(rim)
+      rim.position.set(0, -4, -4); scene.add(rim)
 
-      // ── T-shirt silhouette (ExtrudeGeometry) ─────────────────────────────
+      // ── T-shirt silhouette ────────────────────────────────────────────────
       const shape = new THREE.Shape()
-      shape.moveTo(-0.50,  0.52)   // top of left sleeve
-      shape.lineTo(-0.50,  0.34)   // bottom of left sleeve
-      shape.lineTo(-0.30,  0.34)   // left armpit
-      shape.lineTo(-0.30, -0.56)   // bottom left of body
-      shape.lineTo( 0.30, -0.56)   // bottom right of body
-      shape.lineTo( 0.30,  0.34)   // right armpit
-      shape.lineTo( 0.50,  0.34)   // bottom of right sleeve
-      shape.lineTo( 0.50,  0.52)   // top of right sleeve
-      shape.lineTo( 0.13,  0.52)   // right shoulder edge
-
-      // Round crew collar
+      shape.moveTo(-0.50,  0.52)
+      shape.lineTo(-0.50,  0.34)
+      shape.lineTo(-0.30,  0.34)
+      shape.lineTo(-0.30, -0.56)
+      shape.lineTo( 0.30, -0.56)
+      shape.lineTo( 0.30,  0.34)
+      shape.lineTo( 0.50,  0.34)
+      shape.lineTo( 0.50,  0.52)
+      shape.lineTo( 0.13,  0.52)
       shape.bezierCurveTo( 0.13, 0.67, -0.13, 0.67, -0.13, 0.52)
-      shape.lineTo(-0.50,  0.52)   // close
+      shape.lineTo(-0.50,  0.52)
 
       const bodyGeo = new THREE.ExtrudeGeometry(shape, {
         steps: 1, depth: 0.06,
@@ -78,31 +73,29 @@ export default function TShirtViewer3D({ color = '#7B1A2E', onError }: Props) {
         roughness: 0.92, metalness: 0.0,
       })
       const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat)
-      bodyMesh.castShadow = true
 
-      // ── TACSFON logo via canvas texture ──────────────────────────────────
+      // ── TACSFON logo — cross IS the T ─────────────────────────────────────
       const cvs = document.createElement('canvas')
       cvs.width = 512; cvs.height = 252
       const ctx = cvs.getContext('2d')!
       ctx.clearRect(0, 0, 512, 252)
       ctx.fillStyle = '#FFFFFF'
 
-      // Cross — vertical bar
-      ctx.fillRect(38, 8, 34, 130)
-      // Cross — horizontal bar
-      ctx.fillRect(6, 40, 100, 34)
+      // Vertical bar — T-stem, extends above crossbar (= cross top)
+      ctx.fillRect(44, 4, 30, 140)
+      // Horizontal bar — at cap-height, not mid-height (= cross crossbar = T-bar)
+      ctx.fillRect(4, 28, 110, 30)
 
-      // "ACSFON" — bold, large, flush right of cross
+      // "ACSFON" — baseline matches bottom of vertical bar
+      // Reads as TACSFON with the cross-T preceding it
       ctx.font = 'bold 82px "Arial Black", Arial'
       ctx.textBaseline = 'alphabetic'
-      ctx.fillText('ACSFON', 113, 126)
+      ctx.fillText('ACSFON', 122, 144)
 
-      // "SHARING THE LOVE OF CHRIST" — centred below
-      ctx.font = 'bold 21px Arial'
-      ctx.textBaseline = 'alphabetic'
+      // Subtitle
+      ctx.font = 'bold 20px Arial'
       const sub = 'SHARING THE LOVE OF CHRIST'
-      const subW = ctx.measureText(sub).width
-      ctx.fillText(sub, (512 - subW) / 2, 172)
+      ctx.fillText(sub, (512 - ctx.measureText(sub).width) / 2, 188)
 
       const logoTex = new THREE.CanvasTexture(cvs)
       logoTex.encoding = THREE.sRGBEncoding
@@ -111,14 +104,12 @@ export default function TShirtViewer3D({ color = '#7B1A2E', onError }: Props) {
         new THREE.PlaneGeometry(0.56, 0.276),
         new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, depthWrite: false })
       )
-      logoMesh.position.set(0, 0.08, 0.078)  // front face, upper chest
+      logoMesh.position.set(0, 0.08, 0.078)
 
-      // ── Group ────────────────────────────────────────────────────────────
       const group = new THREE.Group()
       group.add(bodyMesh, logoMesh)
       scene.add(group)
 
-      // ── Interaction ──────────────────────────────────────────────────────
       let down = false, lx = 0, ly = 0
       const onDown  = (e: PointerEvent) => { down = true; lx = e.clientX; ly = e.clientY }
       const onUp    = () => { down = false }
@@ -138,7 +129,6 @@ export default function TShirtViewer3D({ color = '#7B1A2E', onError }: Props) {
         camera.updateProjectionMatrix()
         renderer.setSize(mount.clientWidth, mount.clientHeight)
       }
-
       mount.addEventListener('pointerdown', onDown)
       window.addEventListener('pointerup',   onUp)
       window.addEventListener('pointermove', onMove)
