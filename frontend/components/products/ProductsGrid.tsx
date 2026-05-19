@@ -170,7 +170,7 @@ export default function ProductsGrid({
       {/* End of results */}
       {!loading && !loadingMore && page >= totalPages && products.length > 0 && (
         <p className="mt-8 text-center text-sm" style={{ color: 'var(--color-text-disabled)' }}>
-          You've seen it all ❖
+          You&apos;ve seen it all ❖
         </p>
       )}
 
