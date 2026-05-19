@@ -1,50 +1,18 @@
-'use client'
-
 /**
- * Top-level 3D viewer for the product detail page.
+ * ProductViewer3D.tsx — NOT USED
  *
- * Strategy (cost-free, tier-free):
- *   1. If product.model_url is set → attempt to load the GLB from /public/models/
- *   2. On GLB load error OR no model_url → render ProceduralMerchViewer (zero assets)
+ * This file is intentionally kept as a breadcrumb.
  *
- * Both paths render in the same container so the parent layout never shifts.
+ * The active 3D viewer is:
+ *   components/product/ProductViewer.tsx
+ *
+ * That component handles:
+ *   - Approach B: GLB from /public/models/ via Vercel CDN
+ *   - Approach A: ProceduralMerchViewer (pure Three.js geometry, zero storage)
+ *   - Tab switcher (3D View / Image)
+ *   - Reactive colour from useSelectedProductStore
+ *
+ * Do not import this file. It does nothing.
  */
 
-import { useState } from 'react'
-import dynamic from 'next/dynamic'
-import ProceduralMerchViewer from './ProceduralMerchViewer'
-
-const GLBViewer = dynamic(() => import('./GLBViewer'), {
-  ssr: false,
-  loading: () => <div className="w-full h-full bg-surface animate-pulse rounded-2xl" />,
-})
-
-interface Props {
-  modelUrl?:  string | null
-  category?:  string | null
-  colorName?: string | null
-  onError?:   () => void
-}
-
-export default function ProductViewer3D({ modelUrl, category, colorName, onError }: Props) {
-  const [glbFailed, setGlbFailed] = useState(false)
-
-  const useGlb = !!modelUrl && !glbFailed
-
-  if (useGlb) {
-    return (
-      <GLBViewer
-        modelUrl={modelUrl!}
-        onError={() => { setGlbFailed(true); onError?.() }}
-      />
-    )
-  }
-
-  return (
-    <ProceduralMerchViewer
-      category={category}
-      colorName={colorName}
-      onError={onError}
-    />
-  )
-}
+export {}
