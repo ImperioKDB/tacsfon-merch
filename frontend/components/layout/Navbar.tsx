@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { ShoppingBag, Bell, User, Menu, X } from 'lucide-react'
+import { ShoppingBag, User, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
-import { useNotificationStore } from '@/store/notifications'
 import { createBrowserClient } from '@/lib/supabase/browser'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import type { Session } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
@@ -48,13 +48,12 @@ function CountBadge({ count, color = 'var(--color-gold)' }: { count: number; col
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function Navbar() {
-  const [scrolled, setScrolled]   = useState(false)
+  const [scrolled, setScrolled]     = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [session, setSession]     = useState<Session | null>(null)
-  const cartCount    = useCartStore((s) => s.count)
-  const unreadCount  = useNotificationStore((s) => s.unreadCount)
-  const observerRef  = useRef<IntersectionObserver | null>(null)
-  const supabase     = createBrowserClient()
+  const [session, setSession]       = useState<Session | null>(null)
+  const cartCount   = useCartStore((s) => s.count)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const supabase    = createBrowserClient()
 
   // ── Auth state ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -87,7 +86,6 @@ export default function Navbar() {
     setDrawerOpen(false)
   }
 
-  // ── Icon link style ────────────────────────────────────────────────────
   const iconStyle: React.CSSProperties = {
     position: 'relative',
     color: 'var(--color-text-secondary)',
@@ -139,7 +137,6 @@ export default function Navbar() {
             >
               TACSFON Merch
             </span>
-            {/* Gold accent dot */}
             <span
               aria-hidden="true"
               style={{
@@ -180,13 +177,8 @@ export default function Navbar() {
               <CountBadge count={cartCount} />
             </Link>
 
-            {/* Notifications — only when signed in */}
-            {session && (
-              <Link href="/notifications" style={iconStyle} aria-label={`Notifications, ${unreadCount} unread`}>
-                <Bell size={20} strokeWidth={1.5} />
-                <CountBadge count={unreadCount} color="var(--color-error)" />
-              </Link>
-            )}
+            {/* Notification Bell — only when signed in */}
+            {session && <NotificationBell />}
 
             {/* Auth */}
             {session ? (
