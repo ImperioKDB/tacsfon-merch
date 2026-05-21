@@ -48,6 +48,7 @@ function CountBadge({ count, color = 'var(--color-gold)' }: { count: number; col
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function Navbar() {
+  const supabase = createBrowserClient()
   const [scrolled, setScrolled]     = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [session, setSession]       = useState<Session | null>(null)
@@ -57,15 +58,14 @@ export default function Navbar() {
 
   // ── Auth state ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const supabase = createBrowserClient()
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
     return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Scroll detection via IntersectionObserver on #hero ─────────────────
   useEffect(() => {
-    const supabase = createBrowserClient()
     const hero = document.getElementById('hero')
     if (!hero) { setScrolled(true); return }
 
@@ -79,7 +79,6 @@ export default function Navbar() {
 
   // ── Lock body scroll when mobile drawer is open ─────────────────────────
   useEffect(() => {
-    const supabase = createBrowserClient()
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
