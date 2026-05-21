@@ -1,3 +1,4 @@
+'use client'
 /**
  * /products — Product Catalogue Page (Server Component)
  *
