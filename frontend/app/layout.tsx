@@ -4,23 +4,23 @@ import { Toaster }                                from 'sonner'
 import '@/styles/globals.css'
 
 const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight:  ['400', '600', '700'],
+  subsets:  ['latin'],
+  weight:   ['400', '600', '700'],
   variable: '--font-cormorant',
   display:  'swap',
 })
 
 const inter = Inter({
-  subsets: ['latin'],
-  weight:  ['400', '500'],
+  subsets:  ['latin'],
+  weight:   ['400', '500'],
   variable: '--font-inter',
   display:  'swap',
 })
 
-// Added: resolves --font-urbanist used by admin pages, cart, checkout, orders, profile
+// Resolves --font-urbanist used by admin pages, cart, checkout, orders, profile
 const urbanist = Urbanist({
-  subsets: ['latin'],
-  weight:  ['600', '700', '800'],
+  subsets:  ['latin'],
+  weight:   ['600', '700', '800'],
   variable: '--font-urbanist',
   display:  'swap',
 })
@@ -52,11 +52,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="bottom-right"
           toastOptions={{
             style: {
-              background:  'var(--color-surface)',
-              border:      '1px solid var(--color-border)',
-              color:       'var(--color-text-primary)',
-              fontFamily:  'var(--font-inter)',
-              fontSize:    '0.875rem',
+              background:   'var(--color-surface)',
+              border:       '1px solid var(--color-border)',
+              color:        'var(--color-text-primary)',
+              fontFamily:   'var(--font-inter)',
+              fontSize:     '0.875rem',
               borderRadius: '0',
             },
           }}
