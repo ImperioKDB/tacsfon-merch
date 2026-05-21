@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design Tokens ──────────────────────────────────────────────────────────── */
+/* ── Design Tokens ───────────────────────────────────────────────────────────── */
 :root {
   /* Palette */
   --color-bg:             #0A0A0F;
@@ -10,10 +10,10 @@
   --color-surface-2:      #1C1C26;
   --color-border:         #2A2A38;
 
-  /* Accent — Hermès amber */
-  --color-gold:           #C8860A;
-  --color-gold-light:     #E09B1A;
-  --color-gold-muted:     rgba(200, 134, 10, 0.12);
+  /* Accent — FIX #8: synced to design spec #C9A84C (was #C8860A) */
+  --color-gold:           #C9A84C;
+  --color-gold-light:     #E8C96A;
+  --color-gold-muted:     rgba(201, 168, 76, 0.15);
 
   /* Text */
   --color-text-primary:   #F7F5F0;
@@ -25,15 +25,23 @@
   --color-error:          #D94F4F;
   --color-warning:        #E8A830;
 
-  /* Shadows */
-  --shadow-gold:          0 0 24px rgba(200, 134, 10, 0.18);
+  /* Shadows — FIX #9: added --shadow-sm; FIX #8: updated shadow-gold to match new gold */
+  --shadow-sm:            0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg:            0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-gold:          0 0 24px rgba(201, 168, 76, 0.15);
 
-  /* Motion */
+  /* Glassmorphism — FIX #3: these were missing; CartSummary depends on them */
+  --glass-bg:             rgba(19, 19, 26, 0.7);
+  --glass-border:         rgba(201, 168, 76, 0.15);
+  --glass-blur:           blur(12px);
+
+  /* Motion — FIX #9: added --duration-slow and --ease-spring */
   --duration-fast:        150ms;
   --duration-base:        250ms;
+  --duration-slow:        400ms;
   --ease-smooth:          cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:          cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ── Global Reset ────────────────────────────────────────────────────────────── */
@@ -56,8 +64,6 @@ body {
 }
 
 /* ── Zero border-radius enforcement ─────────────────────────────────────────── */
-/* Applied to every element. The .swatch-dot and .notif-dot classes
-   override this for small circle indicators only. */
 *, *::before, *::after {
   border-radius: 0 !important;
 }
@@ -88,7 +94,7 @@ body {
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
-/* ── Fade-in (only animation used in this project) ───────────────────────────── */
+/* ── Fade-in ─────────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -111,7 +117,7 @@ body {
 ::-webkit-scrollbar-thumb  { background: var(--color-border); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
 
-/* ── Reusable link styles (for server components that can't use JS handlers) ─── */
+/* ── Reusable link styles ────────────────────────────────────────────────────── */
 @layer components {
   .link {
     color: var(--color-text-secondary);
@@ -131,14 +137,12 @@ body {
     color: var(--color-gold-light);
   }
 
-  /* Thin horizontal divider */
   .divider {
     height: 1px;
     background: var(--color-border);
     border: none;
   }
 
-  /* CTA outline button – gold border, transparent background, hover background */
   .cta-outline {
     display: inline-block;
     font-family: var(--font-inter);
