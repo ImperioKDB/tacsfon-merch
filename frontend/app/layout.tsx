@@ -19,10 +19,10 @@ const inter = Inter({
 
 // Resolves --font-urbanist used by admin pages, cart, checkout, orders, profile
 const urbanist = Urbanist({
-  subsets:  ['latin'],
-  weight:   ['600', '700', '800'],
+  subsets: ['latin'],
+  weight: ['600', '700'],
   variable: '--font-urbanist',
-  display:  'swap',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
