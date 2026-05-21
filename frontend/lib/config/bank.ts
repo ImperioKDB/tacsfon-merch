@@ -1,29 +1,29 @@
-/**
- * lib/config/bank.ts
- *
- * Bank account details used in the checkout Step 2 payment panel.
- *
- * FALLBACK_BANK_DETAILS is the source of truth for now.
- * getBankDetails() tries GET /api/config/bank first so that if the
- * backend engineer adds that endpoint later it takes over automatically
- * without any frontend change.
- */
-
 import type { BankDetails } from '@/types'
 
-/** Hardcoded fallback — always works even without the backend endpoint. */
+/**
+ * Bank details are read from environment variables — never hardcoded in source.
+ *
+ * Required Vercel env vars (Settings → Environment Variables):
+ *   NEXT_PUBLIC_BANK_NAME
+ *   NEXT_PUBLIC_BANK_ACCOUNT_NUMBER
+ *   NEXT_PUBLIC_BANK_ACCOUNT_NAME
+ *
+ * Permanent fix: implement GET /api/config/bank on the backend.
+ * Once that endpoint exists, getBankDetails() will use it automatically
+ * and the NEXT_PUBLIC_* vars can be retired.
+ */
 export const FALLBACK_BANK_DETAILS: BankDetails = {
-  bank_name:      'Opay',
-  account_number: '8145355705',
-  account_name:   'Divine Momoh',
+  bank_name:      process.env.NEXT_PUBLIC_BANK_NAME           ?? '',
+  account_number: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER ?? '',
+  account_name:   process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME   ?? '',
 }
 
 /**
  * Fetch bank details for the checkout payment step.
  *
  * Strategy:
- *   1. Try GET /api/config/bank (backend endpoint, may not exist yet)
- *   2. On any error / 404 → return FALLBACK_BANK_DETAILS silently
+ *   1. Try GET /api/config/bank (backend endpoint — may not exist yet)
+ *   2. On any error / 404 → return env-var-backed FALLBACK_BANK_DETAILS silently
  *
  * Safe to call from a client component; never throws.
  */
