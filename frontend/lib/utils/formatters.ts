@@ -3,8 +3,6 @@
  * Display formatters used across admin and student UIs.
  */
 
-import type { Product, ProductVariant } from '@/types'
-
 /**
  * Format a number as Nigerian Naira.
  * e.g. formatPrice(5000) → "₦5,000"
@@ -54,28 +52,15 @@ export function formatOrderId(id: string): string {
 }
 
 /**
- * Return the effective display price for a product.
- * Used by ProductCard for the "from ₦X,XXX" label.
+ * Resolve the effective price for a single variant.
+ * Called per-variant in ProductCard.tsx:
+ *   getVariantPrice(product.base_price, v.price_override)
  *
- * Logic:
- *   - If the product has variants with a price_override, return
- *     the lowest override so the card shows the cheapest entry point.
- *   - Otherwise return the product's base_price.
- *
- * e.g. getVariantPrice(product, variants) → 4500
+ * Returns price_override if set, otherwise base_price.
  */
 export function getVariantPrice(
-  product:  Pick<Product, 'base_price'>,
-  variants?: Pick<ProductVariant, 'price_override'>[] | null,
+  base_price:     number,
+  price_override: number | null | undefined,
 ): number {
-  if (variants && variants.length > 0) {
-    const overrides = variants
-      .map(v => v.price_override)
-      .filter((p): p is number => typeof p === 'number')
-
-    if (overrides.length > 0) {
-      return Math.min(...overrides)
-    }
-  }
-  return product.base_price
+  return price_override ?? base_price
 }
