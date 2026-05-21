@@ -16,7 +16,8 @@ export default function AboutPage() {
         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-gold)', fontFamily: 'var(--font-inter)', marginBottom: '16px' }}>
           About Us
         </p>
-        <h1 style={{ fontFamily: 'var(--font-cormorant)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: '24px', letterSpacing: '-0.01em' }}>
+        {/* FIX #5: was var(--font-cormorant) which is undefined — changed to var(--font-urbanist) */}
+        <h1 style={{ fontFamily: 'var(--font-urbanist)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: '24px', letterSpacing: '-0.01em' }}>
           Wear the Community.<br />Wear the Identity.
         </h1>
         <p style={{ fontSize: '1.0625rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7', maxWidth: '600px' }}>
@@ -44,7 +45,7 @@ export default function AboutPage() {
           </h2>
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7', marginBottom: '16px' }}>
             Every piece in the TACSFON collection is designed with intention — not just
-            to look good, but to mean something. When you wear TACSFON Merch, you're
+            to look good, but to mean something. When you wear TACSFON Merch, you’re
             representing a community built on excellence, service, and shared purpose.
           </p>
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7' }}>
@@ -56,9 +57,9 @@ export default function AboutPage() {
         {/* Right — Values */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {[
-            { icon: ShoppingBag, title: 'Quality First',   body: 'Every product is reviewed before it reaches you. We stand behind what we sell.' },
+            { icon: ShoppingBag, title: 'Quality First',    body: 'Every product is reviewed before it reaches you. We stand behind what we sell.' },
             { icon: Users,       title: 'Community-Driven', body: 'The store exists to serve TACSFON members. Feedback shapes every collection.' },
-            { icon: Star,        title: 'Authentic Design', body: 'Our pieces are exclusive to the TACSFON community — you won't find them elsewhere.' },
+            { icon: Star,        title: 'Authentic Design', body: 'Our pieces are exclusive to the TACSFON community — you won’t find them elsewhere.' },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
               <div style={{ width: '40px', height: '40px', background: 'var(--color-gold-muted)', border: '1px solid var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -80,7 +81,8 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section style={{ maxWidth: '1024px', margin: '0 auto', padding: '64px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'var(--font-cormorant)', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '16px' }}>
+        {/* FIX #5: was var(--font-cormorant) which is undefined */}
+        <h2 style={{ fontFamily: 'var(--font-urbanist)', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '16px' }}>
           Ready to represent?
         </h2>
         <p style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', marginBottom: '32px', maxWidth: '440px', margin: '0 auto 32px' }}>
