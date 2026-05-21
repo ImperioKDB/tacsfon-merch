@@ -1,3 +1,5 @@
+'use client'
+
 // Server Component — no 'use client' needed.
 // Hover effects use CSS classes from globals.css (.link, .link-gold).
 import Link from 'next/link'
