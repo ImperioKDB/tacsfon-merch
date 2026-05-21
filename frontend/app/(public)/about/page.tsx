@@ -10,13 +10,10 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
-
-      {/* Hero */}
       <section style={{ maxWidth: '1024px', margin: '0 auto', padding: '72px 24px 56px' }}>
         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-gold)', fontFamily: 'var(--font-inter)', marginBottom: '16px' }}>
           About Us
         </p>
-        {/* FIX #5: was var(--font-cormorant) which is undefined — changed to var(--font-urbanist) */}
         <h1 style={{ fontFamily: 'var(--font-urbanist)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: '24px', letterSpacing: '-0.01em' }}>
           Wear the Community.<br />Wear the Identity.
         </h1>
@@ -27,15 +24,11 @@ export default function AboutPage() {
         </p>
       </section>
 
-      {/* Divider */}
       <div style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 24px' }}>
         <div style={{ height: '1px', background: 'var(--color-border)' }} />
       </div>
 
-      {/* Two-column: Mission + Values */}
       <section style={{ maxWidth: '1024px', margin: '0 auto', padding: '64px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'start' }}>
-
-        {/* Left — Mission */}
         <div>
           <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-gold)', fontFamily: 'var(--font-inter)', marginBottom: '14px' }}>
             Our Mission
@@ -54,7 +47,6 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Right — Values */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {[
             { icon: ShoppingBag, title: 'Quality First',    body: 'Every product is reviewed before it reaches you. We stand behind what we sell.' },
@@ -74,14 +66,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Divider */}
       <div style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 24px' }}>
         <div style={{ height: '1px', background: 'var(--color-border)' }} />
       </div>
 
-      {/* CTA */}
       <section style={{ maxWidth: '1024px', margin: '0 auto', padding: '64px 24px', textAlign: 'center' }}>
-        {/* FIX #5: was var(--font-cormorant) which is undefined */}
         <h2 style={{ fontFamily: 'var(--font-urbanist)', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '16px' }}>
           Ready to represent?
         </h2>
@@ -90,33 +79,13 @@ export default function AboutPage() {
         </p>
         <Link
           href="/products"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '13px 28px',
-            background: 'var(--color-gold)',
-            color: '#0A0A0F',
-            textDecoration: 'none',
-            fontFamily: 'var(--font-inter)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            letterSpacing: '0.06em',
-            transition: 'all var(--duration-fast) var(--ease-smooth)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold-light)'
-            ;(e.currentTarget as HTMLAnchorElement).style.boxShadow = 'var(--shadow-gold)'
-            ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)'
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold)'
-            ;(e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none'
-            ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'
-          }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', background: 'var(--color-gold)', color: '#0A0A0F', textDecoration: 'none', fontFamily: 'var(--font-inter)', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.06em', transition: 'all var(--duration-fast) var(--ease-smooth)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold-light)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'var(--shadow-gold)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none' }}
         >
           Shop the Collection <ArrowRight size={16} strokeWidth={1.5} />
         </Link>
       </section>
-
     </div>
   )
 }
