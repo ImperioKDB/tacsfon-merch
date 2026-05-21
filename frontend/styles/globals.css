@@ -2,41 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design Tokens ───────────────────────────────────────────────────────────── */
 :root {
-  /* Palette */
   --color-bg:             #0A0A0F;
   --color-surface:        #13131A;
   --color-surface-2:      #1C1C26;
   --color-border:         #2A2A38;
 
-  /* Accent — FIX #8: synced to design spec #C9A84C (was #C8860A) */
   --color-gold:           #C9A84C;
   --color-gold-light:     #E8C96A;
   --color-gold-muted:     rgba(201, 168, 76, 0.15);
 
-  /* Text */
   --color-text-primary:   #F7F5F0;
   --color-text-secondary: #A09C94;
   --color-text-disabled:  #4A4844;
 
-  /* Semantic */
   --color-success:        #2D9E6B;
   --color-error:          #D94F4F;
   --color-warning:        #E8A830;
 
-  /* Shadows — FIX #9: added --shadow-sm; FIX #8: updated shadow-gold to match new gold */
   --shadow-sm:            0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg:            0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-gold:          0 0 24px rgba(201, 168, 76, 0.15);
 
-  /* Glassmorphism — FIX #3: these were missing; CartSummary depends on them */
   --glass-bg:             rgba(19, 19, 26, 0.7);
   --glass-border:         rgba(201, 168, 76, 0.15);
   --glass-blur:           blur(12px);
 
-  /* Motion — FIX #9: added --duration-slow and --ease-spring */
   --duration-fast:        150ms;
   --duration-base:        250ms;
   --duration-slow:        400ms;
@@ -44,16 +36,13 @@
   --ease-spring:          cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Global Reset ────────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--color-bg);
@@ -63,22 +52,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Zero border-radius enforcement ─────────────────────────────────────────── */
-*, *::before, *::after {
-  border-radius: 0 !important;
-}
-.swatch-dot,
-.notif-dot {
-  border-radius: 9999px !important;
-}
+*, *::before, *::after { border-radius: 0 !important; }
+.swatch-dot, .notif-dot { border-radius: 9999px !important; }
 
-/* ── Focus ring ──────────────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
 }
 
-/* ── Skeleton shimmer ────────────────────────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -94,7 +75,6 @@ body {
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
-/* ── Fade-in ─────────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -103,7 +83,6 @@ body {
   animation: fadeIn var(--duration-base) var(--ease-smooth) both;
 }
 
-/* ── Respect reduced motion ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -111,37 +90,27 @@ body {
   }
 }
 
-/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb  { background: var(--color-border); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
 
-/* ── Reusable link styles ────────────────────────────────────────────────────── */
 @layer components {
   .link {
     color: var(--color-text-secondary);
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease-smooth);
   }
-  .link:hover {
-    color: var(--color-text-primary);
-  }
+  .link:hover { color: var(--color-text-primary); }
 
   .link-gold {
     color: var(--color-gold);
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease-smooth);
   }
-  .link-gold:hover {
-    color: var(--color-gold-light);
-  }
+  .link-gold:hover { color: var(--color-gold-light); }
 
-  .divider {
-    height: 1px;
-    background: var(--color-border);
-    border: none;
-  }
+  .divider { height: 1px; background: var(--color-border); border: none; }
 
   .cta-outline {
     display: inline-block;
@@ -157,7 +126,5 @@ body {
     background: transparent;
     transition: background var(--duration-fast) var(--ease-smooth);
   }
-  .cta-outline:hover {
-    background: var(--color-gold-muted);
-  }
+  .cta-outline:hover { background: var(--color-gold-muted); }
 }
