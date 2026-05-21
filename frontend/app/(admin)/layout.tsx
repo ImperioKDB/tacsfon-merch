@@ -1,16 +1,18 @@
-'use server'
-import { redirect } from 'next/navigation'
+import { redirect }           from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
-import AdminShell from '@/components/admin/AdminShell'
+import AdminShell             from '@/components/admin/AdminShell'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+
+  // getUser() verifies the JWT with Supabase Auth on every request.
+  // getSession() only reads from cookies — never use it for server-side auth.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   const { data: profile } = await supabase
     .from('profiles').select('id, full_name, email, role')
-    .eq('id', session.user.id).single()
+    .eq('id', user.id).single()
 
   if (!profile || profile.role !== 'admin') redirect('/')
 
