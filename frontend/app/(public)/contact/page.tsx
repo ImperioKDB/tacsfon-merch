@@ -17,12 +17,13 @@ export default function ContactPage() {
         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-gold)', fontFamily: 'var(--font-inter)', marginBottom: '16px' }}>
           Get In Touch
         </p>
-        <h1 style={{ fontFamily: 'var(--font-cormorant)', fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: '16px' }}>
-          We're here to help
+        {/* FIX #5: was var(--font-cormorant) which is undefined */}
+        <h1 style={{ fontFamily: 'var(--font-urbanist)', fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: '16px' }}>
+          We’re here to help
         </h1>
         <p style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7' }}>
           Have a question about an order, a product, or anything else?
-          Reach out and we'll get back to you as quickly as we can.
+          Reach out and we’ll get back to you as quickly as we can.
         </p>
       </section>
 
@@ -61,11 +62,9 @@ export default function ContactPage() {
               ;(e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none'
             }}
           >
-            {/* Icon */}
             <div style={{ width: '52px', height: '52px', background: 'var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <MessageCircle size={24} strokeWidth={1.5} style={{ color: '#0A0A0F' }} />
             </div>
-            {/* Text */}
             <div style={{ flex: 1 }}>
               <p style={{ fontFamily: 'var(--font-urbanist)', fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
                 Chat on WhatsApp
@@ -74,7 +73,6 @@ export default function ContactPage() {
                 The fastest way to reach us. We typically respond within a few hours.
               </p>
             </div>
-            {/* Arrow */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-gold)', flexShrink: 0 }}>
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
