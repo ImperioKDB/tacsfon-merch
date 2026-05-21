@@ -3,32 +3,39 @@
 @tailwind utilities;
 
 :root {
+  /* Primary Palette */
   --color-bg:             #0A0A0F;
   --color-surface:        #13131A;
   --color-surface-2:      #1C1C26;
   --color-border:         #2A2A38;
 
+  /* Accent */
   --color-gold:           #C9A84C;
   --color-gold-light:     #E8C96A;
   --color-gold-muted:     rgba(201, 168, 76, 0.15);
 
+  /* Text */
   --color-text-primary:   #F7F5F0;
   --color-text-secondary: #A09C94;
   --color-text-disabled:  #4A4844;
 
+  /* Semantic */
   --color-success:        #2D9E6B;
   --color-error:          #D94F4F;
   --color-warning:        #E8A830;
 
+  /* Shadows */
   --shadow-sm:            0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg:            0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-gold:          0 0 24px rgba(201, 168, 76, 0.15);
 
+  /* Glassmorphism */
   --glass-bg:             rgba(19, 19, 26, 0.7);
   --glass-border:         rgba(201, 168, 76, 0.15);
   --glass-blur:           blur(12px);
 
+  /* Motion */
   --duration-fast:        150ms;
   --duration-base:        250ms;
   --duration-slow:        400ms;
@@ -46,20 +53,27 @@ html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--color-bg);
-  color: var(--color-text-primary);
-  font-family: var(--font-inter), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  color:            var(--color-text-primary);
+  font-family:      var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing:  antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-*, *::before, *::after { border-radius: 0 !important; }
+/*
+ * Border-radius reset — !important REMOVED.
+ * Tailwind config already maps all rounded-* values to 0.
+ * Without !important, inline styles (borderRadius: '9999px' on
+ * spinners, count badges, notification dots) override correctly.
+ */
+*, *::before, *::after { border-radius: 0; }
 .swatch-dot, .notif-dot { border-radius: 9999px !important; }
 
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline:        2px solid var(--color-gold);
   outline-offset: 2px;
 }
 
+/* ── Skeleton shimmer ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -75,6 +89,7 @@ body {
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* ── Fade-in ───────────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -83,48 +98,51 @@ body {
   animation: fadeIn var(--duration-base) var(--ease-smooth) both;
 }
 
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration:  0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: var(--color-bg); }
-::-webkit-scrollbar-thumb  { background: var(--color-border); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 5px; height: 5px; }
+::-webkit-scrollbar-track       { background: var(--color-bg);     }
+::-webkit-scrollbar-thumb       { background: var(--color-border); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gold);   }
 
+/* ── Utility classes ───────────────────────────────────────────────────────── */
 @layer components {
   .link {
-    color: var(--color-text-secondary);
+    color:           var(--color-text-secondary);
     text-decoration: none;
-    transition: color var(--duration-fast) var(--ease-smooth);
+    transition:      color var(--duration-fast) var(--ease-smooth);
   }
   .link:hover { color: var(--color-text-primary); }
 
   .link-gold {
-    color: var(--color-gold);
+    color:           var(--color-gold);
     text-decoration: none;
-    transition: color var(--duration-fast) var(--ease-smooth);
+    transition:      color var(--duration-fast) var(--ease-smooth);
   }
   .link-gold:hover { color: var(--color-gold-light); }
 
   .divider { height: 1px; background: var(--color-border); border: none; }
 
   .cta-outline {
-    display: inline-block;
-    font-family: var(--font-inter);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--color-gold);
-    border: 1px solid var(--color-gold);
-    padding: 14px 36px;
+    display:         inline-block;
+    font-family:     var(--font-inter);
+    font-size:       0.6875rem;
+    font-weight:     500;
+    letter-spacing:  0.16em;
+    text-transform:  uppercase;
+    color:           var(--color-gold);
+    border:          1px solid var(--color-gold);
+    padding:         14px 36px;
     text-decoration: none;
-    background: transparent;
-    transition: background var(--duration-fast) var(--ease-smooth);
+    background:      transparent;
+    transition:      background var(--duration-fast) var(--ease-smooth);
   }
   .cta-outline:hover { background: var(--color-gold-muted); }
 }
