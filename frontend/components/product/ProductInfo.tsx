@@ -46,13 +46,11 @@ function mapError(code: string): string {
 interface Props { product: Product }
 
 export default function ProductInfo({ product }: Props) {
-  const variants = product.variants ?? (product as any).product_variants ?? []
-
   // Pre-select first in-stock variant, or first variant if all out of stock
-  const defaultVariant = useMemo(
-    () => variants.find((v: ProductVariant) => v.stock_qty > 0) ?? variants[0] ?? null,
-    [variants]
-  )
+  const defaultVariant = useMemo(() => {
+    const variants = product.variants ?? (product as any).product_variants ?? [];
+    return variants.find((v: ProductVariant) => v.stock_qty > 0) ?? variants[0] ?? null;
+  }, [product]);
 
   const [selected,  setSelected]  = useState<ProductVariant | null>(defaultVariant)
   const [quantity,  setQuantity]  = useState(1)

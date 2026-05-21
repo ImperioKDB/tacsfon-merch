@@ -1,6 +1,8 @@
 'use client'
 
+'use client'
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 
 interface HeroViewerProps {
   modelUrl: string
@@ -183,11 +185,14 @@ export default function HeroViewer({ modelUrl, fallbackImageUrl }: HeroViewerPro
   if (!webglOk || modelErr) {
     if (fallbackImageUrl) {
       return (
-        <img
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <Image
           src={fallbackImageUrl}
           alt="Product showcase"
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          fill
+          className="object-contain"
         />
+      </div>
       )
     }
     return (

@@ -53,10 +53,11 @@ export default function Navbar() {
   const [session, setSession]       = useState<Session | null>(null)
   const cartCount   = useCartStore((s) => s.count)
   const observerRef = useRef<IntersectionObserver | null>(null)
-  const supabase    = createBrowserClient()
+  
 
   // ── Auth state ─────────────────────────────────────────────────────────
   useEffect(() => {
+    const supabase = createBrowserClient()
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
     return () => subscription.unsubscribe()
@@ -64,6 +65,7 @@ export default function Navbar() {
 
   // ── Scroll detection via IntersectionObserver on #hero ─────────────────
   useEffect(() => {
+    const supabase = createBrowserClient()
     const hero = document.getElementById('hero')
     if (!hero) { setScrolled(true); return }
 
@@ -77,6 +79,7 @@ export default function Navbar() {
 
   // ── Lock body scroll when mobile drawer is open ─────────────────────────
   useEffect(() => {
+    const supabase = createBrowserClient()
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
