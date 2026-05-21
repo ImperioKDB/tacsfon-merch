@@ -3,6 +3,8 @@
  * Display formatters used across admin and student UIs.
  */
 
+import type { Product, ProductVariant } from '@/types'
+
 /**
  * Format a number as Nigerian Naira.
  * e.g. formatPrice(5000) → "₦5,000"
@@ -10,6 +12,12 @@
 export function formatPrice(amount: number): string {
   return `₦${Number(amount).toLocaleString('en-NG')}`
 }
+
+/**
+ * Alias for formatPrice.
+ * ReceiptPreview.tsx imports this name.
+ */
+export const formatCurrency = formatPrice
 
 /**
  * Format an ISO date string to a short readable date.
@@ -46,8 +54,28 @@ export function formatOrderId(id: string): string {
 }
 
 /**
- * Alias for formatPrice.
- * ReceiptPreview.tsx imports this name — keeping it as an alias
- * avoids touching the receipt component.
+ * Return the effective display price for a product.
+ * Used by ProductCard for the "from ₦X,XXX" label.
+ *
+ * Logic:
+ *   - If the product has variants with a price_override, return
+ *     the lowest override so the card shows the cheapest entry point.
+ *   - Otherwise return the product's base_price.
+ *
+ * e.g. getVariantPrice(product, variants) → 4500
  */
-export const formatCurrency = formatPrice
+export function getVariantPrice(
+  product:  Pick<Product, 'base_price'>,
+  variants?: Pick<ProductVariant, 'price_override'>[] | null,
+): number {
+  if (variants && variants.length > 0) {
+    const overrides = variants
+      .map(v => v.price_override)
+      .filter((p): p is number => typeof p === 'number')
+
+    if (overrides.length > 0) {
+      return Math.min(...overrides)
+    }
+  }
+  return product.base_price
+}
