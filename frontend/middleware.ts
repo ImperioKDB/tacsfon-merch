@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse }  from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
@@ -8,6 +8,9 @@ const ADMIN_ROUTES   = ['/admin']
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: request.headers } })
   const pathname  = request.nextUrl.pathname
+
+  // Forward pathname so server layouts can construct ?next= redirect URLs
+  response.headers.set('x-pathname', pathname)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +26,8 @@ export async function middleware(request: NextRequest) {
     },
   )
 
+  // getSession() is acceptable in middleware (performance — no network call).
+  // Use getUser() in server components/layouts for trusted verification.
   const { data: { session } } = await supabase.auth.getSession()
 
   const needsAuth = STUDENT_ROUTES.some((r) => pathname.startsWith(r))
@@ -32,7 +37,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // FIX #4: now checks role, not just session
   const needsAdmin = ADMIN_ROUTES.some((r) => pathname.startsWith(r))
   if (needsAdmin) {
     if (!session) return NextResponse.redirect(new URL('/login', request.url))
