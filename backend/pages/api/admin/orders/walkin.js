@@ -1,7 +1,3 @@
-/**
- * POST /api/admin/orders/walkin — record walk-in order
- * Phase 12: rate limit 'admin' + zod validation
- */
 import { withMiddleware }    from '../../../../lib/middleware/withMiddleware.js'
 import { sendSuccess }       from '../../../../lib/responseFormatter.js'
 import { ApiError }          from '../../../../lib/errorHandler.js'
@@ -36,9 +32,10 @@ async function handler(req, res) {
     }
 
     const unitPrice = variant.price_override ?? product.base_price
-    const qty = Number(quantity)
+    const qty       = Number(quantity)
     total += unitPrice * qty
-    enrichedItems.push({ product_id, variant_id, quantity: qty, unit_price: unitPrice })
+    // FIX #6: removed product_id — order_items has no product_id column
+    enrichedItems.push({ variant_id, quantity: qty, unit_price: unitPrice })
   }
 
   const { data: order, error: orderErr } = await supabaseAdmin
