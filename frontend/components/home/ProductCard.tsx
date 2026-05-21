@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { formatPrice, getVariantPrice } from '@/lib/utils/formatters'
+import { formatPrice } from '@/lib/utils/formatters'
 import Badge from '@/components/ui/Badge'
 import type { Product } from '@/types'
 
@@ -18,7 +18,7 @@ function getPriceDisplay(product: Product): string {
   const variants = product.variants ?? []
   if (!variants.length) return formatPrice(product.base_price)
 
-  const prices = variants.map((v) => getVariantPrice(product.base_price, v.price_override))
+  const prices = variants.map((v) => v.price_override ?? product.base_price)
   const min = Math.min(...prices)
   const max = Math.max(...prices)
 
