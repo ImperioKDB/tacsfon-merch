@@ -1,3 +1,4 @@
+'use client'
 import type { Metadata } from 'next'
 import { MessageCircle, Clock, Mail } from 'lucide-react'
 
