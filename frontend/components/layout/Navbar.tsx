@@ -49,6 +49,7 @@ function CountBadge({ count, color = 'var(--color-gold)' }: { count: number; col
 
 export default function Navbar() {
   const supabase = createBrowserClient()
+  const supabase = createBrowserClient()
   const [scrolled, setScrolled]     = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [session, setSession]       = useState<Session | null>(null)
