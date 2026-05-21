@@ -1,4 +1,3 @@
-'use client'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, ShoppingBag, Users, Star } from 'lucide-react'
