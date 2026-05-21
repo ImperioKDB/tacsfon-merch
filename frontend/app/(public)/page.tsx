@@ -1,3 +1,4 @@
+'use client'
 import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase/server'
 import Hero from '@/components/home/Hero'
