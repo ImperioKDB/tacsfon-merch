@@ -1,4 +1,3 @@
-'use client'
 /**
  * /products/[id] — Product Detail Page (Server Component)
  *
