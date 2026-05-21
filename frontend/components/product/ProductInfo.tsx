@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * ProductInfo (Client Component)
  *

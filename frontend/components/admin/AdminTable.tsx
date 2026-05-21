@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react'
 export interface Column<T> { key: string; label: string; render: (row: T) => React.ReactNode }
 interface Props<T> { columns: Column<T>[]; rows: T[]; loading: boolean; emptyMessage?: string }
