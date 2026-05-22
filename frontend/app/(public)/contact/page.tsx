@@ -1,5 +1,3 @@
-'use client';
-
 import type { Metadata } from 'next'
 import { MessageCircle, Clock, Mail } from 'lucide-react'
 
@@ -37,8 +35,7 @@ export default function ContactPage() {
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '28px 24px', background: 'var(--color-surface)', border: '1px solid var(--color-gold)', textDecoration: 'none', transition: 'all var(--duration-fast) var(--ease-smooth)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold-muted)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'var(--shadow-gold)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-surface)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none' }}
+            className="hover:bg-gold-muted hover:shadow-gold transition-all duration-fast"
           >
             <div style={{ width: '52px', height: '52px', background: 'var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <MessageCircle size={24} strokeWidth={1.5} style={{ color: '#0A0A0F' }} />
