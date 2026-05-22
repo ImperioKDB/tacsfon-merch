@@ -1,5 +1,3 @@
-'use client';
-
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, ShoppingBag, Users, Star } from 'lucide-react'
@@ -82,8 +80,7 @@ export default function AboutPage() {
         <Link
           href="/products"
           style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 28px', background: 'var(--color-gold)', color: '#0A0A0F', textDecoration: 'none', fontFamily: 'var(--font-inter)', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.06em', transition: 'all var(--duration-fast) var(--ease-smooth)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold-light)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'var(--shadow-gold)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--color-gold)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = 'none' }}
+          className="hover:bg-gold-light hover:shadow-gold transition-all duration-fast"
         >
           Shop the Collection <ArrowRight size={16} strokeWidth={1.5} />
         </Link>
