@@ -11,7 +11,7 @@ export default function HoodieViewer3D({ color = '#1C1C1C', onError }: { color?:
       const camera = new THREE.PerspectiveCamera(40, mount.clientWidth / mount.clientHeight, 0.1, 50)
       camera.position.set(0, 0, 3.2)
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      renderer.setSize(mount.clientWidth, mount.clientHeight); renderer.outputEncoding = THREE.sRGBEncoding
+      renderer.setSize(mount.clientWidth, mount.clientHeight); renderer.outputColorSpace = THREE.SRGBColorSpace
       mount.appendChild(renderer.domElement)
       scene.add(new THREE.AmbientLight(0xffffff, 0.5))
       const light = new THREE.DirectionalLight(0xffffff, 1); light.position.set(2, 2, 5); scene.add(light)

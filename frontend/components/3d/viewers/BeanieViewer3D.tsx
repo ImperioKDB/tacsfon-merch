@@ -31,7 +31,7 @@ export default function BeanieViewer3D({ color = '#1C1C1C', onError }: Props) {
       const renderer = new THREE.WebGLRenderer({ antialias: true })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setSize(w, h)
-      renderer.outputEncoding = THREE.sRGBEncoding
+      renderer.outputColorSpace = THREE.SRGBColorSpace
       mount.appendChild(renderer.domElement)
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.8))

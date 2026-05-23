@@ -31,7 +31,7 @@ export default function ToteBagViewer3D({ color = '#F0EDE8', onError }: Props) {
       const renderer = new THREE.WebGLRenderer({ antialias: true })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setSize(w, h)
-      renderer.outputEncoding = THREE.sRGBEncoding
+      renderer.outputColorSpace = THREE.SRGBColorSpace
       mount.appendChild(renderer.domElement)
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.8))
@@ -73,7 +73,7 @@ export default function ToteBagViewer3D({ color = '#F0EDE8', onError }: Props) {
       ctx.fillText(sub, (512 - ctx.measureText(sub).width) / 2, 350)
 
       const logoTex = new THREE.CanvasTexture(cvs)
-      logoTex.encoding = THREE.sRGBEncoding
+      logoTex.colorSpace = THREE.SRGBColorSpace
       const logoMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(0.64, 0.64),
         new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, depthWrite: false })

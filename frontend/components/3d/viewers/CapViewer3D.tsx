@@ -31,7 +31,7 @@ export default function CapViewer3D({ color = '#1C1C1C', onError }: Props) {
       const renderer = new THREE.WebGLRenderer({ antialias: true })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setSize(w, h)
-      renderer.outputEncoding = THREE.sRGBEncoding
+      renderer.outputColorSpace = THREE.SRGBColorSpace
       mount.appendChild(renderer.domElement)
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.8))
@@ -110,7 +110,7 @@ export default function CapViewer3D({ color = '#1C1C1C', onError }: Props) {
       ctx.font = 'bold 32px "Arial Black", Arial'
       ctx.fillText('ACSFON', 46, 52)
       const logoTex = new THREE.CanvasTexture(cvs)
-      logoTex.encoding = THREE.sRGBEncoding
+      logoTex.colorSpace = THREE.SRGBColorSpace
       const frontLogoMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(0.22, 0.11),
         new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, depthWrite: false })

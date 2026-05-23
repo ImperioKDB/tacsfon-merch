@@ -31,7 +31,7 @@ export default function TieViewer3D({ color = '#7B1A2E', onError }: Props) {
       const renderer = new THREE.WebGLRenderer({ antialias: true })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setSize(w, h)
-      renderer.outputEncoding = THREE.sRGBEncoding
+      renderer.outputColorSpace = THREE.SRGBColorSpace
       mount.appendChild(renderer.domElement)
 
       scene.add(new THREE.AmbientLight(0xffffff, 0.8))
