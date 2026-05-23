@@ -170,7 +170,7 @@ export default function SignupForm() {
             authError.message.toLowerCase().includes('already exists')) {
           setError('An account with this email already exists. Please sign in instead.')
         } else {
-          setError('Account creation failed. Please try again.')
+          setError(authError.message)
         }
         return
       }

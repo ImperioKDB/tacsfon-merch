@@ -111,7 +111,7 @@ export default function LoginForm() {
         ) {
           setError('Incorrect email or password. Please check and try again.')
         } else {
-          setError('Sign in failed. Please try again or contact support.')
+          setError(authError.message)
         }
         return
       }
