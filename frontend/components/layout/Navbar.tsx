@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ShoppingBag, User, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { createBrowserClient } from '@/lib/supabase/browser'
@@ -15,15 +16,21 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const supabase = createBrowserClient()
+  const router = useRouter()
+  
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
   const cartCount = useCartStore((s) => s.count)
 
   useEffect(() => {
+    // 1. Get initial session
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    
+    // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
     
+    // 3. Handle scroll effects
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     
@@ -37,7 +44,8 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setDrawerOpen(false)
-    router.push('/'); router.refresh();
+    router.push('/')
+    router.refresh()
   }
 
   return (
@@ -50,17 +58,20 @@ export default function Navbar() {
     }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 20px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
+        {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontFamily: 'var(--font-urbanist)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--color-text-primary)', letterSpacing: '1px' }}>TACSFON</span>
           <div style={{ width: '6px', height: '6px', background: 'var(--color-gold)' }} />
         </Link>
 
+        {/* Desktop Nav */}
         <nav style={{ display: 'flex', gap: '30px' }} className="hidden md:flex">
           {NAV_LINKS.map((l) => (
             <Link key={l.href} href={l.href} style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px' }}>{l.label}</Link>
           ))}
         </nav>
 
+        {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           {session && <NotificationBell />}
           <Link href="/cart" style={{ position: 'relative', color: 'var(--color-text-primary)' }}>
@@ -83,6 +94,7 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Drawer */}
       {drawerOpen && (
         <div style={{ position: 'fixed', top: '72px', left: 0, right: 0, bottom: 0, background: 'var(--color-bg)', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 99 }}>
           {NAV_LINKS.map(l => (
