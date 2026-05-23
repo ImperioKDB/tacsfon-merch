@@ -126,7 +126,7 @@ export default function Navbar() {
           }}
         >
           {/* Logo */}
-          <Link href="/" aria-label="TACSFON Merch home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Link href={process.env.NEXT_PUBLIC_APP_URL || "/"} aria-label="TACSFON Merch home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
                 fontFamily: 'var(--font-cormorant)',

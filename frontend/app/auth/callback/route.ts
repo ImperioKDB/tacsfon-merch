@@ -10,7 +10,7 @@ import { createServerClient } from '@supabase/ssr'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next') ?? (process.env.NEXT_PUBLIC_APP_URL || '/')
 
   if (!code) {
     return NextResponse.redirect(new URL('/', origin))
