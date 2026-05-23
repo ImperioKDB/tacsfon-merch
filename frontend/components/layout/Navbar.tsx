@@ -37,7 +37,7 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setDrawerOpen(false)
-    window.location.href = '/'
+    router.push('/'); router.refresh();
   }
 
   return (
