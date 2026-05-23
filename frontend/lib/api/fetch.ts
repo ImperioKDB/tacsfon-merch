@@ -43,8 +43,12 @@ export async function apiFetch<T>(
   }
 
   let res: Response
+  
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   try {
-    res = await fetch(`/api${path}`, { ...options, headers })
+    res = await fetch(`${baseUrl}/api${path}`, { ...options, headers })
+  } catch {
+
   } catch {
     throw new ApiError(
       'NETWORK_ERROR',
