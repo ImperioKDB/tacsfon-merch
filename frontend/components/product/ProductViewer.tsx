@@ -5,6 +5,10 @@ import { ShoppingBag } from 'lucide-react'
 interface ProductViewerProps {
   imageUrl: string | null;
   productName: string;
+  // We keep these in the interface to satisfy the parent page,
+  // even though we are now in stable 2D mode.
+  modelUrl?: string | null;
+  categoryName?: string | null;
 }
 
 export default function ProductViewer({ imageUrl, productName }: ProductViewerProps) {
