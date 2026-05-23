@@ -1,10 +1,11 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ShoppingBag, User, Menu, X, LogIn } from 'lucide-react'
+import { ShoppingBag, User, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { createBrowserClient } from '@/lib/supabase/browser'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import type { Session } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
   { label: 'Products', href: '/products' },
@@ -16,14 +17,21 @@ export default function Navbar() {
   const supabase = createBrowserClient()
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useState<Session | null>(null)
   const cartCount = useCartStore((s) => s.count)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
-    window.onscroll = () => setScrolled(window.scrollY > 20)
-    return () => subscription.unsubscribe()
+    
+    const handleScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll)
+    
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('scroll', handleScroll)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSignOut = async () => {
@@ -42,13 +50,11 @@ export default function Navbar() {
     }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 20px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
-        {/* Fixed Home Button */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontFamily: 'var(--font-urbanist)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--color-text-primary)', letterSpacing: '1px' }}>TACSFON</span>
           <div style={{ width: '6px', height: '6px', background: 'var(--color-gold)' }} />
         </Link>
 
-        {/* Desktop Links */}
         <nav style={{ display: 'flex', gap: '30px' }} className="hidden md:flex">
           {NAV_LINKS.map((l) => (
             <Link key={l.href} href={l.href} style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px' }}>{l.label}</Link>
@@ -62,7 +68,6 @@ export default function Navbar() {
             {cartCount > 0 && <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--color-gold)', color: '#000', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px' }}>{cartCount}</span>}
           </Link>
 
-          {/* User / Auth Buttons */}
           {session ? (
             <Link href="/profile" style={{ color: 'var(--color-text-primary)' }}><User size={20} /></Link>
           ) : (
@@ -72,13 +77,12 @@ export default function Navbar() {
             </div>
           )}
 
-          <button onClick={() => setDrawerOpen(!drawerOpen)} style={{ background: 'none', border: 'none', color: 'var(--color-text-primary)' }} className="md:hidden">
+          <button onClick={() => setDrawerOpen(!drawerOpen)} style={{ background: 'none', border: 'none', color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center' }} className="md:hidden">
             {drawerOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {drawerOpen && (
         <div style={{ position: 'fixed', top: '72px', left: 0, right: 0, bottom: 0, background: 'var(--color-bg)', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 99 }}>
           {NAV_LINKS.map(l => (
@@ -90,7 +94,12 @@ export default function Navbar() {
               <Link href="/login" onClick={() => setDrawerOpen(false)} style={{ border: '1px solid var(--color-gold)', color: 'var(--color-gold)', textAlign: 'center', padding: '15px', fontWeight: 'bold', textDecoration: 'none' }}>LOG IN</Link>
             </div>
           )}
-          {session && <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: 'var(--color-error)', textAlign: 'left', fontSize: '1.2rem', fontWeight: 'bold' }}>SIGN OUT</button>}
+          {session && (
+            <>
+              <Link href="/profile" onClick={() => setDrawerOpen(false)} style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-primary)', textDecoration: 'none' }}>PROFILE</Link>
+              <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: 'var(--color-error)', textAlign: 'left', fontSize: '1.2rem', fontWeight: 'bold', padding: 0 }}>SIGN OUT</button>
+            </>
+          )}
         </div>
       )}
     </header>
