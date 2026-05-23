@@ -17,10 +17,7 @@ export class ApiError extends Error {
 
 /**
  * Central fetch utility for all /api/* calls.
- * - Attaches auth token from Supabase session automatically
- * - Parses the standard { success, data, error } envelope
- * - Throws ApiError on failure — never returns raw error objects
- * - Accepts AbortSignal for cancellable requests
+ * Connects Frontend (Vercel) to Backend (Render).
  */
 export async function apiFetch<T>(
   path: string,
@@ -42,14 +39,14 @@ export async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${session.access_token}`
   }
 
-  let res: Response
-  
+  // Use the Render Backend URL from Environment Variables
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  
+  let res: Response;
   try {
+    // Combine baseUrl + /api + path (e.g., https://api.render.com/api/products)
     res = await fetch(`${baseUrl}/api${path}`, { ...options, headers })
-  } catch {
-
-  } catch {
+  } catch (err) {
     throw new ApiError(
       'NETWORK_ERROR',
       'Connection issue. Please check your internet and try again.',
