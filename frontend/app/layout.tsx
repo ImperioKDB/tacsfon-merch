@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: '%s | TACSFON Merch',
   },
   description: 'Premium merch for the TACSFON community.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL?.startsWith('http') ? process.env.NEXT_PUBLIC_APP_URL : `https://${process.env.NEXT_PUBLIC_APP_URL || 'localhost:3000'}`),
   openGraph: {
     siteName: 'TACSFON Merch',
     type:     'website',
