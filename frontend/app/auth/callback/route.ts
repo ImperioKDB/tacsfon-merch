@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll()
           },
-          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+          setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
             )
@@ -26,12 +26,9 @@ export async function GET(request: NextRequest) {
       }
     )
     
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return response
-    }
+    await supabase.auth.exchangeCodeForSession(code)
+    return response
   }
 
-  // Return the user to an error page if auth fails
   return NextResponse.redirect(new URL('/login?error=auth_failed', origin))
 }
