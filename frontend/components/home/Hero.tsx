@@ -8,7 +8,7 @@ const HERO_MODEL_URL = process.env.NEXT_PUBLIC_HERO_MODEL_URL ?? null
 export default function Hero() {
   return (
     <section id="hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden', background: 'radial-gradient(ellipse 80% 60% at 50% 40%, #0E0A1A 0%, var(--color-bg) 100%)' }}>
-      <div style={{ position: 'relative', z_index: 1, maxWidth: '1280px', margin: '0 auto', padding: '80px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '64px', alignItems: 'center', width: '100%' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1280px', margin: '0 auto', padding: '80px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '64px', alignItems: 'center', width: '100%' }}>
         
         {/* Left Content */}
         <div>
