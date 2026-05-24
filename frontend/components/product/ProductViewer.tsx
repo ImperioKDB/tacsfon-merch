@@ -5,23 +5,29 @@ import { ShoppingBag } from 'lucide-react'
 interface ProductViewerProps {
   imageUrl: string | null;
   productName: string;
-  // We keep these in the interface to satisfy the parent page,
-  // even though we are now in stable 2D mode.
   modelUrl?: string | null;
   categoryName?: string | null;
 }
 
 export default function ProductViewer({ imageUrl, productName }: ProductViewerProps) {
+  // Construct the full Supabase URL for the image
+  const fullImageUrl = imageUrl 
+    ? (imageUrl.startsWith('http') 
+        ? imageUrl 
+        : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-assets/${imageUrl}`)
+    : null;
+
   return (
     <div className="space-y-4">
       <div className="relative w-full aspect-square overflow-hidden bg-surface border border-border rounded-2xl">
-        {imageUrl ? (
+        {fullImageUrl ? (
           <Image 
-            src={imageUrl} 
+            src={fullImageUrl} 
             alt={productName} 
             fill 
             className="object-cover" 
             priority 
+            unoptimized={true}
             sizes="(max-width: 768px) 100vw, 500px"
           />
         ) : (

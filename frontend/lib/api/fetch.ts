@@ -21,27 +21,31 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers['Authorization'] = `Bearer ${session.access_token}`
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  
-  // 'credentials: include' allows the browser to send/receive cookies across domains (Vercel <-> Render)
-  const config: RequestInit = {
-    ...options,
-    headers,
-    credentials: 'include',
-    mode: 'cors'
-  }
+  // FORCE USE RENDER URL
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${baseUrl}/api${cleanPath}`;
 
-  let res: Response;
+  console.log('📡 Fetching from:', url);
+
   try {
-    res = await fetch(`${baseUrl}/api${path}`, config)
-  } catch (err) {
-    console.error('Fetch Error:', err);
-    throw new ApiError('NETWORK_ERROR', 'Cannot reach backend. Check if Render is awake.')
-  }
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+      mode: 'cors',
+    })
+    
+    if (res.status === 204) return {} as T;
 
-  const body = (await res.json()) as ApiResponse<T>
-  if (!body.success) {
-    throw new ApiError(body.error.code, body.error.message, body.error.field, res.status)
+    const body = (await res.json()) as ApiResponse<T>
+    if (!body.success) {
+      throw new ApiError(body.error.code, body.error.message, body.error.field, res.status)
+    }
+    return (body as { success: true; data: T }).data
+  } catch (err: any) {
+    if (err.name === 'ApiError') throw err;
+    console.error('❌ Fetch failed:', err.message);
+    throw new ApiError('NETWORK_ERROR', 'The Backend (Render) is not responding. Please wait 30s and try again.')
   }
-  return (body as { success: true; data: T }).data
 }
