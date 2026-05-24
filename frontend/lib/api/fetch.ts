@@ -45,7 +45,7 @@ export async function apiFetch<T>(
   let res: Response;
   try {
     // Combine baseUrl + /api + path (e.g., https://api.render.com/api/products)
-    res = await fetch(`${baseUrl}/api${path}`, { ...options, headers })
+    console.log('Attempting fetch to:', `${baseUrl}/api${path}`); res = await fetch(`${baseUrl}/api${path}`, { ...options, headers })
   } catch (err) {
     throw new ApiError(
       'NETWORK_ERROR',

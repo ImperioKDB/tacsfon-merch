@@ -1,38 +1,26 @@
-/**
- * CORS middleware.
- * In production: only allows requests from NEXT_PUBLIC_APP_URL.
- * In development: allows localhost:3000 and localhost:3001.
- *
- * Returns true if the request was an OPTIONS preflight (response already sent).
- * Returns false if the request should continue to the route handler.
- */
-
-const ALLOWED_ORIGINS =
-  process.env.NODE_ENV === 'production'
-    ? [process.env.NEXT_PUBLIC_APP_URL].filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:3001']
 
 export function applyCors(req, res) {
-  const origin = req.headers.origin
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    process.env.NEXT_PUBLIC_APP_URL, 
+    'https://tacsfon-merch-two.vercel.app',
+    'http://localhost:3000'
+  ].filter(Boolean);
 
-  // Only set Allow-Origin if the origin is in the allowed list
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
+  if (origin && allowedOrigins.some(o => origin.startsWith(o))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // Allow non-browser requests (like server-to-server)
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Request-ID'
-  )
-  res.setHeader('Access-Control-Expose-Headers', 'X-Request-ID')
-  res.setHeader('Vary', 'Origin')
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
-    res.status(204).end()
-    return true // Response sent — stop middleware chain
+    res.status(204).end();
+    return true;
   }
-
-  return false // Continue to route handler
+  return false;
 }
