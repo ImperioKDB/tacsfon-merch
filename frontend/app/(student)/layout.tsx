@@ -1,11 +1,3 @@
-/**
- * Student layout — secondary auth guard.
- * Primary guard is middleware.ts. This catches edge cases
- * and provides defense-in-depth.
- *
- * Reads x-pathname header (forwarded by middleware) to build a
- * ?next= redirect URL so the user returns here after login.
- */
 import { redirect }           from 'next/navigation'
 import { headers }            from 'next/headers'
 import { createServerClient } from '@/lib/supabase/server'
@@ -20,9 +12,11 @@ export default async function StudentLayout({
 }) {
   const supabase = await createServerClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
+  // FIX: use getUser() — verifies JWT server-side, unlike getSession()
+  // which only reads cookies and cannot be trusted for auth checks.
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     const headersList = headers()
     const pathname    = headersList.get('x-pathname') ?? '/'
     redirect(`/login?next=${encodeURIComponent(pathname)}`)

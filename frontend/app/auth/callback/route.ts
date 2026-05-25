@@ -1,11 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import { cookies }       from 'next/headers'
+import { NextResponse }  from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  // if "next" is in param, use it; otherwise fallback to home
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
@@ -24,9 +23,7 @@ export async function GET(request: Request) {
                 cookieStore.set(name, value, options)
               )
             } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
+              // Called from a Server Component — middleware handles the refresh.
             }
           },
         },
@@ -39,6 +36,5 @@ export async function GET(request: Request) {
     }
   }
 
-  // Return the user to an error page with some instructions
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
