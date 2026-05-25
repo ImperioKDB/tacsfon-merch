@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // if "next" is in param, use it; otherwise fallback to home
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
@@ -22,14 +23,22 @@ export async function GET(request: Request) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               )
-            } catch {}
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
           },
         },
       }
     )
+
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) return NextResponse.redirect(`${origin}${next}`)
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
   }
 
+  // Return the user to an error page with some instructions
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
