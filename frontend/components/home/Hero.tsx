@@ -1,21 +1,26 @@
-'use client'
-import Link from 'next/link'
+
+import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Hero() {
+  const { user } = useAuth();
+
   return (
-    <section style={{ minHeight: '90vh', display: 'flex', alignItems: 'center', background: 'var(--color-bg)', paddingTop: '100px', overflow: 'hidden' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', textAlign: 'center', width: '100%' }}>
-        <h1 style={{ fontFamily: 'var(--font-urbanist)', fontWeight: 800, fontSize: 'clamp(3.5rem, 12vw, 7rem)', lineHeight: 0.9, color: 'var(--color-text-primary)', marginBottom: '30px' }}>
-          TACSFON<br /><span style={{ color: 'var(--color-gold)' }}>MERCH</span>
-        </h1>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto 40px', lineHeight: 1.6 }}>
-          Premium quality merchandise for the community. Wear the identity, share the love.
-        </p>
-        <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/products" style={{ background: 'var(--color-gold)', color: '#000', padding: '16px 40px', fontWeight: 800, textDecoration: 'none', fontSize: '0.9rem', letterSpacing: '1px' }}>SHOP NOW</Link>
-          <Link href="/signup" style={{ border: '1px solid var(--color-gold)', color: 'var(--color-gold)', padding: '16px 40px', fontWeight: 800, textDecoration: 'none', fontSize: '0.9rem', letterSpacing: '1px' }}>SIGN UP</Link>
-        </div>
+    <div className="bg-black text-white py-20 px-6 text-center">
+      <h1 className="text-5xl font-bold mb-4">Premium TACSFON Merch</h1>
+      <p className="text-zinc-400 mb-8 max-w-md mx-auto">Elevate your style with our exclusive collection.</p>
+      
+      <div className="flex justify-center gap-4">
+        <Link href="/products" className="bg-gold text-black px-8 py-3 rounded-full font-bold">
+          {user ? 'Go to Store' : 'Shop Now'}
+        </Link>
+        
+        {!user && (
+          <Link href="/signup" className="border border-white px-8 py-3 rounded-full font-bold">
+            Sign Up
+          </Link>
+        )}
       </div>
-    </section>
-  )
+    </div>
+  );
 }

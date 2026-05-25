@@ -21,7 +21,6 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     const body = await res.json() as ApiResponse<T>;
     
     if (!res.ok || body.success === false) {
-      // Cast to ApiErrorResponse to satisfy TypeScript compiler
       const errorBody = body as ApiErrorResponse;
       throw new ApiError(
         errorBody.error?.code || 'ERROR', 
@@ -29,11 +28,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
         res.status
       );
     }
-
-    // At this point TypeScript knows body.success is true
     return (body as any).data;
   } catch (err: any) {
     if (err instanceof ApiError) throw err;
-    throw new ApiError('NETWORK_ERROR', 'Backend unreachable. Wake up Render by refreshing.');
+    throw new Error(err.message || 'Network error');
   }
 }
