@@ -11,21 +11,16 @@ export function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Check current session immediately
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // 1. Immediate check
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    };
-    checkUser();
+    });
 
-    // 2. Listen for ANY auth changes (Login, Logout, Token Refresh)
+    // 2. Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth Event:", event);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // If we just logged in, refresh the page data
       if (event === 'SIGNED_IN') router.refresh();
     });
 
@@ -36,7 +31,6 @@ export function useAuth() {
     await supabase.auth.signOut();
     setUser(null);
     router.push('/');
-    router.refresh();
   };
 
   return { user, loading, signOut };
