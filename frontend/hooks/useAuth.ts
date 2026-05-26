@@ -1,37 +1,43 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase/browser';
-import { useRouter } from 'next/navigation';
-import type { User } from '@supabase/supabase-js';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
-  const router = useRouter();
 
   useEffect(() => {
-    // 1. Immediate check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const fetchUserAndRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setRole(profile?.role || 'student');
+      }
       setLoading(false);
-    });
+    };
+    fetchUserAndRole();
 
-    // 2. Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        setUser(session.user);
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+        setRole(profile?.role || 'student');
+      } else {
+        setUser(null);
+        setRole(null);
+      }
       setLoading(false);
-      if (event === 'SIGNED_IN') router.refresh();
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, router]);
+  }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push('/');
-  };
-
-  return { user, loading, signOut };
+  return { user, role, loading, isAdmin: role === 'admin' };
 }
