@@ -86,9 +86,7 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="w-full lg:w-[480px] lg:flex-shrink-0">
             <ProductViewer
               imageUrl={product.image_url}
-              modelUrl={product.model_url}
               productName={product.name}
-              categoryName={product.category?.name ?? null}
             />
           </div>
 

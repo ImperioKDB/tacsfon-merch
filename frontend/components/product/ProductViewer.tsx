@@ -29,7 +29,7 @@ export default function ProductViewer({ imageUrl, productName }: ProductViewerPr
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-zinc-700 bg-zinc-950">
             <ShoppingBag size={64} strokeWidth={1} />
-            <p className="text-xs mt-4 uppercase font-bold tracking-[0.2em]">Image Coming Soon</p>
+            <p className="text-xs mt-4 uppercase font-bold tracking-widest">Image Coming Soon</p>
           </div>
         )}
       </div>
