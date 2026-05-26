@@ -1,46 +1,38 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api/fetch';
-import { createBrowserClient } from '@/lib/supabase/browser';
-import { RefreshCw, ShoppingBasket } from 'lucide-react';
-import type { Cart } from '@/types';
+import { ShoppingBasket, ArrowRight, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CartClient() {
-  const [cart, setCart] = useState<Cart | null>(null);
+  const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const supabase = createBrowserClient();
 
   const fetchCart = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setLoading(false); return; }
-    
-    setError(false);
     try {
-      const data = await apiFetch<Cart>('/cart');
+      const data = await apiFetch('/cart');
       setCart(data);
-    } catch { setError(true); } 
-    finally { setLoading(false); }
-  }, [supabase]);
+    } catch {
+      setCart(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" size={30} /></div>;
-  
-  if (error || !cart || cart.items.length === 0) return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white text-center px-6">
-      <ShoppingBasket size={64} className="text-zinc-800 mb-4" />
-      <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">No Merch Added Yet</h2>
-      <p className="text-zinc-500 mb-8">Your cart is currently empty. Explore the store to find your mission style.</p>
-      <button onClick={() => window.location.href='/products'} className="bg-gold text-black px-10 py-3 font-bold uppercase hover:bg-white transition-all">Go to Store</button>
+  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" /></div>;
+
+  if (!cart || !cart.items || cart.items.length === 0) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white px-6 text-center">
+      <ShoppingBasket size={64} className="text-zinc-800 mb-6" />
+      <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">Your cart is empty</h2>
+      <p className="text-zinc-500 mb-8 max-w-xs">No Merch added to Cart yet. Start exploring our premium collection.</p>
+      <Link href="/products" className="bg-gold text-black px-10 py-3 font-bold uppercase flex items-center gap-2 hover:bg-white transition-all">
+        Go to Store <ArrowRight size={18}/>
+      </Link>
     </div>
   );
 
-  return <div className="min-h-screen bg-black py-16 text-white px-6">
-      <h1 className="max-w-4xl mx-auto text-4xl font-black uppercase mb-10 tracking-tighter italic">Your Bag</h1>
-      <div className="max-w-4xl mx-auto">
-         {/* Cart list logic remains the same */}
-         <p className="text-zinc-400">Cart items would display here...</p>
-      </div>
-  </div>;
+  return <div className="min-h-screen bg-black p-10 text-white italic">Cart content logic here...</div>;
 }

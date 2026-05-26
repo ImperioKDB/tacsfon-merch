@@ -9,23 +9,28 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
 
+  const getProfile = async (id: string) => {
+    const { data } = await supabase.from('profiles').select('role').eq('id', id).single();
+    return data?.role || 'student';
+  };
+
   useEffect(() => {
-    const getInitialAuth = async () => {
+    const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setRole(p?.role || 'student');
+        const r = await getProfile(session.user.id);
+        setRole(r);
       }
       setLoading(false);
     };
-    getInitialAuth();
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setRole(p?.role || 'student');
+        const r = await getProfile(session.user.id);
+        setRole(r);
       } else {
         setUser(null);
         setRole(null);
@@ -33,12 +38,7 @@ export function useAuth() {
       setLoading(false);
     });
     return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  };
-
-  return { user, role, isAdmin: role === 'admin', loading, signOut };
+  return { user, role, isAdmin: role === 'admin', loading, signOut: () => supabase.auth.signOut().then(() => window.location.href='/') };
 }

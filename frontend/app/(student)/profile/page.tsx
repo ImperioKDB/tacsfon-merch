@@ -1,53 +1,64 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { apiFetch } from '@/lib/api/fetch';
+import { formatDate } from '@/lib/utils/formatters';
+import { User, Mail, Phone, Calendar, ShoppingBag, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { RefreshCw, User } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase/browser';
-import type { Profile } from '@/types';
 
 export default function ProfilePage() {
-  const supabase = createBrowserClient();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [orderCount, setOrderCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (!error) setProfile(data);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    // Immediate Check + Listener
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) await fetchProfile(session.user.id);
-      else setLoading(false);
-    };
-    init();
+    async function loadData() {
+      try {
+        const [pData, oData] = await Promise.all([
+          apiFetch('/auth/session'),
+          apiFetch('/orders')
+        ]);
+        setProfile(pData);
+        setOrderCount(Array.isArray(oData) ? oData.length : 0);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (user) loadData();
+    else if (!authLoading) setLoading(false);
+  }, [user, authLoading]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) fetchProfile(session.user.id);
-      else { setProfile(null); setLoading(false); }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" size={30} /></div>;
-  if (!profile) return <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white text-center px-6">
-      <User size={48} className="text-zinc-800 mb-4"/>
-      <h2 className="text-xl font-bold mb-2 uppercase">Session Expired</h2>
-      <p className="text-zinc-500 mb-6">Please log in again to view your profile.</p>
-      <button onClick={() => window.location.href='/login'} className="bg-gold text-black px-8 py-2 font-bold uppercase">Sign In</button>
-    </div>;
+  if (loading || authLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen bg-black py-16 px-6 text-white">
-      <div className="max-w-xl mx-auto bg-zinc-900 border border-zinc-800 p-8">
-        <h1 className="text-3xl font-bold uppercase tracking-tighter mb-8 border-b border-zinc-800 pb-4">My Account</h1>
-        <div className="space-y-6">
-          <div><label className="text-zinc-500 text-xs font-bold uppercase">Name</label><p className="text-lg">{profile.full_name}</p></div>
-          <div><label className="text-zinc-500 text-xs font-bold uppercase">Email</label><p className="text-lg">{profile.email}</p></div>
-          <div><label className="text-zinc-500 text-xs font-bold uppercase">Phone</label><p className="text-lg">{profile.phone || 'Not provided'}</p></div>
+    <div className="min-h-screen bg-black py-20 px-6">
+      <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 p-8 shadow-2xl">
+        <h1 className="text-3xl font-bold text-white mb-8 uppercase tracking-tighter italic">Account Overview</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+               <div className="w-16 h-16 bg-gold flex items-center justify-center text-black font-black text-2xl">{profile?.full_name?.charAt(0)}</div>
+               <div>
+                  <p className="text-xl font-bold text-white">{profile?.full_name}</p>
+                  <p className="text-gold text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
+               </div>
+            </div>
+            <div className="space-y-3 text-zinc-400 text-sm">
+              <div className="flex items-center gap-2"><Mail size={16}/> {profile?.email}</div>
+              <div className="flex items-center gap-2"><Phone size={16}/> {profile?.phone || "No phone added"}</div>
+              <div className="flex items-center gap-2"><Calendar size={16}/> Joined {formatDate(profile?.created_at)}</div>
+            </div>
+          </div>
+          
+          <div className="bg-black border border-zinc-800 p-6 flex flex-col items-center justify-center text-center">
+            <ShoppingBag className="text-gold mb-2" size={32}/>
+            <p className="text-4xl font-black text-white">{orderCount}</p>
+            <p className="text-zinc-500 uppercase text-[10px] font-bold tracking-widest">Total Orders</p>
+          </div>
         </div>
       </div>
     </div>
