@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase/browser';
+import type { User } from '@supabase/supabase-js';
 
 export function useAuth() {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  // Fix: Explicitly tell TypeScript this can be a User OR null
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
 
@@ -16,10 +18,7 @@ export function useAuth() {
         .eq('id', userId)
         .single();
       
-      if (error) {
-        console.warn("Profile not found for authenticated user. Discrepancy detected.");
-        return 'student'; // Fallback
-      }
+      if (error) return 'student';
       return data?.role || 'student';
     } catch (e) {
       return 'student';
@@ -52,6 +51,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { 

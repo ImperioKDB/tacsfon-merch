@@ -50,7 +50,7 @@ export default function ProfilePage() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSaveProfile() {
     if (!profile) return;
