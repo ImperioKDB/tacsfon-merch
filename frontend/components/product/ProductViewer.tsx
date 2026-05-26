@@ -5,12 +5,9 @@ import { ShoppingBag } from 'lucide-react'
 interface ProductViewerProps {
   imageUrl: string | null;
   productName: string;
-  modelUrl?: string | null;
-  categoryName?: string | null;
 }
 
 export default function ProductViewer({ imageUrl, productName }: ProductViewerProps) {
-  // Construct the full Supabase URL for the image
   const fullImageUrl = imageUrl 
     ? (imageUrl.startsWith('http') 
         ? imageUrl 
@@ -19,7 +16,7 @@ export default function ProductViewer({ imageUrl, productName }: ProductViewerPr
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-square overflow-hidden bg-surface border border-border rounded-2xl">
+      <div className="relative w-full aspect-square overflow-hidden bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl">
         {fullImageUrl ? (
           <Image 
             src={fullImageUrl} 
@@ -28,12 +25,11 @@ export default function ProductViewer({ imageUrl, productName }: ProductViewerPr
             className="object-cover" 
             priority 
             unoptimized={true}
-            sizes="(max-width: 768px) 100vw, 500px"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center text-text-disabled bg-surface-2">
+          <div className="flex h-full w-full flex-col items-center justify-center text-zinc-700 bg-zinc-950">
             <ShoppingBag size={64} strokeWidth={1} />
-            <p className="text-sm mt-4">Image coming soon</p>
+            <p className="text-xs mt-4 uppercase font-bold tracking-[0.2em]">Image Coming Soon</p>
           </div>
         )}
       </div>

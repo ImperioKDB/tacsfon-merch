@@ -1,9 +1,17 @@
 import { createBrowserClient } from '@/lib/supabase/browser';
 
+// This class is REQUIRED by Admin pages. Restoring it now.
+export class ApiError extends Error {
+  constructor(public readonly code: string, message: string, public readonly status?: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
   
-  // Get the session, allowing Supabase to handle the refresh logic internally
+  // Get freshest token
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -19,14 +27,18 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const res = await fetch(url, { ...options, headers });
   
   if (res.status === 401) {
-      console.warn("Unauthorized request to:", path);
-      // We don't force redirect here anymore to prevent the "Split Second" crash
-      throw new Error("UNAUTHORIZED");
+      console.warn("Unauthorized access attempt.");
+      throw new ApiError("UNAUTHORIZED", "Session expired", 401);
   }
 
   const body = await res.json();
+  
   if (!res.ok || body.success === false) {
-    throw new Error(body.error?.message || "API Error");
+    throw new ApiError(
+      body.error?.code || 'ERROR', 
+      body.error?.message || 'Request failed', 
+      res.status
+    );
   }
   return body.data;
 }
