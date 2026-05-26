@@ -9,7 +9,9 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  
+  // FORCE REFRESH: Get the freshest session possible
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   const token = session?.access_token;
 
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
@@ -17,12 +19,20 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}), // AUTO-ATTACH ID CARD
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string>),
   };
 
   try {
     const res = await fetch(url, { ...options, headers });
+    
+    // If Backend says token is expired (401), force a logout/refresh
+    if (res.status === 401) {
+       await supabase.auth.signOut();
+       window.location.href = '/login?error=session_expired';
+       throw new Error("Session expired");
+    }
+
     const body = await res.json();
     
     if (!res.ok || body.success === false) {
