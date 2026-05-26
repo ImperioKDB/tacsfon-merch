@@ -8,27 +8,42 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.warn("Profile not found for authenticated user. Discrepancy detected.");
+        return 'student'; // Fallback
+      }
+      return data?.role || 'student';
+    } catch (e) {
+      return 'student';
+    }
+  };
+
   useEffect(() => {
-    const fetchUserAndRole = async () => {
+    const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session?.user) {
         setUser(session.user);
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setRole(profile?.role || 'student');
+        const userRole = await fetchProfile(session.user.id);
+        setRole(userRole);
       }
       setLoading(false);
     };
-    fetchUserAndRole();
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
+      if (session?.user) {
         setUser(session.user);
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setRole(profile?.role || 'student');
+        const userRole = await fetchProfile(session.user.id);
+        setRole(userRole);
       } else {
         setUser(null);
         setRole(null);
@@ -39,5 +54,11 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { user, role, loading, isAdmin: role === 'admin' };
+  return { 
+    user, 
+    role, 
+    loading, 
+    isAdmin: role === 'admin',
+    isAuthenticated: !!user 
+  };
 }
