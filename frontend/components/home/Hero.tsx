@@ -7,10 +7,10 @@ export default function Hero() {
 
   return (
     <div className="bg-black text-white py-24 px-6 text-center border-b border-zinc-900">
-      <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter uppercase">
+      <h1 className="text-5xl md:text-8xl font-bold mb-6 tracking-tighter uppercase">
         Wear the <span className="text-gold">Mission</span>
       </h1>
-      <p className="text-zinc-400 mb-10 max-w-lg mx-auto text-lg font-medium">
+      <p className="text-zinc-400 mb-10 max-w-lg mx-auto text-lg md:text-xl font-medium">
         Premium community merchandise for the TACSFON family.
       </p>
       
