@@ -5,35 +5,33 @@ import type { User } from '@supabase/supabase-js';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
 
   useEffect(() => {
-    const fetchSession = async () => {
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setRole(profile?.role || 'student');
+        setIsAdmin(profile?.role === 'admin');
       }
       setLoading(false);
     };
-
-    fetchSession();
+    checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setRole(profile?.role || 'student');
+        setIsAdmin(profile?.role === 'admin');
       } else {
         setUser(null);
-        setRole(null);
+        setIsAdmin(false);
       }
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -42,5 +40,5 @@ export function useAuth() {
     window.location.href = '/';
   };
 
-  return { user, role, loading, isAdmin: role === 'admin', signOut };
+  return { user, isAdmin, loading, signOut };
 }
