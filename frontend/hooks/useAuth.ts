@@ -10,40 +10,36 @@ export function useAuth() {
   const supabase = createBrowserClient();
 
   useEffect(() => {
-    const syncUser = async () => {
-      const { data: { user: sbUser } } = await supabase.auth.getUser();
-      if (sbUser) {
-        setUser(sbUser);
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', sbUser.id).single();
-        setIsAdmin(profile?.role === 'admin');
+    const sync = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
+        setIsAdmin(p?.role === 'admin');
       }
       setLoading(false);
     };
-
-    syncUser();
+    sync();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        setIsAdmin(profile?.role === 'admin');
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
+        setIsAdmin(p?.role === 'admin');
       } else {
-        setUser(null);
         setIsAdmin(false);
       }
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  return { 
-    user, 
-    isAdmin, 
-    loading, 
-    signOut: async () => {
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    } 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/';
   };
+
+  return { user, isAdmin, loading, signOut };
 }
