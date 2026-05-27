@@ -29,12 +29,14 @@ export default function LoginForm() {
         password,
       })
 
+      
       if (authError) {
         setError(authError.message)
       } else {
-        
-        window.location.href = next === '/' ? '/profile' : next
+        // Hard redirect to profile to force cookie synchronization
+        window.location.href = '/profile'
       }
+
     } catch (err) {
       setError('Connection issue. Please try again.')
     } finally {

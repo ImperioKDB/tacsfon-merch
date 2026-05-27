@@ -15,9 +15,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
 
-  // Bug 4 Fix: Add 20-second timeout for Render Cold Start
+  // Fix for Render Cold Start (25-second timeout)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000); 
+  const timeoutId = setTimeout(() => controller.abort(), 25000); 
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     return body.data;
   } catch (err: any) {
     if (err.name === 'AbortError') {
-      throw new Error("The server is taking a moment to wake up. Please refresh in 30 seconds.");
+      throw new Error("Server is waking up. Please wait 30 seconds and refresh.");
     }
     if (err instanceof ApiError) throw err;
     throw new Error(err.message || 'Network error');

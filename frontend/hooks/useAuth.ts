@@ -19,6 +19,7 @@ export function useAuth() {
       }
       setLoading(false);
     };
+
     syncUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -32,8 +33,17 @@ export function useAuth() {
       }
       setLoading(false);
     });
-    return () => subscription.unsubscribe();
-  }, []);
 
-  return { user, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => window.location.href='/') };
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  return { 
+    user, 
+    isAdmin, 
+    loading, 
+    signOut: async () => {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } 
+  };
 }
