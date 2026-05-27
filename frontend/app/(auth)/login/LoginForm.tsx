@@ -32,8 +32,8 @@ export default function LoginForm() {
       if (authError) {
         setError(authError.message)
       } else {
-        router.push(next)
-        router.refresh()
+        
+        window.location.href = next === '/' ? '/profile' : next
       }
     } catch (err) {
       setError('Connection issue. Please try again.')
