@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createBrowserClient } from '@/lib/supabase/browser';
 import { RefreshCw, Save, Edit2, X } from 'lucide-react';
@@ -11,26 +11,30 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Form State
   const [formData, setFormData] = useState({ full_name: '', phone: '' });
-  
   const supabase = createBrowserClient();
 
-  const loadProfile = async () => {
-    if (!user) return;
+  // Memoized loader to fix the ESLint warning
+  const loadProfile = useCallback(async () => {
+    if (!user?.id) return;
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     if (data) {
       setProfile(data);
       setFormData({ full_name: data.full_name || '', phone: data.phone || '' });
     }
     setLoading(false);
-  };
+  }, [user?.id, supabase]);
 
   useEffect(() => {
     loadProfile();
-  }, [user]);
+  }, [loadProfile]);
 
   const handleSave = async () => {
+    if (!user?.id) {
+      toast.error("Authentication error");
+      return;
+    }
+
     setLoading(true);
     const { error } = await supabase
       .from('profiles')
@@ -41,7 +45,7 @@ export default function ProfilePage() {
       .eq('id', user.id);
 
     if (error) {
-      toast.error("Update failed");
+      toast.error("Update failed: " + error.message);
     } else {
       toast.success("Profile updated successfully!");
       setIsEditing(false);
@@ -50,7 +54,13 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
-  if (authLoading || loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" /></div>;
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-gold">
+        <RefreshCw className="animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black py-24 px-6 text-white uppercase">
@@ -61,18 +71,22 @@ export default function ProfilePage() {
             onClick={() => setIsEditing(!isEditing)}
             className="text-gold text-xs font-bold border border-gold/30 px-4 py-2 hover:bg-gold hover:text-black transition-all"
           >
-            {isEditing ? <span className="flex items-center gap-2"><X size={14}/> Cancel</span> : <span className="flex items-center gap-2"><Edit2 size={14}/> Edit Profile</span>}
+            {isEditing ? (
+              <span className="flex items-center gap-2"><X size={14}/> Cancel</span>
+            ) : (
+              <span className="flex items-center gap-2"><Edit2 size={14}/> Edit Profile</span>
+            )}
           </button>
         </div>
 
         <div className="space-y-8">
-          {/* Status Row */}
           <div className="flex justify-between items-center bg-zinc-950 p-4 border border-zinc-800">
             <p className="text-zinc-500 text-[10px] font-bold">Account Level</p>
-            <p className="text-gold font-bold text-xs tracking-widest">{isAdmin ? 'ADMINISTRATOR' : 'STUDENT MEMBER'}</p>
+            <p className="text-gold font-bold text-xs tracking-widest">
+              {isAdmin ? 'ADMINISTRATOR' : 'STUDENT MEMBER'}
+            </p>
           </div>
 
-          {/* Name Field */}
           <div>
             <p className="text-zinc-500 text-[10px] font-bold mb-2">Full Name</p>
             {isEditing ? (
@@ -86,13 +100,11 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Email Field (Static - for security) */}
           <div>
             <p className="text-zinc-500 text-[10px] font-bold mb-2">Email Address</p>
             <p className="text-xl font-bold text-zinc-400">{user?.email}</p>
           </div>
 
-          {/* Phone Field */}
           <div>
             <p className="text-zinc-500 text-[10px] font-bold mb-2">Phone Number</p>
             {isEditing ? (
