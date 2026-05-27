@@ -11,14 +11,19 @@ export function useAuth() {
 
   useEffect(() => {
     const sync = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
-        setIsAdmin(p?.role === 'admin');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u) {
+          const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
+          setIsAdmin(p?.role === 'admin');
+        }
+      } catch (e) {
+        console.error("Auth sync error", e);
+      } finally {
+        setLoading(false); // ALWAYS stop loading
       }
-      setLoading(false);
     };
     sync();
 
@@ -36,10 +41,5 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  };
-
-  return { user, isAdmin, loading, signOut };
+  return { user, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => window.location.href='/') };
 }

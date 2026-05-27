@@ -2,9 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createBrowserClient } from '@/lib/supabase/browser';
-import { RefreshCw, Save, User, Phone, Mail, Calendar, ShieldCheck } from 'lucide-react';
+import { RefreshCw, Save, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDate } from '@/lib/utils/formatters';
 
 export default function ProfilePage() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -14,8 +13,12 @@ export default function ProfilePage() {
   const supabase = createBrowserClient();
 
   useEffect(() => {
+    if (!authLoading && !user) {
+        window.location.href = '/login';
+        return;
+    }
     if (user) {
-      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
+      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data, error }) => {
         if (data) {
           setProfile(data);
           setFormData({ full_name: data.full_name || '', phone: data.phone || '' });
@@ -23,50 +26,45 @@ export default function ProfilePage() {
         setLoading(false);
       });
     }
-  }, [user, supabase]);
+    // Timeout safety: if it takes 10 seconds, stop spinning
+    const timeout = setTimeout(() => setLoading(false), 10000);
+    return () => clearTimeout(timeout);
+  }, [user, authLoading, supabase]);
 
   const handleSave = async () => {
     const { error } = await supabase.from('profiles').update(formData).eq('id', user?.id);
-    if (error) toast.error("Deficiency detected: Update failed");
-    else { toast.success("System updated: Profile synchronized"); setProfile({...profile, ...formData}); }
+    if (error) toast.error("Sync failed");
+    else { toast.success("Profile updated"); setProfile({...profile, ...formData}); }
   };
 
-  if (authLoading || loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold"><RefreshCw className="animate-spin" size={32}/></div>;
+  if (authLoading || loading) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center">
+      <RefreshCw className="animate-spin text-gold mb-4" size={32}/>
+      <p className="text-zinc-500 text-[10px] font-bold tracking-[0.3em]">SYNCHRONIZING...</p>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black py-32 px-6">
-      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-12">
-          <div className="border-b border-zinc-800 pb-8">
-            <h1 className="text-6xl font-black tracking-tighter uppercase italic text-white mb-2">Member<span className="text-gold">.</span></h1>
-            <p className="text-zinc-500 font-bold text-xs tracking-[0.3em]">SECURE ACCESS AUTHORIZED</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Full Legal Name</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} />
-            </div>
-            <div className="space-y-2">
-              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Direct Contact (Mobile)</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
-            </div>
-          </div>
-          
-          <button onClick={handleSave} className="bg-gold text-black px-12 py-4 font-black uppercase tracking-widest hover:bg-white transition-all flex items-center gap-3">
-             <Save size={18}/> Commit Changes
-          </button>
+    <div className="min-h-screen bg-black py-24 px-6">
+      <div className="max-w-2xl mx-auto space-y-12">
+        <div className="border-b border-zinc-800 pb-8">
+          <h1 className="text-4xl font-black tracking-tight text-white italic uppercase">Account Details</h1>
         </div>
 
-        <div className="bg-zinc-900/30 border border-zinc-800 p-8 h-fit space-y-8">
-           <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gold flex items-center justify-center text-black font-black text-xl">{profile?.full_name?.charAt(0)}</div>
-              <div><p className="text-white font-bold">{user?.email}</p><p className="text-gold text-[10px] font-black tracking-widest uppercase">{profile?.role}</p></div>
-           </div>
-           <div className="space-y-4 pt-4 border-t border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest">
-              <div className="flex items-center gap-3"><Calendar size={16} className="text-gold"/> Joined {formatDate(profile?.created_at)}</div>
-              <div className="flex items-center gap-3"><ShieldCheck size={16} className="text-gold"/> Verified Identity</div>
-           </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Full Name</label>
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold outline-none transition-all" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Phone Number</label>
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold outline-none transition-all" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
+            </div>
+          </div>
+          <button onClick={handleSave} className="w-full bg-gold text-black py-4 font-black uppercase tracking-widest text-xs hover:bg-white transition-all flex items-center justify-center gap-2">
+             <Save size={16}/> Update Profile
+          </button>
         </div>
       </div>
     </div>
