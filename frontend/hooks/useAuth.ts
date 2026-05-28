@@ -10,25 +10,28 @@ export function useAuth() {
   const supabase = createBrowserClient();
 
   useEffect(() => {
+    let mounted = true;
     const sync = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const u = session?.user ?? null;
+        if (!mounted) return;
         setUser(u);
         if (u) {
           const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
           setIsAdmin(p?.role === 'admin');
         }
-      } catch (e) {
-        console.error("Auth sync error", e);
+      } catch (err) {
+        console.error("Auth sync error", err);
       } finally {
-        setLoading(false); // ALWAYS stop loading
+        if (mounted) setLoading(false);
       }
     };
     sync();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
+      if (!mounted) return;
       setUser(u);
       if (u) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
@@ -38,8 +41,17 @@ export function useAuth() {
       }
       setLoading(false);
     });
-    return () => subscription.unsubscribe();
+    
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [supabase]);
 
-  return { user, isAdmin, loading, signOut: () => supabase.auth.signOut().then(() => window.location.href='/') };
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  return { user, isAdmin, loading, signOut };
 }

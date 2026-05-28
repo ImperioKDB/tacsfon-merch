@@ -1,11 +1,9 @@
 'use client'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/browser'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Loader2 } from 'lucide-react'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -20,6 +18,7 @@ export default function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
     setError('')
     setLoading(true)
 
@@ -29,37 +28,41 @@ export default function LoginForm() {
         password,
       })
 
-      
       if (authError) {
         setError(authError.message)
+        setLoading(false)
       } else {
-        // Hard redirect to profile to force cookie synchronization
-        window.location.href = '/profile'
+        router.push(next === '/' ? '/profile' : next)
+        router.refresh()
       }
-
     } catch (err) {
       setError('Connection issue. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <h2 style={{ fontFamily: 'var(--font-cormorant)', fontWeight: 600, fontSize: '2rem', color: 'var(--color-text-primary)', marginBottom: '32px' }}>
-        Sign In
-      </h2>
+    <div className="flex flex-col w-full max-w-sm mx-auto">
+      <h2 className="text-4xl font-black text-white mb-8 uppercase tracking-tighter italic">Sign In</h2>
+      {error && <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 mb-6 text-sm font-bold">{error}</div>}
 
-      {error && <div style={{ color: 'var(--color-error)', background: 'rgba(217,79,79,0.1)', padding: '12px', marginBottom: '20px' }}>{error}</div>}
-
-      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        <Input label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-        <Input label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-        <Button type="submit" loading={loading} style={{ width: '100%', marginTop: '10px' }}>Sign In</Button>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-1 block">Email</label>
+          <input type="email" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-white focus:border-gold outline-none transition-colors" value={email} onChange={e => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase mb-1 block">Password</label>
+          <input type="password" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-white focus:border-gold outline-none transition-colors" value={password} onChange={e => setPassword(e.target.value)} required />
+        </div>
+        
+        <button type="submit" disabled={loading} className="w-full mt-6 bg-gold text-black py-4 font-black uppercase tracking-widest hover:bg-white transition-all flex justify-center items-center gap-2 disabled:opacity-50">
+          {loading ? <Loader2 size={18} className="animate-spin" /> : "Sign In"}
+        </button>
       </form>
 
-      <p style={{ marginTop: '28px', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
-        Don't have an account? <Link href="/signup" style={{ color: 'var(--color-gold)' }}>Sign up</Link>
+      <p className="mt-8 text-zinc-500 text-center font-bold text-xs uppercase tracking-widest">
+        Don't have an account? <Link href="/signup" className="text-gold hover:text-white transition-colors">Sign up</Link>
       </p>
     </div>
   )
