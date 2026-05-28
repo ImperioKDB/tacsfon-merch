@@ -11,27 +11,28 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    const sync = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const u = session?.user ?? null;
-        if (!mounted) return;
+    
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
+      
+      if (mounted) {
         setUser(u);
         if (u) {
+          // Fetch profile every time to ensure role changes are caught immediately
           const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
           setIsAdmin(p?.role === 'admin');
         }
-      } catch (err) {
-        console.error("Auth sync error", err);
-      } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
-    sync();
+
+    checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null;
       if (!mounted) return;
+      
       setUser(u);
       if (u) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
