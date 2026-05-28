@@ -119,8 +119,8 @@ export default function CheckoutClient() {
 
         if (cancelled) return
 
-        if (cartBody?.success) {
-          const c: Cart = cartBody.data
+        if (cartBody?.success && 'data' in cartBody) {
+          const c: Cart = (cartBody as any).data
           // Guard: empty cart → back to cart page
           if (!c?.items?.length) {
             router.replace('/cart')
