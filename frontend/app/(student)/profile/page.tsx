@@ -19,12 +19,16 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
-        setProfile(data || null);
-        setFormData({ 
-          full_name: data?.full_name || user?.user_metadata?.full_name || '', 
-          phone: data?.phone || user?.phone || user?.user_metadata?.phone || '' 
-        });
+      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data, error }) => {
+        if (data) {
+          setProfile(data);
+          setFormData({ 
+            full_name: data.full_name || '', 
+            phone: data.phone || '' 
+          });
+          // DEBUG LOG: Check this in your browser console (F12)
+          console.log("Current User Role in DB:", data.role);
+        }
         setLoading(false);
       });
     }
@@ -34,20 +38,17 @@ export default function ProfilePage() {
     const payload = { 
         id: user?.id, 
         email: user?.email,
-        ...formData, 
-        updated_at: new Date().toISOString() 
+        full_name: formData.full_name,
+        phone: formData.phone
+        // updated_at removed to prevent schema cache errors
     };
     
-    // Explicitly using upsert with onConflict to handle missing profile rows
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
     
     if (error) {
-      console.error("Database Error:", error);
       toast.error(`Update failed: ${error.message}`);
     } else { 
-      toast.success("Profile synchronized successfully"); 
-      setProfile({...profile, ...formData}); 
-      // Force a tiny delay then refresh to show new name/role
+      toast.success("Profile saved. Reloading to verify Admin status..."); 
       setTimeout(() => window.location.reload(), 1000);
     }
   };
@@ -62,7 +63,7 @@ export default function ProfilePage() {
             <h1 className="text-6xl font-black tracking-tighter uppercase italic text-white mb-2">
                 {profile?.full_name?.split(' ')[0] || 'Member'}<span className="text-gold">.</span>
             </h1>
-            <p className="text-zinc-500 font-bold text-xs tracking-[0.3em]">SECURE ACCESS AUTHORIZED</p>
+            <p className="text-zinc-500 font-bold text-xs tracking-[0.3em]">IDENTITY VERIFIED</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -95,7 +96,7 @@ export default function ProfilePage() {
            </div>
            <div className="space-y-4 pt-4 border-t border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest">
               <div className="flex items-center gap-3"><Calendar size={16} className="text-gold"/> Joined {formatDate(user?.created_at || profile?.created_at)}</div>
-              <div className="flex items-center gap-3"><ShieldCheck size={16} className="text-gold"/> Verified Identity</div>
+              <div className="flex items-center gap-3"><ShieldCheck size={16} className="text-gold"/> Access Level: {profile?.role?.toUpperCase()}</div>
            </div>
         </div>
       </div>
