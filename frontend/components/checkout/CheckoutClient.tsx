@@ -6,6 +6,7 @@ import StepDelivery    from './StepDelivery'
 import StepPayment     from './StepPayment'
 import StepUploadProof from './StepUploadProof'
 import type { Cart, Profile } from '@/types'
+import { apiFetch } from '@/lib/api/fetch'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,14 +111,11 @@ export default function CheckoutClient() {
     async function bootstrap() {
       try {
         const [profileRes, cartRes] = await Promise.all([
-          fetch('/api/auth/profile', { cache: 'no-store' }),
-          fetch('/api/cart',         { cache: 'no-store' }),
+          apiFetch('/auth/profile').then(data => ({ success: true, data })).catch(() => ({ success: false })),
+          apiFetch('/cart').then(data => ({ success: true, data })).catch(() => ({ success: false })),
         ])
 
-        const [profileBody, cartBody] = await Promise.all([
-          profileRes.json(),
-          cartRes.json(),
-        ])
+        const [profileBody, cartBody] = [profileRes, cartRes]
 
         if (cancelled) return
 
