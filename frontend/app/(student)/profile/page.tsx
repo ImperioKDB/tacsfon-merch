@@ -11,7 +11,7 @@ const formatDate = (dateString?: string) => {
 };
 
 export default function ProfilePage() {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ full_name: '', phone: '' });
@@ -20,7 +20,6 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
-        // Automatically fetch from user metadata if their profile is empty/missing
         setProfile(data || null);
         setFormData({ 
           full_name: data?.full_name || user?.user_metadata?.full_name || '', 
@@ -32,15 +31,13 @@ export default function ProfilePage() {
   }, [user, supabase]);
 
   const handleSave = async () => {
-    // CRITICAL FIX: Use 'upsert' instead of update. This creates the profile if it doesn't exist yet!
     const payload = { id: user?.id, ...formData, updated_at: new Date().toISOString() };
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
     
     if (error) {
-      console.error("Profile saving error:", error);
-      toast.error("Deficiency detected: Update failed");
+      toast.error("Update failed");
     } else { 
-      toast.success("System updated: Profile synchronized"); 
+      toast.success("Profile updated successfully"); 
       setProfile({...profile, ...formData}); 
     }
   };
@@ -55,23 +52,20 @@ export default function ProfilePage() {
             <h1 className="text-6xl font-black tracking-tighter uppercase italic text-white mb-2">Member<span className="text-gold">.</span></h1>
             <p className="text-zinc-500 font-bold text-xs tracking-[0.3em]">SECURE ACCESS AUTHORIZED</p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Full Legal Name</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} placeholder="Abolaji Bright" />
+              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Full Name</label>
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} />
             </div>
             <div className="space-y-2">
-              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Direct Contact (Mobile)</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} placeholder="07045934864" />
+              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Mobile Number</label>
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
             </div>
           </div>
-          
           <button onClick={handleSave} className="bg-gold text-black px-12 py-4 font-black uppercase tracking-widest hover:bg-white transition-all flex items-center gap-3">
              <Save size={18}/> Commit Changes
           </button>
         </div>
-
         <div className="bg-zinc-900/30 border border-zinc-800 p-8 h-fit space-y-8">
            <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gold flex items-center justify-center text-black font-black text-xl">{user?.email?.charAt(0).toUpperCase()}</div>
