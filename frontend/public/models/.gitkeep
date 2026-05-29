@@ -1,3 +1,0 @@
-# Drop .glb files here and reference them as /models/filename.glb in the DB.
-# Files are served for free via Vercel CDN — no Supabase storage needed.
-# Recommended max per file: 5 MB (optimise with: npx gltf-pipeline -i in.glb -o out.glb --draco.compressionLevel 10)
