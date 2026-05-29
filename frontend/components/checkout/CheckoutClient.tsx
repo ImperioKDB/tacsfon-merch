@@ -6,12 +6,20 @@ import StepPayment from './StepPayment'
 import StepUploadProof from './StepUploadProof'
 import { apiFetch } from '@/lib/api/fetch'
 
+// CRITICAL: StepDelivery.tsx imports this specifically. 
+// It must be exported for the build to pass.
+export interface DeliveryData {
+  fullName: string;
+  phone: string;
+  deliveryAddress: string;
+}
+
 export default function CheckoutClient() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [profile, setProfile] = useState<any>(null)
   const [cart, setCart] = useState<any>(null)
-  const [deliveryData, setDeliveryData] = useState<any>(null)
+  const [deliveryData, setDeliveryData] = useState<DeliveryData | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -21,8 +29,11 @@ export default function CheckoutClient() {
         const [p, c] = await Promise.all([apiFetch<any>('/auth/profile'), apiFetch<any>('/cart')])
         if (!c?.items?.length) { router.replace('/cart'); return; }
         setProfile(p); setCart(c);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      } catch (err) { 
+        console.error("Checkout Bootstrap Error:", err); 
+      } finally { 
+        setLoading(false); 
+      }
     }
     bootstrap()
   }, [router])
@@ -33,8 +44,8 @@ export default function CheckoutClient() {
     <main className="min-h-screen px-4 py-24" style={{ background: 'black' }}>
       <div className="max-w-lg mx-auto">
         <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-12 text-center">Checkout</h1>
-        {step === 1 && <StepDelivery profile={profile} onComplete={(d: any) => { setDeliveryData(d); setStep(2); }} />}
-        {step === 2 && <StepPayment deliveryData={deliveryData} cart={cart} onOrderCreated={(id: string) => { setOrderId(id); setStep(3); }} onBack={() => setStep(1)} />}
+        {step === 1 && <StepDelivery profile={profile} onComplete={(d: DeliveryData) => { setDeliveryData(d); setStep(2); }} />}
+        {step === 2 && deliveryData && cart && <StepPayment deliveryData={deliveryData} cart={cart} onOrderCreated={(id: string) => { setOrderId(id); setStep(3); }} onBack={() => setStep(1)} />}
         {step === 3 && orderId && <StepUploadProof orderId={orderId} />}
       </div>
     </main>
