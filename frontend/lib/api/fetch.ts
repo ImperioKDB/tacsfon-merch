@@ -1,9 +1,5 @@
 import { createBrowserClient } from '@/lib/supabase/browser';
 
-/**
- * Custom error class for API-level errors.
- * Exported so that admin pages can check 'instanceof ApiError'
- */
 export class ApiError extends Error {
   constructor(public readonly code: string, message: string, public readonly status?: number) {
     super(message);
@@ -13,13 +9,15 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
-  
-  // Force a session refresh check before every admin call
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
+
+  // Fix for Render Cold Start (25-second timeout)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000); 
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -27,25 +25,33 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     ...(options.headers as Record<string, string>),
   };
 
-  const res = await fetch(url, { ...options, headers });
+  try {
+    const res = await fetch(url, { 
+      ...options, 
+      headers, 
+      signal: controller.signal 
+    });
+    clearTimeout(timeoutId);
 
-  if (res.status === 401) {
-      // If truly expired, kick to login to get a fresh start
-      if (typeof window !== 'undefined') {
+    if (res.status === 401) {
+       // Only redirect if we AREN'T currently on the login page to avoid loops
+       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          console.warn("Session expired. Redirecting to login.");
           window.location.href = '/login?next=' + window.location.pathname;
-      }
-      throw new ApiError("UNAUTHORIZED", "Session expired. Redirecting...", 401);
-  }
+       }
+       throw new ApiError("UNAUTHORIZED", "Session expired", 401);
+    }
 
-  const body = await res.json();
-  
-  if (!res.ok) {
-      throw new ApiError(
-          body.error?.code || 'FETCH_ERROR', 
-          body.error?.message || 'Request failed', 
-          res.status
-      );
+    const body = await res.json();
+    if (!res.ok || body.success === false) {
+      throw new ApiError(body.error?.code || 'ERROR', body.error?.message || 'Request failed', res.status);
+    }
+    return body.data;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error("Server is waking up. Please wait 30 seconds and refresh.");
+    }
+    if (err instanceof ApiError) throw err;
+    throw new Error(err.message || 'Network error');
   }
-  
-  return body.data;
 }
