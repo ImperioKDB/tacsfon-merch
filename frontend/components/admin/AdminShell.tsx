@@ -25,49 +25,48 @@ export default function AdminShell({ children, adminName }: { children: React.Re
 
   async function signOut() {
     await createBrowserClient().auth.signOut()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   const sidebar = (
-    <nav style={{ width: '260px', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', flexShrink: 0 }}>
-      <div style={{ padding: '30px 20px', borderBottom: '1px solid var(--color-border)' }}>
-        <span style={{ fontFamily: 'var(--font-urbanist)', fontWeight: 900, fontSize: '1.2rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-gold)' }}>ADMIN<span className="text-white">.</span></span>
+    <nav style={{ width: '280px', background: '#07070a', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+      <div style={{ padding: '40px 24px', borderBottom: '1px solid #1a1a1a' }}>
+        <h2 style={{ color: 'var(--color-gold)', fontWeight: 900, fontSize: '1.4rem', letterSpacing: '-0.02em' }}>TACSFON<br/><span style={{ color: 'white' }}>ADMIN</span></h2>
       </div>
-      <div style={{ padding: '15px 10px', flex: 1 }}>
-        {NAV.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href
+      <div style={{ padding: '20px 10px', flex: 1 }}>
+        {NAV.map((item) => {
+          const active = pathname === item.href
           return (
-            <Link key={href} href={href} onClick={() => setOpen(false)}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 15px', marginBottom: '4px', fontFamily: 'var(--font-inter)', fontSize: '0.8rem', fontWeight: active ? 800 : 500, color: active ? 'white' : 'var(--color-text-secondary)', background: active ? 'var(--color-gold)' : 'transparent', textDecoration: 'none', transition: '0.2s' }}
-              className={active ? 'text-black shadow-lg shadow-gold/20' : 'hover:bg-white/5'}>
-              <Icon size={18} strokeWidth={active ? 2.5 : 1.5} />{label}
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
+              style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', marginBottom: '4px', color: active ? 'black' : '#888', background: active ? 'var(--color-gold)' : 'transparent', textDecoration: 'none', fontWeight: active ? 900 : 500, fontSize: '0.85rem', transition: '0.2s' }}>
+              <item.icon size={18} strokeWidth={active ? 3 : 1.5} /> {item.label}
             </Link>
           )
         })}
       </div>
+      <button onClick={signOut} style={{ padding: '20px', background: 'transparent', border: 'none', borderTop: '1px solid #1a1a1a', color: '#ef4444', textAlign: 'left', fontWeight: 900, fontSize: '0.7rem', cursor: 'pointer', letterSpacing: '0.1em' }}>
+         <LogOut size={14} style={{ marginRight: '10px' }}/> SYSTEM EXIT
+      </button>
     </nav>
   )
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
-      <div className="hidden md:flex" style={{ position: 'sticky', top: 0, height: '100vh' }}>{sidebar}</div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'black' }}>
+      <div className="hidden md:block">{sidebar}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <header style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderBottom: '1px solid #1a1a1a', background: '#07070a' }}>
+           <button onClick={() => setOpen(true)} className="md:hidden text-white"><Menu/></button>
+           <div className="text-zinc-500 font-bold text-xs uppercase tracking-widest">{adminName}</div>
+           <Link href="/" className="text-gold font-bold text-xs flex items-center gap-2"><Store size={14}/> STOREFRONT</Link>
+        </header>
+        <main style={{ padding: '40px' }}>{children}</main>
+      </div>
       {open && (
-        <div style={{ position: 'fixed', inset: 0, z_index: 200 }} className="z-[200]">
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)' }} onClick={() => setOpen(false)} />
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '260px' }}>{sidebar}</div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)' }} onClick={() => setOpen(false)} />
+          <div style={{ position: 'absolute', left: 0, top: 0, height: '100vh' }}>{sidebar}</div>
         </div>
       )}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <header style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)', position: 'sticky', top: 0, zIndex: 40 }}>
-          <button onClick={() => setOpen(true)} className="md:hidden text-white"><Menu size={24}/></button>
-          <div className="hidden md:block" />
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-widest flex items-center gap-2"><Store size={14}/> Store</Link>
-            <button onClick={signOut} className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2"><LogOut size={14}/> Exit</button>
-          </div>
-        </header>
-        <main style={{ flex: 1, padding: '40px' }}>{children}</main>
-      </div>
     </div>
   )
 }
