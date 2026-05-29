@@ -1,5 +1,16 @@
 import { createBrowserClient } from '@/lib/supabase/browser';
 
+/**
+ * Custom error class for API-level errors.
+ * Exported so that admin pages can check 'instanceof ApiError'
+ */
+export class ApiError extends Error {
+  constructor(public readonly code: string, message: string, public readonly status?: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
   
@@ -20,11 +31,21 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   if (res.status === 401) {
       // If truly expired, kick to login to get a fresh start
-      window.location.href = '/login?next=' + window.location.pathname;
-      throw new Error("Session expired. Redirecting...");
+      if (typeof window !== 'undefined') {
+          window.location.href = '/login?next=' + window.location.pathname;
+      }
+      throw new ApiError("UNAUTHORIZED", "Session expired. Redirecting...", 401);
   }
 
   const body = await res.json();
-  if (!res.ok) throw new Error(body.error?.message || 'Request failed');
+  
+  if (!res.ok) {
+      throw new ApiError(
+          body.error?.code || 'FETCH_ERROR', 
+          body.error?.message || 'Request failed', 
+          res.status
+      );
+  }
+  
   return body.data;
 }
