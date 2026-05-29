@@ -10,21 +10,23 @@ async function handler(req, res) {
     const { delivery_address, phone, signal_only } = req.body;
     const userId = req.user.id;
 
-    // Fetch current profile for the Telegram message
     const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', userId).single();
-
     const { data: cart } = await supabaseAdmin.from('carts').select('id, cart_items(*)').eq('user_id', userId).single();
+    
+    // Validate stock exists for all items before starting
     const { total } = await calculateOrderTotal(cart.cart_items);
 
-    // Create the order in the database
-    const { data: order } = await supabaseAdmin.from('orders').insert({
-      user_id: userId, total, delivery_address, phone, status: 'pending_payment'
+    // Create order
+    const { data: order, error } = await supabaseAdmin.from('orders').insert({
+      user_id: userId, total, delivery_address, phone, status: 'pending'
     }).select().single();
 
-    // IF USER CLICKED THE BUTTON: Send Telegram Alert
+    if (error) throw error;
+
+    // FIRE AND FORGET TELEGRAM (Doesn't block user)
     if (signal_only) {
-      const message = `🚨 <b>PAYMENT CLAIMED</b>\n\nStudent: ${profile.full_name}\nOrder ID: #${order.id.slice(0,8)}\nAmount: ₦${total.toLocaleString()}\n\nWaiting for proof upload...`;
-      notifyAdmins(message);
+      const message = `🚨 <b>PAYMENT CLAIMED</b>\n\nStudent: ${profile?.full_name}\nOrder ID: #${order.id.slice(0,8)}\nAmount: ₦${total.toLocaleString()}`;
+      notifyAdmins(message); // This is non-blocking
     }
 
     return sendSuccess(res, order, 'Order initiated');

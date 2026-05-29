@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Upload, X, Save, Package, Image as ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Save, Package, Image as ImageIcon, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api/fetch'
 import { formatPrice } from '@/lib/utils/formatters'
@@ -16,6 +16,7 @@ export default function ProductsPage() {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [form, setForm] = useState({ name: '', description: '', base_price: '', category_id: '', stock_type: 'stock' })
+  const [variants, setVariants] = useState([{ size: 'M', color: 'Black', stock_qty: 50 }])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -35,20 +36,25 @@ export default function ProductsPage() {
     e.preventDefault()
     setIsSaving(true)
     try {
-      // 1. Create Product Text Data
+      // 1. Create Product
       const product = await apiFetch<any>('/admin/products', {
         method: 'POST',
         body: JSON.stringify({ ...form, base_price: Number(form.base_price), is_available: true })
       })
 
-      // 2. Upload Image if selected
-      if (selectedFile && product.id) {
+      // 2. Create Variants
+      for (const v of variants) {
+          await apiFetch(`/admin/products/${product.id}/variants`, {
+              method: 'POST',
+              body: JSON.stringify(v)
+          })
+      }
+
+      // 3. Upload Image with cache busting
+      if (selectedFile) {
           const formData = new FormData()
           formData.append('image', selectedFile)
-          
-          const supabase = createBrowserClient()
-          const { data: { session } } = await supabase.auth.getSession()
-          
+          const { data: { session } } = await createBrowserClient().auth.getSession()
           await fetch(`/api/admin/products/${product.id}/image`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${session?.access_token}` },
@@ -56,87 +62,72 @@ export default function ProductsPage() {
           })
       }
 
-      toast.success("Merch Logged Successfully")
+      toast.success("Inventory Updated")
       setShowPanel(false)
-      setSelectedFile(null)
       loadData()
     } catch (err: any) { toast.error(err.message) }
     finally { setIsSaving(false) }
   }
 
   const columns: Column<any>[] = [
-    { key: 'name', label: 'Item', render: r => <span className="font-bold text-white">{r.name}</span> },
-    { key: 'price', label: 'Price', render: r => <span className="text-gold font-mono">{formatPrice(r.base_price)}</span> },
-    { key: 'stock', label: 'Mode', render: r => <span className="uppercase text-[9px] font-black tracking-widest px-2 py-0.5 bg-zinc-800 rounded-full">{r.stock_type}</span> },
-    { key: 'act', label: '', render: r => <button className="text-zinc-600 hover:text-gold transition-colors"><Pencil size={14}/></button> }
+    { key: 'name', label: 'Item', render: r => <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-zinc-800 overflow-hidden">
+            {r.image_url && <img src={`${r.image_url}?t=${new Date().getTime()}`} className="w-full h-full object-cover" />}
+        </div>
+        <span className="font-bold text-white">{r.name}</span>
+    </div>},
+    { key: 'price', label: 'Price', render: r => <span className="text-gold">{formatPrice(r.base_price)}</span> },
+    { key: 'act', label: '', render: r => <button className="text-zinc-600 hover:text-gold"><Pencil size={14}/></button> }
   ]
 
   return (
-    <div className="space-y-10 animate-fadeIn">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b border-zinc-800 pb-8">
-        <div>
-          <h1 className="text-5xl font-black text-white uppercase italic tracking-tighter leading-none">Inventory</h1>
-        </div>
-        <button onClick={() => setShowPanel(true)} className="bg-gold text-black px-8 py-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all">
-            <Plus size={18} strokeWidth={3}/> Create New Entry
-        </button>
+    <div className="space-y-10">
+      <div className="flex justify-between items-end border-b border-zinc-800 pb-8">
+        <h1 className="text-5xl font-black text-white italic tracking-tighter">Inventory</h1>
+        <button onClick={() => setShowPanel(true)} className="bg-gold text-black px-8 py-4 font-black uppercase text-xs tracking-widest">Create Product</button>
       </div>
 
-      <div className="bg-black border border-zinc-800">
-        <AdminTable columns={columns} rows={products} loading={loading} emptyMessage="Inventory Empty." />
-      </div>
+      <AdminTable columns={columns} rows={products} loading={loading} />
 
       {showPanel && (
         <div className="fixed inset-0 z-[200] flex justify-end">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPanel(false)} />
-          <div className="relative w-full max-w-md bg-zinc-950 border-l border-zinc-800 p-8 h-full overflow-y-auto animate-fadeIn">
-             <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-black text-white uppercase italic">Add Merch</h2>
-                <button onClick={() => setShowPanel(false)}><X size={24}/></button>
-             </div>
-
+          <div className="absolute inset-0 bg-black/80" onClick={() => setShowPanel(false)} />
+          <div className="relative w-full max-w-xl bg-zinc-950 p-8 h-full overflow-y-auto">
+             <h2 className="text-3xl font-black text-white mb-8 italic uppercase">New Merch Entry</h2>
+             
              <form onSubmit={handleCreate} className="space-y-6">
-                <div className="space-y-2">
-                   <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Product Photo</label>
-                   <div className="relative group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                        onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-                      />
-                      <div className="bg-zinc-900 border-2 border-dashed border-zinc-800 p-8 flex flex-col items-center justify-center text-zinc-500 group-hover:border-gold transition-colors">
-                         <ImageIcon size={32} className="mb-2"/>
-                         <span className="text-xs font-bold uppercase">{selectedFile ? selectedFile.name : "Select 2D Image"}</span>
-                      </div>
-                   </div>
-                </div>
-
-                <div className="space-y-2">
-                   <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Product Name*</label>
-                   <input required className="w-full bg-zinc-900 border border-zinc-800 p-4 text-white focus:border-gold outline-none" 
-                          value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                </div>
-
+                <input type="file" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="w-full bg-zinc-900 p-4 text-xs text-zinc-500 border border-zinc-800" />
+                
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Price (₦)*</label>
-                       <input required type="number" className="w-full bg-zinc-900 border border-zinc-800 p-4 text-white focus:border-gold outline-none" 
-                              value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Category*</label>
-                       <select required className="w-full bg-zinc-900 border border-zinc-800 p-4 text-white focus:border-gold outline-none" 
-                               value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}>
-                          <option value="">Select...</option>
-                          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                       </select>
-                    </div>
+                    <input placeholder="Product Name" className="bg-zinc-900 p-4 text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    <input placeholder="Price" className="bg-zinc-900 p-4 text-white" value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} />
                 </div>
 
-                <button type="submit" disabled={isSaving} className="w-full bg-gold text-black py-5 font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3">
-                   {isSaving ? <Package className="animate-pulse"/> : <Save size={18}/>}
-                   {isSaving ? "SYNCING..." : "COMMIT TO INVENTORY"}
+                <select className="w-full bg-zinc-900 p-4 text-white" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}>
+                    <option>Select Category</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+
+                <div className="border-t border-zinc-800 pt-6">
+                    <p className="text-[10px] font-black text-gold uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><Layers size={14}/> Variant Matrix</p>
+                    {variants.map((v, i) => (
+                        <div key={i} className="grid grid-cols-3 gap-2 mb-2">
+                            <input placeholder="Size" className="bg-black p-3 text-xs text-white" value={v.size} onChange={e => {
+                                const newV = [...variants]; newV[i].size = e.target.value; setVariants(newV);
+                            }} />
+                            <input placeholder="Color" className="bg-black p-3 text-xs text-white" value={v.color} onChange={e => {
+                                const newV = [...variants]; newV[i].color = e.target.value; setVariants(newV);
+                            }} />
+                            <input placeholder="Stock" type="number" className="bg-black p-3 text-xs text-white" value={v.stock_qty} onChange={e => {
+                                const newV = [...variants]; newV[i].stock_qty = Number(e.target.value); setVariants(newV);
+                            }} />
+                        </div>
+                    ))}
+                    <button type="button" onClick={() => setVariants([...variants, { size: '', color: '', stock_qty: 0 }])} className="text-[10px] text-zinc-500 font-bold uppercase hover:text-white">+ Add Variant Row</button>
+                </div>
+
+                <button type="submit" disabled={isSaving} className="w-full bg-gold text-black py-5 font-black uppercase text-xs mt-10">
+                    {isSaving ? "SYNCING..." : "COMMIT TO VAULT"}
                 </button>
              </form>
           </div>
