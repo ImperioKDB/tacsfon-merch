@@ -2,16 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { createBrowserClient } from '@/lib/supabase/browser';
-import { RefreshCw, Save, User, Phone, Mail, Calendar, ShieldCheck } from 'lucide-react';
+import { RefreshCw, Save, Calendar, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-
-const formatDate = (dateString?: string) => {
-  if (!dateString) return 'WAITING...';
-  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-};
+import { getFriendlyError } from '@/lib/utils/errors';
 
 export default function ProfilePage() {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ full_name: '', phone: '' });
@@ -22,33 +18,25 @@ export default function ProfilePage() {
       supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data, error }) => {
         if (data) {
           setProfile(data);
-          setFormData({ 
-            full_name: data.full_name || '', 
-            phone: data.phone || '' 
-          });
-          // DEBUG LOG: Check this in your browser console (F12)
-          console.log("Current User Role in DB:", data.role);
+          setFormData({ full_name: data.full_name || '', phone: data.phone || '' });
         }
+        if (error) toast.error(getFriendlyError(error));
         setLoading(false);
       });
     }
   }, [user, supabase]);
 
   const handleSave = async () => {
-    const payload = { 
+    const { error } = await supabase.from('profiles').upsert({ 
         id: user?.id, 
         email: user?.email,
-        full_name: formData.full_name,
-        phone: formData.phone
-        // updated_at removed to prevent schema cache errors
-    };
-    
-    const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+        ...formData 
+    }, { onConflict: 'id' });
     
     if (error) {
-      toast.error(`Update failed: ${error.message}`);
+      toast.error(getFriendlyError(error));
     } else { 
-      toast.success("Profile saved. Reloading to verify Admin status..."); 
+      toast.success("Profile Updated"); 
       setTimeout(() => window.location.reload(), 1000);
     }
   };
@@ -61,19 +49,18 @@ export default function ProfilePage() {
         <div className="lg:col-span-2 space-y-12">
           <div className="border-b border-zinc-800 pb-8">
             <h1 className="text-6xl font-black tracking-tighter uppercase italic text-white mb-2">
-                {profile?.full_name?.split(' ')[0] || 'Member'}<span className="text-gold">.</span>
+                {profile?.full_name?.split(' ')[0] || 'Account'}<span className="text-gold">.</span>
             </h1>
-            <p className="text-zinc-500 font-bold text-xs tracking-[0.3em]">IDENTITY VERIFIED</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Full Name</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all outline-none" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} />
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold outline-none" value={formData.full_name} onChange={e=>setFormData({...formData, full_name: e.target.value})} />
             </div>
             <div className="space-y-2">
-              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Mobile Number</label>
-              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold transition-all outline-none" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
+              <label className="text-zinc-500 text-[10px] font-black tracking-widest uppercase">Phone</label>
+              <input className="w-full bg-zinc-950 border border-zinc-800 p-4 text-white focus:border-gold outline-none" value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} />
             </div>
           </div>
           
@@ -84,20 +71,13 @@ export default function ProfilePage() {
 
         <div className="bg-zinc-900/30 border border-zinc-800 p-8 h-fit space-y-8">
            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gold flex items-center justify-center text-black font-black text-xl">
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
-              <div className="overflow-hidden">
+              <div className="w-12 h-12 bg-gold flex items-center justify-center text-black font-black text-xl">{user?.email?.charAt(0).toUpperCase()}</div>
+              <div>
                 <p className="text-white font-bold truncate">{user?.email}</p>
-                <p className="text-gold text-[10px] font-black tracking-widest uppercase">
-                    {profile?.role === 'admin' ? '🛡️ ADMINISTRATOR' : 'MEMBER'}
-                </p>
+                <p className="text-gold text-[10px] font-black tracking-widest uppercase">{profile?.role || 'MEMBER'}</p>
               </div>
            </div>
-           <div className="space-y-4 pt-4 border-t border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest">
-              <div className="flex items-center gap-3"><Calendar size={16} className="text-gold"/> Joined {formatDate(user?.created_at || profile?.created_at)}</div>
-              <div className="flex items-center gap-3"><ShieldCheck size={16} className="text-gold"/> Access Level: {profile?.role?.toUpperCase()}</div>
-           </div>
+           <button onClick={signOut} className="w-full border border-red-900/50 text-red-500 py-3 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all">Sign Out</button>
         </div>
       </div>
     </div>
