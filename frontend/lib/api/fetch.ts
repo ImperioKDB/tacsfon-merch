@@ -15,7 +15,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
 
-  // Fix for Render Cold Start (25-second timeout)
+  // This controller gives the server 25 seconds to wake up (Render's max boot time)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25000); 
 
@@ -26,17 +26,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
 
   try {
-    const res = await fetch(url, { 
-      ...options, 
-      headers, 
-      signal: controller.signal 
-    });
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (res.status === 401) {
-       // Only redirect if we AREN'T currently on the login page to avoid loops
        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          console.warn("Session expired. Redirecting to login.");
           window.location.href = '/login?next=' + window.location.pathname;
        }
        throw new ApiError("UNAUTHORIZED", "Session expired", 401);
@@ -49,7 +43,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     return body.data;
   } catch (err: any) {
     if (err.name === 'AbortError') {
-      throw new Error("Server is waking up. Please wait 30 seconds and refresh.");
+      throw new Error("System is warming up. Please wait 10 seconds and refresh.");
     }
     if (err instanceof ApiError) throw err;
     throw new Error(err.message || 'Network error');
