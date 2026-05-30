@@ -1,8 +1,9 @@
+
 /**
  * POST /api/admin/categories
  *
  * Creates a new product category.
- * Body: { name, description? }
+ * Body: { name }
  */
 import { withMiddleware } from '../../../../lib/middleware/withMiddleware.js'
 import { sendSuccess }    from '../../../../lib/responseFormatter.js'
@@ -16,14 +17,17 @@ async function handler(req, res) {
   }
 
   const adminId = req.user.id
-  const { name, description } = req.body
+  const { name } = req.body
 
   if (!name?.trim()) throw new ApiError('INVALID_INPUT', 'name is required.', 400)
 
+  // FIX: removed `description` field — column does not exist in the categories table.
+  // Table schema: id (uuid), name (text), created_at (timestamptz)
   const { data: category, error } = await supabaseAdmin
     .from('categories')
-    .insert({ name: name.trim(), description: description?.trim() || null, created_at: new Date().toISOString() })
-    .select().single()
+    .insert({ name: name.trim() })
+    .select()
+    .single()
 
   if (error) {
     if (error.code === '23505') {
