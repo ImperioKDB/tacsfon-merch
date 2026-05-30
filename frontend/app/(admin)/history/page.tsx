@@ -1,61 +1,82 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api/fetch'
 import { formatPrice, formatDate, formatOrderId } from '@/lib/utils/formatters'
 import AdminTable, { type Column } from '@/components/admin/AdminTable'
-interface OrderRow { id: string; customer_name: string | null; total: number; created_at: string; status: string; user: { full_name: string; email: string } | null; order_items: { id: string }[] }
-interface PMeta { page: number; total_pages: number }
-const STATUSES = ['','pending_payment','payment_submitted','confirmed','dispatched','received','cancelled']
-const STATUS_COLORS: Record<string,string> = { pending_payment: 'var(--color-text-disabled)', payment_submitted: 'var(--color-warning)', confirmed: 'var(--color-gold)', dispatched: '#60a5fa', received: 'var(--color-success)', cancelled: 'var(--color-error)' }
+
+// AUDIT #17: Sync statuses with backend enums
+const STATUSES = ['', 'pending', 'confirmed', 'dispatched', 'received', 'cancelled']
+
 export default function HistoryPage() {
-  const [orders, setOrders]   = useState<OrderRow[]>([])
+  const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
-  const [status, setStatus]   = useState('')
-  const [page, setPage]       = useState(1)
-  const [meta, setMeta]       = useState<PMeta | null>(null)
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<any>(null)
+  const [status, setStatus] = useState('')
+
   const load = useCallback(async (p = 1) => {
     setLoading(true)
     try {
       const q = new URLSearchParams({ page: String(p), limit: '20' })
       if (status) q.set('status', status)
-      const d = await apiFetch<{ orders: OrderRow[]; pagination: PMeta }>(`/admin/orders?${q}`)
+      const d = await apiFetch<any>(`/admin/orders?${q}`)
       setOrders(d.orders); setMeta(d.pagination); setPage(p)
-    } catch { toast.error('Failed.') } finally { setLoading(false) }
+    } catch { toast.error('Failed to sync history') } finally { setLoading(false) }
   }, [status])
+
   useEffect(() => { load(1) }, [load])
-  const filtered = search.trim() ? orders.filter(o => o.id.toLowerCase().includes(search.toLowerCase()) || (o.user?.full_name ?? o.customer_name ?? '').toLowerCase().includes(search.toLowerCase())) : orders
-  const iStyle: React.CSSProperties = { padding: '9px 12px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', fontSize: '0.875rem', fontFamily: 'var(--font-inter)', outline: 'none' }
-  const columns: Column<OrderRow>[] = [
-    { key: 'id',   label: 'Order ID', render: r => formatOrderId(r.id) },
-    { key: 'cust', label: 'Customer', render: r => r.user?.full_name ?? r.customer_name ?? '—' },
-    { key: 'item', label: 'Items',    render: r => `${r.order_items.length} item(s)` },
-    { key: 'tot',  label: 'Total',    render: r => formatPrice(r.total) },
-    { key: 'stat', label: 'Status',   render: r => <span style={{ fontSize: '0.75rem', fontWeight: 600, color: STATUS_COLORS[r.status] ?? 'var(--color-text-primary)' }}>{r.status.replace(/_/g,' ').toUpperCase()}</span> },
-    { key: 'date', label: 'Date',     render: r => formatDate(r.created_at) },
-  ]
-  return (
-    <div>
-      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-urbanist)', color: 'var(--color-text-primary)', marginBottom: '20px' }}>All Orders</h1>
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-          <Search size={14} strokeWidth={1.5} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-disabled)' }} />
-          <input type="text" placeholder="Search order ID or customer…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...iStyle, width: '100%', paddingLeft: '36px', boxSizing: 'border-box' }} />
-        </div>
-        <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...iStyle, cursor: 'pointer' }}>
-          {STATUSES.map(s => <option key={s} value={s}>{s ? s.replace(/_/g,' ') : 'All statuses'}</option>)}
-        </select>
+
+  // AUDIT #18: Windowed Pagination Logic
+  const renderPagination = () => {
+    if (!meta || meta.total_pages <= 1) return null
+    const pages = []
+    const total = meta.total_pages
+    
+    let start = Math.max(1, page - 2)
+    let end = Math.min(total, page + 2)
+
+    if (start > 1) pages.push(1)
+    if (start > 2) pages.push('...')
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (end < total - 1) pages.push('...')
+    if (end < total) pages.push(total)
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-12">
+        <button disabled={page === 1} onClick={() => load(page - 1)} className="p-2 text-zinc-500 hover:text-white disabled:opacity-20"><ChevronLeft/></button>
+        {pages.map((p, i) => (
+            typeof p === 'number' ? (
+                <button key={i} onClick={() => load(p)} className={`w-10 h-10 font-bold text-xs ${page === p ? 'bg-gold text-black' : 'text-zinc-500 border border-zinc-900'}`}>{p}</button>
+            ) : <span key={i} className="text-zinc-700">...</span>
+        ))}
+        <button disabled={page === total} onClick={() => load(page + 1)} className="p-2 text-zinc-500 hover:text-white disabled:opacity-20"><ChevronRight/></button>
       </div>
-      <AdminTable columns={columns} rows={filtered} loading={loading} emptyMessage="No orders found." />
-      {meta && meta.total_pages > 1 && (
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '20px' }}>
-          {Array.from({ length: meta.total_pages }, (_, i) => i + 1).map(p => (
-            <button key={p} onClick={() => load(p)} style={{ width: '36px', height: '36px', border: '1px solid', borderColor: p===page?'var(--color-gold)':'var(--color-border)', background: p===page?'var(--color-gold-muted)':'transparent', color: p===page?'var(--color-gold)':'var(--color-text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-inter)', fontSize: '0.875rem' }}>{p}</button>
-          ))}
-        </div>
-      )}
+    )
+  }
+
+  const columns: Column<any>[] = [
+    { key: 'id', label: 'ID', render: r => formatOrderId(r.id) },
+    { key: 'cust', label: 'Customer', render: r => r.user?.full_name || r.customer_name || '—' },
+    { key: 'tot', label: 'Total', render: r => <span className="text-gold font-bold">{formatPrice(r.total)}</span> },
+    { key: 'stat', label: 'Status', render: r => <span className="uppercase text-[9px] font-black">{r.status}</span> },
+    { key: 'date', label: 'Date', render: r => formatDate(r.created_at) }
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+         <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Order History</h1>
+         <select value={status} onChange={e => setStatus(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 text-xs font-bold text-zinc-400 outline-none">
+            <option value="">Filter: All Statuses</option>
+            {STATUSES.slice(1).map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+         </select>
+      </div>
+      <div className="bg-zinc-950 border border-zinc-800">
+        <AdminTable columns={columns} rows={orders} loading={loading} />
+      </div>
+      {renderPagination()}
     </div>
   )
 }
