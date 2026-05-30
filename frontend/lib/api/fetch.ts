@@ -9,13 +9,14 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
-  
-  // Get current session
   const { data: { session } } = await supabase.auth.getSession();
-  let token = session?.access_token;
+  const token = session?.access_token;
 
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000); 
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -24,31 +25,24 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
 
   try {
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    clearTimeout(timeoutId);
 
-    if (res.status === 401) {
-       // Deep Refresh Strategy:
-       // If the backend rejects the token, we force a session refresh in the browser
-       const { data: refresh, error: refreshErr } = await supabase.auth.refreshSession();
-       
-       if (refreshErr || !refresh.session) {
-          window.location.href = '/login?next=' + window.location.pathname;
-          throw new ApiError("UNAUTHORIZED", "Session lost. Please log in again.", 401);
-       }
-       
-       // Success! We have a new token. Let's try the request ONE more time automatically.
-       const retryHeaders = { ...headers, 'Authorization': `Bearer ${refresh.session.access_token}` };
-       const retryRes = await fetch(url, { ...options, headers: retryHeaders });
-       const retryBody = await retryRes.json();
-       
-       if (!retryRes.ok) throw new ApiError("RETRY_FAILED", "Identity refreshed, but access still denied.", 403);
-       return retryBody.data;
+    // Detect if we hit a HTML error page (Render/Supabase 404)
+    const type = res.headers.get("content-type");
+    if (type && type.includes("text/html")) {
+        throw new ApiError("BACKEND_OFFLINE", "Server returned HTML instead of JSON. Check Render URLs.", 500);
     }
 
     const body = await res.json();
+    if (res.status === 401 && !window.location.pathname.includes('/login')) {
+       window.location.href = '/login?next=' + window.location.pathname;
+    }
+
     if (!res.ok) throw new ApiError(body.error?.code || 'ERR', body.error?.message || 'Fail', res.status);
     return body.data;
   } catch (err: any) {
+    if (err.name === 'AbortError') throw new Error("Server wake-up in progress. Refresh in 10s.");
     if (err instanceof ApiError) throw err;
     throw new Error(err.message || 'Network error');
   }

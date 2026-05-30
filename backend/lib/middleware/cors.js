@@ -7,16 +7,16 @@ export function applyCors(req, res) {
     'http://localhost:3000'
   ].filter(Boolean);
 
-  if (origin && allowedOrigins.some(o => origin.startsWith(o))) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (!origin) {
-    // Allow non-browser requests (like server-to-server)
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    // Audit Fix: Don't send credentials for unknown origins
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
   }
 
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
 
   if (req.method === 'OPTIONS') {
     res.status(204).end();
