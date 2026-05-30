@@ -9,15 +9,17 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  
+  // CRITICAL FIX: Refresh the session immediately before making the call
+  // This prevents the 'expired token' kick during cold starts.
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
   const token = session?.access_token;
-
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
 
-  // This controller gives the server 25 seconds to wake up (Render's max boot time)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000); 
+  const timeoutId = setTimeout(() => controller.abort(), 35000); // Increased to 35s for heavy cold starts
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -26,14 +28,25 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
 
   try {
-    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    const res = await fetch(url, { 
+      ...options, 
+      headers, 
+      signal: controller.signal 
+    });
     clearTimeout(timeoutId);
 
+    // If the server rejected us, we only kick to login if we can't refresh
     if (res.status === 401) {
-       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+       console.warn("Server returned 401. Attempting one-time token refresh...");
+       const { data: refreshed } = await supabase.auth.refreshSession();
+       
+       if (!refreshed.session && !window.location.pathname.includes('/login')) {
           window.location.href = '/login?next=' + window.location.pathname;
+          throw new ApiError("UNAUTHORIZED", "Session totally lost.", 401);
        }
-       throw new ApiError("UNAUTHORIZED", "Session expired", 401);
+       
+       // Tell the user to try the button one more time now that we are refreshed
+       throw new ApiError("RETRY", "Connection synchronized. Please click the button again.", 401);
     }
 
     const body = await res.json();
@@ -43,7 +56,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     return body.data;
   } catch (err: any) {
     if (err.name === 'AbortError') {
-      throw new Error("System is warming up. Please wait 10 seconds and refresh.");
+      throw new Error("The server is still waking up. Please wait 10 seconds and try again.");
     }
     if (err instanceof ApiError) throw err;
     throw new Error(err.message || 'Network error');
