@@ -10,16 +10,12 @@ export class ApiError extends Error {
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const supabase = createBrowserClient();
   
-  // CRITICAL FIX: Refresh the session immediately before making the call
-  // This prevents the 'expired token' kick during cold starts.
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  const token = session?.access_token;
+  // Get current session
+  const { data: { session } } = await supabase.auth.getSession();
+  let token = session?.access_token;
+
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
   const url = `${baseUrl}/api${path.startsWith('/') ? path : '/' + path}`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 35000); // Increased to 35s for heavy cold starts
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -28,36 +24,31 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   };
 
   try {
-    const res = await fetch(url, { 
-      ...options, 
-      headers, 
-      signal: controller.signal 
-    });
-    clearTimeout(timeoutId);
+    const res = await fetch(url, { ...options, headers });
 
-    // If the server rejected us, we only kick to login if we can't refresh
     if (res.status === 401) {
-       console.warn("Server returned 401. Attempting one-time token refresh...");
-       const { data: refreshed } = await supabase.auth.refreshSession();
+       // Deep Refresh Strategy:
+       // If the backend rejects the token, we force a session refresh in the browser
+       const { data: refresh, error: refreshErr } = await supabase.auth.refreshSession();
        
-       if (!refreshed.session && !window.location.pathname.includes('/login')) {
+       if (refreshErr || !refresh.session) {
           window.location.href = '/login?next=' + window.location.pathname;
-          throw new ApiError("UNAUTHORIZED", "Session totally lost.", 401);
+          throw new ApiError("UNAUTHORIZED", "Session lost. Please log in again.", 401);
        }
        
-       // Tell the user to try the button one more time now that we are refreshed
-       throw new ApiError("RETRY", "Connection synchronized. Please click the button again.", 401);
+       // Success! We have a new token. Let's try the request ONE more time automatically.
+       const retryHeaders = { ...headers, 'Authorization': `Bearer ${refresh.session.access_token}` };
+       const retryRes = await fetch(url, { ...options, headers: retryHeaders });
+       const retryBody = await retryRes.json();
+       
+       if (!retryRes.ok) throw new ApiError("RETRY_FAILED", "Identity refreshed, but access still denied.", 403);
+       return retryBody.data;
     }
 
     const body = await res.json();
-    if (!res.ok || body.success === false) {
-      throw new ApiError(body.error?.code || 'ERROR', body.error?.message || 'Request failed', res.status);
-    }
+    if (!res.ok) throw new ApiError(body.error?.code || 'ERR', body.error?.message || 'Fail', res.status);
     return body.data;
   } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw new Error("The server is still waking up. Please wait 10 seconds and try again.");
-    }
     if (err instanceof ApiError) throw err;
     throw new Error(err.message || 'Network error');
   }
