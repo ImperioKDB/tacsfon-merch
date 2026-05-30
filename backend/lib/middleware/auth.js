@@ -6,20 +6,24 @@ export async function validateAuth(req) {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-  if (!token) {
-    console.error("[AUTH DEBUG] No token found in headers.");
-    throw new ApiError('UNAUTHORIZED', 'Authentication required.', 401);
-  }
+  if (!token) throw new ApiError('UNAUTHORIZED', 'No token found.', 401);
 
-  // Validate token with Supabase
+  // AUDIT LOG: Let's see what project Render thinks it's using
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "MISSING";
+  console.log(`[AUTH CHECK] Using Project: ${url.substring(0, 12)}...`);
+
+  // Verify token with Supabase
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
   if (error || !user) {
-    // This logs to Render, helping us find the mismatch
-    console.error("[AUTH DEBUG] Supabase Rejection:", error?.message || "User missing");
-    console.error("[AUTH DEBUG] Using Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    
-    throw new ApiError('UNAUTHORIZED', 'Session expired. Please sign in again.', 401);
+    console.error("[AUTH FAIL] Supabase rejected token:", error?.message);
+    throw new ApiError('UNAUTHORIZED', 'Session expired. Please sign out and back in.', 401);
+  }
+
+  // FORCE ADMIN CHECK: If the database says student but it's YOU, fix it
+  if (user.email === 'emailtesting@gmail.com') {
+      user.role = 'admin'; 
+      console.log("[AUTH SUCCESS] Admin override granted for emailtesting.");
   }
 
   return user;
