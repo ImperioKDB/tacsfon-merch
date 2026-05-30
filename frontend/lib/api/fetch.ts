@@ -8,25 +8,30 @@ export class ApiError extends Error {
 }
 
 /**
- * Returns a valid (non-expired) access token.
- * - Reads the current session from storage
- * - Proactively refreshes if the token expires within 60 seconds
- * - Returns undefined if there is no session
+ * Returns a valid access token.
+ * - If the token expires within 60s, attempts a proactive refresh.
+ * - Falls back to existing token if refresh fails so the 401 retry gets a chance.
  */
 async function getValidToken(): Promise<string | undefined> {
   const supabase = createBrowserClient();
-  let { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) return undefined;
+  if (!session?.access_token) return undefined;
 
-  // Proactively refresh if token expires within the next 60 seconds
+  // Proactively refresh only if the token is about to expire
   const expiresAt = (session.expires_at ?? 0) * 1000;
   if (expiresAt - 60_000 < Date.now()) {
-    const { data: refreshed } = await supabase.auth.refreshSession();
-    session = refreshed.session;
+    try {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      if (refreshed.session?.access_token) {
+        return refreshed.session.access_token;
+      }
+    } catch {
+      // Network error during refresh - fallback to original token
+    }
   }
 
-  return session?.access_token;
+  return session.access_token;
 }
 
 function buildHeaders(
@@ -57,7 +62,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     });
     clearTimeout(timeoutId);
 
-    // Detect HTML error page (Render/Supabase 404 or cold-start page)
+    // Detect HTML error page (Render cold-start / 404)
     const contentType = res.headers.get('content-type');
     if (contentType?.includes('text/html')) {
       throw new ApiError(
@@ -67,35 +72,46 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       );
     }
 
-    // ── 401 handling: refresh the session and retry ONCE before giving up ──
+    // ── 401 Self-Healing: refresh and retry ONCE ──
     if (res.status === 401) {
       const supabase = createBrowserClient();
-      const { data: refreshed } = await supabase.auth.refreshSession();
-      const newToken = refreshed.session?.access_token;
+      let newToken: string | undefined;
 
-      if (newToken) {
-        // Retry the original request with the fresh token
-        const retryController = new AbortController();
-        const retryTimeout = setTimeout(() => retryController.abort(), 20_000);
-        const retryRes = await fetch(url, {
-          ...options,
-          headers: buildHeaders(newToken, options.headers),
-          signal: retryController.signal,
-        });
-        clearTimeout(retryTimeout);
-
-        const retryBody = await retryRes.json().catch(() => ({}));
-
-        if (retryRes.ok) return retryBody.data as T;
-
-        throw new ApiError(
-          retryBody.error?.code || 'ERR',
-          retryBody.error?.message || 'Request failed',
-          retryRes.status,
-        );
+      try {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        newToken = refreshed.session?.access_token;
+      } catch {
+        // Refresh failed
       }
 
-      // Refresh itself failed — session is truly gone, redirect to login
+      if (newToken) {
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 20_000);
+
+        try {
+          const retryRes = await fetch(url, {
+            ...options,
+            headers: buildHeaders(newToken, options.headers),
+            signal: retryController.signal,
+          });
+          clearTimeout(retryTimeout);
+
+          const retryBody = await retryRes.json().catch(() => ({}));
+          if (retryRes.ok) return retryBody.data as T;
+
+          throw new ApiError(
+            retryBody.error?.code || 'ERR',
+            retryBody.error?.message || 'Request failed',
+            retryRes.status,
+          );
+        } catch (retryErr: any) {
+          clearTimeout(retryTimeout);
+          if (retryErr instanceof ApiError) throw retryErr;
+          throw new ApiError('ERR', retryErr.message || 'Retry failed');
+        }
+      }
+
+      // Session genuinely dead - redirect
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login?next=' + window.location.pathname;
       }
