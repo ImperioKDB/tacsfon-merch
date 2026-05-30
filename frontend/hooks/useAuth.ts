@@ -1,56 +1,58 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/browser';
-import type { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const supabase = createBrowserClient();
+  const router = useRouter();
+
+  const syncProfile = useCallback(async (u: any) => {
+    if (!u) {
+      setIsAdmin(false);
+      setLoading(false);
+      return;
+    }
+    // We fetch the profile, but we don't block the 'loading' state of the user account
+    const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
+    setIsAdmin(p?.role === 'admin');
+    setLoading(false);
+  }, [supabase]);
 
   useEffect(() => {
     let mounted = true;
-    const sync = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const u = session?.user ?? null;
-        if (!mounted) return;
-        setUser(u);
-        if (u) {
-          const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
-          setIsAdmin(p?.role === 'admin');
-        }
-      } catch (err) {
-        console.error("Auth sync error", err);
-      } finally {
-        if (mounted) setLoading(false);
+    
+    // Get session instantly from local storage/cookie
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setUser(session?.user ?? null);
+        syncProfile(session?.user);
       }
-    };
-    sync();
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const u = session?.user ?? null;
-      if (!mounted) return;
-      setUser(u);
-      if (u) {
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', u.id).single();
-        setIsAdmin(p?.role === 'admin');
-      } else {
-        setIsAdmin(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        syncProfile(currentUser);
       }
-      setLoading(false);
     });
     
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+    return () => { mounted = false; subscription.unsubscribe(); };
+  }, [supabase, syncProfile]);
 
   const signOut = async () => {
+    // OPTIMISTIC SIGN OUT: Clear UI state immediately
+    setUser(null);
+    setIsAdmin(false);
+    setLoading(false);
+    
     await supabase.auth.signOut();
-    window.location.href = '/login';
+    localStorage.clear(); 
+    window.location.href = '/login'; // Hard redirect to reset all caches
   };
 
   return { user, isAdmin, loading, signOut };
