@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, X, Save, Image as ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Save, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api/fetch'
 import { formatPrice } from '@/lib/utils/formatters'
@@ -13,6 +13,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [showPanel, setShowPanel] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [form, setForm] = useState({ name: '', description: '', base_price: '', category_id: '', stock_type: 'stock' })
@@ -29,19 +30,23 @@ export default function ProductsPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const handleOpenEdit = (p: any) => {
-    setEditingId(p.id)
-    setForm({ name: p.name, description: p.description || '', base_price: String(p.base_price), category_id: p.category_id, stock_type: p.stock_type })
-    setShowPanel(true)
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure? This will permanently delete the product and its variants.")) return;
+    try {
+      await apiFetch(`/admin/products/${id}`, { method: 'DELETE' })
+      toast.success("Item Purged")
+      loadData()
+    } catch (err: any) { toast.error(err.message) }
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.category_id) return toast.error("Select a category");
+    setIsSaving(true)
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')
     try {
       const method = editingId ? 'PATCH' : 'POST'
       const path = editingId ? `/admin/products/${editingId}` : '/admin/products'
-      
       const product = await apiFetch<any>(path, {
         method,
         body: JSON.stringify({ ...form, base_price: Number(form.base_price), is_available: true })
@@ -51,46 +56,62 @@ export default function ProductsPage() {
           const formData = new FormData()
           formData.append('image', selectedFile)
           const { data: { session } } = await createBrowserClient().auth.getSession()
-          // FIX: Use absolute URL for direct image upload
           await fetch(`${baseUrl}/api/admin/products/${product.id}/image`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${session?.access_token}` },
               body: formData
           })
       }
-      toast.success("Vault Updated")
+      toast.success("Vault Synchronized")
       setShowPanel(false)
       loadData()
     } catch (err: any) { toast.error(err.message) }
+    finally { setIsSaving(false) }
   }
 
   const columns: Column<any>[] = [
-    { key: 'name', label: 'Item', render: r => <span className="font-bold text-white">{r.name}</span> },
-    { key: 'price', label: 'Price', render: r => <span className="text-gold">{formatPrice(r.base_price)}</span> },
-    { key: 'act', label: '', render: r => <button onClick={() => handleOpenEdit(r)} className="text-zinc-600 hover:text-gold"><Pencil size={14}/></button> }
+    { key: 'name', label: 'Item', render: r => <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+            {r.image_url ? <img src={r.image_url} className="w-full h-full object-cover" /> : <ImageIcon size={14} className="text-zinc-700"/>}
+        </div>
+        <span className="font-bold text-white">{r.name}</span>
+    </div>},
+    { key: 'price', label: 'Price', render: r => <span className="text-gold font-mono">{formatPrice(r.base_price)}</span> },
+    { key: 'act', label: '', render: r => <div className="flex gap-4">
+        <button onClick={() => { setEditingId(r.id); setForm({name:r.name, description:r.description||'', base_price:r.base_price, category_id:r.category_id, stock_type:r.stock_type}); setShowPanel(true); }} className="text-zinc-500 hover:text-gold"><Pencil size={16}/></button>
+        <button onClick={() => handleDelete(r.id)} className="text-zinc-800 hover:text-red-500"><Trash2 size={16}/></button>
+    </div> }
   ]
 
   return (
     <div className="space-y-10">
       <div className="flex justify-between items-center border-b border-zinc-800 pb-8">
         <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Inventory</h1>
-        <button onClick={() => { setEditingId(null); setForm({name:'', description:'', base_price:'', category_id:'', stock_type:'stock'}); setShowPanel(true); }} className="bg-gold text-black px-6 py-2 font-black uppercase text-xs">Create New</button>
+        <button onClick={() => { setEditingId(null); setForm({name:'', description:'', base_price:'', category_id:'', stock_type:'stock'}); setShowPanel(true); }} className="bg-gold text-black px-6 py-2 font-black uppercase text-xs">Add Product</button>
       </div>
       <AdminTable columns={columns} rows={products} loading={loading} />
+      
       {showPanel && (
         <div className="fixed inset-0 z-[200] flex justify-end">
-          <div className="absolute inset-0 bg-black/80" onClick={() => setShowPanel(false)} />
-          <div className="relative w-full max-w-md bg-zinc-950 p-8 h-full border-l border-zinc-800">
-             <h2 className="text-2xl font-black text-white mb-8 italic uppercase">{editingId ? 'Edit Item' : 'New Entry'}</h2>
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowPanel(false)} />
+          <div className="relative w-full max-w-md bg-black border-l border-zinc-800 p-8 h-full overflow-y-auto">
+             <div className="flex justify-between items-center mb-10">
+                <h2 className="text-2xl font-black text-white uppercase italic">{editingId ? 'Modify' : 'Create'}</h2>
+                <button onClick={() => setShowPanel(false)}><X/></button>
+             </div>
              <form onSubmit={handleSave} className="space-y-6">
-                <input type="file" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="w-full bg-zinc-900 p-4 text-xs text-zinc-500" />
-                <input placeholder="Name" className="w-full bg-zinc-900 p-4 text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                <input placeholder="Price" className="w-full bg-zinc-900 p-4 text-white" value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} />
-                <select className="w-full bg-zinc-900 p-4 text-white" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}>
+                <div className="p-4 border-2 border-dashed border-zinc-800 text-center">
+                    <input type="file" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="w-full text-xs text-zinc-500" />
+                    <p className="text-[10px] uppercase font-black text-zinc-600 mt-2">Recommended: 1080x1080px</p>
+                </div>
+                <input placeholder="Product Name" className="w-full bg-zinc-900 p-4 text-white outline-none focus:border-gold border border-transparent" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+                <input placeholder="Price (Naira)" type="number" className="w-full bg-zinc-900 p-4 text-white outline-none focus:border-gold border border-transparent" value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} required />
+                <select className="w-full bg-zinc-900 p-4 text-white" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} required>
                     <option value="">Select Category</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <button type="submit" className="w-full bg-gold text-black py-4 font-black uppercase text-xs">Commit Changes</button>
+                <textarea placeholder="Description" className="w-full bg-zinc-900 p-4 text-white h-32" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                <button disabled={isSaving} className="w-full bg-gold text-black py-4 font-black uppercase tracking-widest">{isSaving ? 'Processing...' : 'Save to Vault'}</button>
              </form>
           </div>
         </div>
