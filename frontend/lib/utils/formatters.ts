@@ -1,66 +1,25 @@
-/**
- * lib/utils/formatters.ts
- * Display formatters used across admin and student UIs.
- */
 
-/**
- * Format a number as Nigerian Naira.
- * e.g. formatPrice(5000) → "₦5,000"
- */
 export function formatPrice(amount: number): string {
   return `₦${Number(amount).toLocaleString('en-NG')}`
 }
 
-/**
- * Alias for formatPrice.
- * ReceiptPreview.tsx imports this name.
- */
-export const formatCurrency = formatPrice
+export const formatCurrency = formatPrice;
 
-/**
- * Format an ISO date string to a short readable date.
- * e.g. "2024-05-21T10:30:00Z" → "21 May 2024"
- */
 export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day:   '2-digit',
-    month: 'short',
-    year:  'numeric',
+  return new Date(dateString).toLocaleDateString('en-NG', {
+    day: '2-digit', month: 'short', year: 'numeric'
   })
 }
 
-/**
- * Format an ISO date string to date + time.
- * e.g. "2024-05-21T10:30:00Z" → "21 May 2024, 10:30"
- */
-export function formatDateTime(dateString: string): string {
-  return new Date(dateString).toLocaleString('en-GB', {
-    day:    '2-digit',
-    month:  'short',
-    year:   'numeric',
-    hour:   '2-digit',
-    minute: '2-digit',
-  })
-}
-
-/**
- * Truncate a UUID to the first 8 characters, prefixed with #.
- * e.g. formatOrderId("abc123def456") → "#ABC123DE"
- */
 export function formatOrderId(id: string): string {
   return `#${id.slice(0, 8).toUpperCase()}`
 }
 
-/**
- * Resolve the effective price for a single variant.
- * Called per-variant in ProductCard.tsx:
- *   getVariantPrice(product.base_price, v.price_override)
- *
- * Returns price_override if set, otherwise base_price.
- */
-export function getVariantPrice(
-  base_price:     number,
-  price_override: number | null | undefined,
-): number {
-  return price_override ?? base_price
+// NEW HELPER: Ensures images always have a valid full URL
+export function resolveImageUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  return `${supabaseUrl}/storage/v1/object/public/product-assets/${path}`;
 }
