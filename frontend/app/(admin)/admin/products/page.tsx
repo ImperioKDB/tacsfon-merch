@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, X, Save, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Save, Image as ImageIcon, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api/fetch'
 import { formatPrice } from '@/lib/utils/formatters'
@@ -30,20 +30,19 @@ export default function ProductsPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure? This will permanently delete the product and its variants.")) return;
-    try {
-      await apiFetch(`/admin/products/${id}`, { method: 'DELETE' })
-      toast.success("Item Purged")
-      loadData()
-    } catch (err: any) { toast.error(err.message) }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file && file.name.toLowerCase().endsWith('.heic')) {
+        toast.error("iPhone HEIC format not supported. Please convert to JPEG or PNG.");
+        return;
+    }
+    setSelectedFile(file);
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.category_id) return toast.error("Select a category");
     setIsSaving(true)
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')
     try {
       const method = editingId ? 'PATCH' : 'POST'
       const path = editingId ? `/admin/products/${editingId}` : '/admin/products'
@@ -52,17 +51,26 @@ export default function ProductsPage() {
         body: JSON.stringify({ ...form, base_price: Number(form.base_price), is_available: true })
       })
 
+      // If new product, create at least ONE default variant so it's not "OUT OF STOCK"
+      if (!editingId) {
+          await apiFetch(`/admin/products/${product.id}/variants`, {
+              method: 'POST',
+              body: JSON.stringify({ size: 'Standard', color: 'Default', stock_qty: 100 })
+          })
+      }
+
       if (selectedFile) {
           const formData = new FormData()
           formData.append('image', selectedFile)
           const { data: { session } } = await createBrowserClient().auth.getSession()
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '')
           await fetch(`${baseUrl}/api/admin/products/${product.id}/image`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${session?.access_token}` },
               body: formData
           })
       }
-      toast.success("Vault Synchronized")
+      toast.success("Inventory Synchronized")
       setShowPanel(false)
       loadData()
     } catch (err: any) { toast.error(err.message) }
@@ -77,17 +85,14 @@ export default function ProductsPage() {
         <span className="font-bold text-white">{r.name}</span>
     </div>},
     { key: 'price', label: 'Price', render: r => <span className="text-gold font-mono">{formatPrice(r.base_price)}</span> },
-    { key: 'act', label: '', render: r => <div className="flex gap-4">
-        <button onClick={() => { setEditingId(r.id); setForm({name:r.name, description:r.description||'', base_price:r.base_price, category_id:r.category_id, stock_type:r.stock_type}); setShowPanel(true); }} className="text-zinc-500 hover:text-gold"><Pencil size={16}/></button>
-        <button onClick={() => handleDelete(r.id)} className="text-zinc-800 hover:text-red-500"><Trash2 size={16}/></button>
-    </div> }
+    { key: 'act', label: '', render: r => <button onClick={() => { setEditingId(r.id); setForm({name:r.name, description:r.description||'', base_price:r.base_price, category_id:r.category_id, stock_type:r.stock_type}); setShowPanel(true); }} className="text-zinc-500 hover:text-gold"><Pencil size={16}/></button> }
   ]
 
   return (
     <div className="space-y-10">
       <div className="flex justify-between items-center border-b border-zinc-800 pb-8">
         <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Inventory</h1>
-        <button onClick={() => { setEditingId(null); setForm({name:'', description:'', base_price:'', category_id:'', stock_type:'stock'}); setShowPanel(true); }} className="bg-gold text-black px-6 py-2 font-black uppercase text-xs">Add Product</button>
+        <button onClick={() => { setEditingId(null); setForm({name:'', description:'', base_price:'', category_id:'', stock_type:'stock'}); setShowPanel(true); }} className="bg-gold text-black px-6 py-2 font-black uppercase text-xs">Add Merch</button>
       </div>
       <AdminTable columns={columns} rows={products} loading={loading} />
       
@@ -95,23 +100,19 @@ export default function ProductsPage() {
         <div className="fixed inset-0 z-[200] flex justify-end">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowPanel(false)} />
           <div className="relative w-full max-w-md bg-black border-l border-zinc-800 p-8 h-full overflow-y-auto">
-             <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-black text-white uppercase italic">{editingId ? 'Modify' : 'Create'}</h2>
-                <button onClick={() => setShowPanel(false)}><X/></button>
-             </div>
+             <h2 className="text-2xl font-black text-white mb-8 italic uppercase">{editingId ? 'Modify' : 'Create'}</h2>
              <form onSubmit={handleSave} className="space-y-6">
                 <div className="p-4 border-2 border-dashed border-zinc-800 text-center">
-                    <input type="file" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="w-full text-xs text-zinc-500" />
-                    <p className="text-[10px] uppercase font-black text-zinc-600 mt-2">Recommended: 1080x1080px</p>
+                    <input type="file" accept="image/png, image/jpeg, image/webp" onChange={handleFileChange} className="w-full text-xs text-zinc-500" />
+                    <p className="text-[9px] uppercase font-black text-amber-500 mt-2 flex items-center justify-center gap-1"><AlertTriangle size={10}/> NO HEIC (iPHONE) FILES</p>
                 </div>
                 <input placeholder="Product Name" className="w-full bg-zinc-900 p-4 text-white outline-none focus:border-gold border border-transparent" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-                <input placeholder="Price (Naira)" type="number" className="w-full bg-zinc-900 p-4 text-white outline-none focus:border-gold border border-transparent" value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} required />
-                <select className="w-full bg-zinc-900 p-4 text-white" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} required>
+                <input placeholder="Price" type="number" className="w-full bg-zinc-900 p-4 text-white outline-none focus:border-gold border border-transparent" value={form.base_price} onChange={e => setForm({...form, base_price: e.target.value})} required />
+                <select className="w-full bg-zinc-900 p-4 text-white outline-none" value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} required>
                     <option value="">Select Category</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <textarea placeholder="Description" className="w-full bg-zinc-900 p-4 text-white h-32" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-                <button disabled={isSaving} className="w-full bg-gold text-black py-4 font-black uppercase tracking-widest">{isSaving ? 'Processing...' : 'Save to Vault'}</button>
+                <button disabled={isSaving} className="w-full bg-gold text-black py-4 font-black uppercase tracking-widest">{isSaving ? 'Processing...' : 'Commit to Vault'}</button>
              </form>
           </div>
         </div>
