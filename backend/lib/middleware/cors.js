@@ -1,4 +1,3 @@
-
 export function applyCors(req, res) {
   const origin = req.headers.origin;
   const isAllowed = origin && (

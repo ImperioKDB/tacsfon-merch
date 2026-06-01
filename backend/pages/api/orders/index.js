@@ -1,4 +1,3 @@
-
 import { withMiddleware } from '../../../lib/middleware/withMiddleware.js';
 import { sendSuccess } from '../../../lib/responseFormatter.js';
 import { supabaseAdmin } from '../../../lib/supabase.js';
@@ -19,7 +18,6 @@ async function handler(req, res) {
       const { data: cart } = await supabaseAdmin.from('carts').select('id, cart_items(*)').eq('user_id', userId).single();
       if (!cart || !cart.cart_items?.length) return res.status(400).json({ error: "Cart empty" });
 
-      // Verified: returns { total, lineItems }
       const { total, lineItems } = await calculateOrderTotal(cart.cart_items);
 
       const { data: order, error: orderErr } = await supabaseAdmin.from('orders').insert({
@@ -41,9 +39,13 @@ async function handler(req, res) {
 
       await supabaseAdmin.from('cart_items').delete().eq('cart_id', cart.id);
 
-      // Guarded notification
+      // FIX: Use try/catch because notifyAdmins may return undefined, causing .catch() to fail
       if (typeof notifyAdmins === 'function') {
-          notifyAdmins(`🛍️ NEW ORDER: #${order.id.slice(0,8)}\nTotal: ₦${total.toLocaleString()}`).catch(() => {});
+          try {
+              notifyAdmins(`🛍️ NEW ORDER: #${order.id.slice(0,8)}\nTotal: ₦${total.toLocaleString()}`);
+          } catch (e) {
+              console.error("Telegram Notification failed silently:", e.message);
+          }
       }
 
       return sendSuccess(res, order);
