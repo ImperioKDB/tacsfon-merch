@@ -1,18 +1,15 @@
 
 export function applyCors(req, res) {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    process.env.NEXT_PUBLIC_APP_URL, 
-    'https://tacsfon-merch-two.vercel.app',
-    'http://localhost:3000'
-  ].filter(Boolean);
+  
+  // Hardened CORS: allow localhost and all Vercel subdomains
+  const isVercel = origin && (origin.endsWith('.vercel.app') || origin === 'http://localhost:3000');
 
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && isVercel) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else {
-    // Audit Fix: Don't send credentials for unknown origins
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
