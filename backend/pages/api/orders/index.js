@@ -6,7 +6,7 @@ import { notifyAdmins } from '../../../lib/telegram/sendTelegram.js';
 
 async function handler(req, res) {
   if (req.method === 'GET') {
-    const { data, error } = await supabaseAdmin.from('orders').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
+    const { data } = await supabaseAdmin.from('orders').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false });
     return sendSuccess(res, data || []);
   }
 
@@ -34,24 +34,20 @@ async function handler(req, res) {
 
       if (rpcErr) {
         await supabaseAdmin.from('orders').delete().eq('id', order.id); 
-        return res.status(400).json({ success: false, error: { message: rpcErr.message } });
+        return res.status(400).json({ error: rpcErr.message });
       }
 
       await supabaseAdmin.from('cart_items').delete().eq('cart_id', cart.id);
 
-      // FIX: Use try/catch because notifyAdmins may return undefined, causing .catch() to fail
+      // SAFE EXECUTION: notifyAdmins return value is ignored
       if (typeof notifyAdmins === 'function') {
-          try {
-              notifyAdmins(`🛍️ NEW ORDER: #${order.id.slice(0,8)}\nTotal: ₦${total.toLocaleString()}`);
-          } catch (e) {
-              console.error("Telegram Notification failed silently:", e.message);
-          }
+          try { notifyAdmins(`🛍️ NEW ORDER: #${order.id.slice(0,8)}\nTotal: ₦${total.toLocaleString()}`); } catch(e) {}
       }
 
       return sendSuccess(res, order);
     } catch (err) {
-      console.error("Critical Order Failure:", err.message);
-      return res.status(500).json({ success: false, error: { message: err.message } });
+      console.error("Order Failure:", err.message);
+      return res.status(500).json({ error: err.message });
     }
   }
 }
