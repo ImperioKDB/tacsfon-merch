@@ -1,0 +1,18 @@
+name: Keep Render Alive
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://tacsfon-merch.onrender.com/api/health)
+          if [ "$STATUS" = "000" ] || [ "$STATUS" -ge 500 ]; then
+            echo "❌ Failed with $STATUS"
+            exit 1
+          else
+            echo "✅ Alive ($STATUS)"
+          fi
