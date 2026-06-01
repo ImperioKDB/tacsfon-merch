@@ -1,4 +1,3 @@
-
 /**
  * lib/utils/formatters.ts
  * Comprehensive display formatters used across admin and student UIs.
@@ -40,10 +39,9 @@ export function getVariantPrice(
   return price_override ?? base_price
 }
 
-export function resolveImageUrl(path: string | null): string | null {
+export function resolveImageUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith('http')) return path;
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-  return `${supabaseUrl}/storage/v1/object/public/product-assets/${path}`;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  return base ? `${base}/storage/v1/object/public/product-assets/${path}` : null;
 }
