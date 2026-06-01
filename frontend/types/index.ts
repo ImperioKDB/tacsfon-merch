@@ -6,14 +6,14 @@ export interface Profile {
   email: string;
   phone: string | null;
   role: 'student' | 'admin';
-  created_at: string;
+  created_at: string; product?: Product;
 }
 
 // --- Catalogue ---
 export interface Category {
   id: string;
   name: string;
-  created_at: string;
+  created_at: string; product?: Product;
 }
 
 export interface ProductVariant {
@@ -23,7 +23,7 @@ export interface ProductVariant {
   color: string | null;
   stock_qty: number;
   price_override: number | null;
-  created_at: string;
+  created_at: string; product?: Product;
 }
 
 export interface Product {
@@ -36,7 +36,7 @@ export interface Product {
   model_url: string | null;
   is_available: boolean;
   stock_type: 'stock' | 'preorder' | 'both';
-  created_at: string;
+  created_at: string; product?: Product;
   updated_at: string;
   category?: Category;
   variants?: ProductVariant[];
@@ -83,7 +83,7 @@ export interface Order {
   phone: string | null;
   customer_name: string | null;
   proof_url: string | null;
-  created_at: string;
+  created_at: string; product?: Product;
   updated_at: string;
   items?: any[];
   profile?: Profile;
@@ -95,5 +95,15 @@ export interface Notification {
   user_id: string;
   message: string;
   is_read: boolean;
-  created_at: string;
+  created_at: string; product?: Product;
+}
+
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  variant_id: string;
+  quantity: number;
+  unit_price: number;
+  variant?: ProductVariant & { product?: Product };
 }
