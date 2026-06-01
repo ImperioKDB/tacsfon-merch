@@ -87,8 +87,8 @@ export default function OrderDetailClient({ orderId }: Props) {
   const items    = order.items ?? []
   const subtotal = items.reduce((s, it) => s + it.unit_price * it.quantity, 0)
 
-  // FIX #2: was 'pending_payment' — actual DB value is 'pending'
-  const showUploadBtn  = (order.status === 'pending') && !order.proof_url
+  // CRITICAL FIX: Reverted 'pending' to 'pending_payment' to match DB status values
+  const showUploadBtn  = (order.status === 'pending_payment') && !order.proof_url
   const showReceiveBtn = order.status === 'dispatched'
   const showReceiptBtn = order.status === 'received' && order.payment_status === 'paid'
 

@@ -60,7 +60,15 @@ export interface Cart {
 }
 
 // --- Orders ---
-export type OrderStatus = 'pending_payment' | 'payment_submitted' | 'confirmed' | 'dispatched' | 'received' | 'cancelled';
+// ALIGNED WITH DB: 'pending' is NOT a valid status. We use 'pending_payment'.
+export type OrderStatus = 
+  | 'pending_payment' 
+  | 'payment_submitted' 
+  | 'confirmed' 
+  | 'dispatched' 
+  | 'received' 
+  | 'cancelled';
+
 export type PaymentStatus = 'unpaid' | 'paid' | 'incomplete';
 export type OrderType = 'online' | 'walkin';
 
