@@ -53,15 +53,15 @@ export default function OrderDetailClient({ orderId }: Props) {
   if (loadState === 'not_found' || !order) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-black">
-        <p className="text-zinc-500 uppercase font-black tracking-widest">Order Not Found</p>
-        <Link href="/orders" className="text-gold mt-4 underline">Back</Link>
+        <p className="text-zinc-500 uppercase font-black tracking-widest text-sm">Manifest Not Found</p>
+        <Link href="/orders" className="text-[#C9A84C] mt-4 underline text-xs font-bold uppercase tracking-widest">Return to List</Link>
       </main>
     )
   }
 
   return (
     <main className="min-h-screen px-4 py-24 md:px-8 bg-[#0A0A0F] text-[#F7F5F0]">
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
         <Link href="/orders" className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white flex items-center gap-2">
           <ArrowLeft size={12}/> Back to manifest
         </Link>
@@ -75,9 +75,11 @@ export default function OrderDetailClient({ orderId }: Props) {
         </div>
 
         <div className="bg-black border border-[#2A2A38] overflow-hidden">
+          <div className="p-4 border-b border-[#2A2A38] bg-[#13131A]/30">
+             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Fulfillment Manifest</p>
+          </div>
           <div className="divide-y divide-[#2A2A38]">
             {displayItems.map((item, i) => {
-              // FIX: Explicitly handle undefined to satisfy TypeScript strict mode
               const rawImg = item.variant?.product?.image_url;
               const itemImg = resolveImageUrl(rawImg ?? null);
               return (
@@ -87,8 +89,8 @@ export default function OrderDetailClient({ orderId }: Props) {
                       {itemImg && <Image src={itemImg} alt="Merch" width={64} height={64} className="object-cover" unoptimized />}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white uppercase">{item.variant?.product?.name}</p>
-                      <p className="text-[10px] font-black text-[#C9A84C] uppercase mt-1">{item.variant?.size} • {item.variant?.color}</p>
+                      <p className="text-sm font-bold text-white uppercase tracking-tight">{item.variant?.product?.name || 'Item'}</p>
+                      <p className="text-[10px] font-black text-[#C9A84C] uppercase mt-1">Qty: {item.quantity}</p>
                     </div>
                   </div>
                   <p className="font-mono font-bold text-[#C9A84C]">₦{(item.unit_price * item.quantity).toLocaleString()}</p>
@@ -97,7 +99,7 @@ export default function OrderDetailClient({ orderId }: Props) {
             })}
           </div>
           <div className="p-6 bg-[#13131A] flex justify-between items-center border-t border-[#2A2A38]">
-            <span className="text-xs font-black text-zinc-500 uppercase tracking-widest">Total Transaction</span>
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Total Transaction</span>
             <span className="text-2xl font-black text-[#C9A84C]">₦{Number(order.total).toLocaleString()}</span>
           </div>
         </div>

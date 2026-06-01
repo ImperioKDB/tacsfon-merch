@@ -107,3 +107,10 @@ export interface OrderItem {
   unit_price: number;
   variant?: ProductVariant & { product?: Product };
 }
+
+
+export interface BankDetails {
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+}
