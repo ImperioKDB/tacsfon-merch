@@ -1,3 +1,4 @@
+
 import { z } from 'zod'
 
 export const AddCartItemSchema = z.object({
@@ -8,7 +9,7 @@ export const AddCartItemSchema = z.object({
     .number({ required_error: 'quantity is required.' })
     .int('quantity must be an integer.')
     .min(1, 'quantity must be at least 1.')
-    .max(20, 'quantity cannot exceed 20.'),
+    .max(9999, 'quantity cannot exceed 9,999 units.'), // INCREASED LIMIT
 })
 
 export const UpdateCartItemSchema = z.object({
@@ -16,5 +17,5 @@ export const UpdateCartItemSchema = z.object({
     .number({ required_error: 'quantity is required.' })
     .int('quantity must be an integer.')
     .min(0, 'quantity cannot be negative.')
-    .max(20, 'quantity cannot exceed 20.'),
+    .max(9999, 'quantity cannot exceed 9,999 units.'), // INCREASED LIMIT
 })
