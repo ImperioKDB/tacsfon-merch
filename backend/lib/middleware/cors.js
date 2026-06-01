@@ -1,14 +1,15 @@
 
 export function applyCors(req, res) {
   const origin = req.headers.origin;
-  
-  // Hardened CORS: allow localhost and all Vercel subdomains
-  const isVercel = origin && (origin.endsWith('.vercel.app') || origin === 'http://localhost:3000');
+  const isAllowed = origin && (
+    origin.endsWith('.vercel.app') || 
+    origin === 'http://localhost:3000'
+  );
 
-  if (origin && isVercel) {
+  if (origin && isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else if (!origin) {
+  } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
