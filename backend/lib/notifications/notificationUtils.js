@@ -70,4 +70,7 @@ export const NotificationMessages = {
    */
   paymentIncomplete: (shortId) =>
     `Your payment for order #${shortId} seems incomplete. Please contact admin on WhatsApp.`,
-}
+
+  proofReceived: (shortId) =>
+    `Your payment proof for order #${shortId} has been received. We will confirm your payment shortly.`,
+};
