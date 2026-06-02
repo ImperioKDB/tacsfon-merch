@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link                                  from 'next/link'
 import Image                                 from 'next/image'
-import { ArrowLeft }                         from 'lucide-react'
+import { ArrowLeft, Bell }                   from 'lucide-react'
 import { StatusBadge }                       from './OrderCard'
 import StatusTimeline                        from './StatusTimeline'
 import MarkReceivedDialog                    from './MarkReceivedDialog'
@@ -20,6 +20,38 @@ export default function OrderDetailClient({ orderId }: Props) {
   const [loadState,   setLoadState]   = useState<LoadState>('loading')
   const [showReceive, setShowReceive] = useState(false)
   const [showUpload,  setShowUpload]  = useState(false)
+
+  // ── Notifications ─────────────────────────────────────────
+  const [notifs,      setNotifs]      = useState<Array<{
+    id: string
+    message: string
+    is_read: boolean
+    created_at: string
+  }>>([])
+
+  useEffect(() => {
+    apiFetch<{ notifications: Array<{ id: string; message: string; is_read: boolean; created_at: string }>; unread: number }>('/notifications')
+      .then(d => setNotifs(d.notifications.slice(0, 5)))
+      .catch(() => {/* non-critical */})
+  }, [])
+
+  function formatRelTime(dateString: string): string {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000)
+    if (seconds < 60)  return 'Just now'
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60)  return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24)    return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return days === 1  ? 'Yesterday' : `${days}d ago`
+  }
+
+  async function markNotifRead(id: string) {
+    try {
+      await apiFetch(`/notifications/${id}/read`, { method: 'PATCH' })
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+    } catch {/* non-blocking */}
+  }
 
   const fetchOrder = useCallback(async () => {
     setLoadState('loading')
@@ -202,6 +234,62 @@ export default function OrderDetailClient({ orderId }: Props) {
           <p className="text-zinc-500 text-xs mt-2 font-mono">
             {order.phone || 'No contact provided'}
           </p>
+        </div>
+
+
+        {/* Order Updates */}
+        <div className="bg-[#13131A] border border-[#2A2A38] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#2A2A38] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell size={14} className="text-[#C9A84C]" />
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                Order Updates
+              </p>
+            </div>
+            <Link
+              href="/notifications"
+              className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] hover:text-white transition-colors"
+            >
+              View all
+            </Link>
+          </div>
+
+          {notifs.length === 0 ? (
+            <div className="px-6 py-8 text-center">
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">
+                No updates yet
+              </p>
+              <p className="text-[10px] text-zinc-700 mt-1">
+                You'll be notified when your order status changes.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#1E1E2A]">
+              {notifs.map((notif) => (
+                <button
+                  key={notif.id}
+                  onClick={() => markNotifRead(notif.id)}
+                  className="w-full flex items-start gap-3 px-6 py-4 text-left hover:bg-[#0F0F16] transition-colors"
+                >
+                  <span
+                    className="mt-[6px] shrink-0 w-2 h-2 rounded-full"
+                    style={{ background: notif.is_read ? 'transparent' : 'var(--color-gold, #C9A84C)' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-xs leading-relaxed"
+                      style={{ color: notif.is_read ? 'var(--color-text-secondary, #6B7280)' : 'var(--color-text-primary, #F7F5F0)' }}
+                    >
+                      {notif.message}
+                    </p>
+                    <p className="text-[10px] text-zinc-600 mt-1">
+                      {formatRelTime(notif.created_at)}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
