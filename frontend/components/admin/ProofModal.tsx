@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
-import Image from 'next/image'
 import { toast } from 'sonner'
 import { apiFetch, ApiError } from '@/lib/api/fetch'
 interface Props { orderId: string; onClose: () => void }
@@ -25,7 +24,7 @@ export default function ProofModal({ orderId, onClose }: Props) {
         <div style={{ padding: '16px', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {loading
             ? <div className="animate-pulse" style={{ width: '100%', height: '300px', background: 'var(--color-surface-2)' }} />
-            : url ? <div style={{ position: 'relative', width: '100%', height: '400px' }}><Image src={url} alt="Payment proof" fill className="object-contain" /></div> : null}
+            : url ? <img src={url} alt="Payment proof" style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain', display: 'block', margin: '0 auto' }} /> : null}
         </div>
       </div>
     </div>
