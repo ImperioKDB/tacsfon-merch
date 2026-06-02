@@ -4,7 +4,7 @@ import { ArrowRight, ShoppingBag, Users, Star } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'About — TACSFON Merch',
-  description: 'Learn about the TACSFON Merch Store — premium community merchandise for TACSFON members.',
+  description: 'Learn about the TACSFON Merch Store — premium community merchandise for TACSFONITES.',
 }
 
 export default function AboutPage() {
@@ -18,7 +18,7 @@ export default function AboutPage() {
           Wear the Community.<br />Wear the Identity.
         </h1>
         <p style={{ fontSize: '1.0625rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7', maxWidth: '600px' }}>
-          TACSFON Merch is the official merchandise store of the TACSFON community —
+          TACSFON Merch is the official merchandise store of The Apostolic Church Student Fellowship Of Nigeria—
           a curated collection of premium clothing and accessories that let members
           carry their identity with pride wherever they go.
         </p>
@@ -39,7 +39,7 @@ export default function AboutPage() {
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7', marginBottom: '16px' }}>
             Every piece in the TACSFON collection is designed with intention — not just
             to look good, but to mean something. When you wear TACSFON Merch, you’re
-            representing a community built on excellence, service, and shared purpose.
+            representing a community built on excellence, service, and the shared purpose of Christ.
           </p>
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', lineHeight: '1.7' }}>
             We source quality materials, design with care, and deliver an experience
