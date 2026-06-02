@@ -78,12 +78,20 @@ export default function OrderDetailClient({ orderId }: Props) {
     <main className="min-h-screen px-4 py-24 md:px-8 bg-[#0A0A0F] text-[#F7F5F0]">
       <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
 
-        <Link
-          href="/orders"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={14} /> Back to orders
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/orders"
+            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to orders
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#C9A84C] hover:text-white transition-colors"
+          >
+            Return Home
+          </Link>
+        </div>
 
         {/* Status header */}
         <div className="p-8 bg-[#13131A] border border-[#2A2A38] space-y-6">
@@ -100,6 +108,34 @@ export default function OrderDetailClient({ orderId }: Props) {
           </div>
           <StatusTimeline status={order.status} />
         </div>
+
+
+        {/* Status notification */}
+        {order.status === 'payment_submitted' && (
+          <div className="px-6 py-4 bg-blue-950/40 border border-blue-800/50 text-blue-300 text-[10px] font-black uppercase tracking-widest">
+            Payment proof received — awaiting admin verification
+          </div>
+        )}
+        {order.status === 'confirmed' && (
+          <div className="px-6 py-4 bg-amber-950/40 border border-[#C9A84C]/40 text-[#C9A84C] text-[10px] font-black uppercase tracking-widest">
+            Payment confirmed — your order is being prepared
+          </div>
+        )}
+        {order.status === 'dispatched' && (
+          <div className="px-6 py-4 bg-green-950/40 border border-green-800/50 text-green-400 text-[10px] font-black uppercase tracking-widest">
+            Order dispatched — ready for collection / out for delivery
+          </div>
+        )}
+        {order.status === 'received' && (
+          <div className="px-6 py-4 bg-green-950/40 border border-green-800/50 text-green-400 text-[10px] font-black uppercase tracking-widest">
+            Order received — thank you!
+          </div>
+        )}
+        {order.status === 'cancelled' && (
+          <div className="px-6 py-4 bg-red-950/40 border border-red-800/50 text-red-400 text-[10px] font-black uppercase tracking-widest">
+            This order has been cancelled
+          </div>
+        )}
 
         {/* Items */}
         {displayItems.length > 0 && (

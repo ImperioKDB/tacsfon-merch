@@ -41,7 +41,7 @@ export async function getOrderWithItems(orderId, userId = null) {
     .from('orders')
     .select(`
       id, status, payment_status, proof_url, total,
-      delivery_address,
+      delivery_address, phone,
       created_at, updated_at, user_id,
       order_items (
         id, quantity, unit_price,
