@@ -9,7 +9,7 @@ import { useNotificationStore }             from '@/store/notifications'
 import {
   Bell, ShoppingBag, Package2,
   LogOut, ShieldCheck, ChevronRight,
-  RefreshCw, Zap,
+  RefreshCw, Zap, Pencil, Check, Loader2,
 } from 'lucide-react'
 import type { Order, Profile, Notification } from '@/types'
 
@@ -133,6 +133,9 @@ export default function ProfilePage() {
   const [pageLoading, setPageLoading] = useState(true)
   const [activeOrder, setActiveOrder] = useState<Order | null>(null)
   const [latestNotif, setLatestNotif] = useState<Notification | null>(null)
+  const [isEditing,   setIsEditing]   = useState(false)
+  const [isSaving,    setIsSaving]    = useState(false)
+  const [form,        setForm]        = useState({ phone: '', delivery_address: '' })
 
   const unread = useNotificationStore(s => s.unreadCount)
 
@@ -150,7 +153,10 @@ export default function ProfilePage() {
         apiFetch<{ notifications: Notification[]; unread: number }>('/notifications').catch(() => null),
       ])
 
-      if (prof) setProfile(prof as Profile)
+      if (prof) {
+        setProfile(prof as Profile)
+        setForm({ phone: prof.phone || '', delivery_address: (prof as any).delivery_address || '' })
+      }
 
       // FIX (a) continued: guard with Array.isArray
       const orders: Order[] = Array.isArray(ordersData) ? ordersData : []
@@ -165,6 +171,23 @@ export default function ProfilePage() {
       setPageLoading(false)
     }
   }, [user, supabase])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const updated = await apiFetch<Profile>('/auth/profile', {
+        method: 'PATCH',
+        body  : JSON.stringify(form),
+      })
+      setProfile(updated)
+      setForm({ phone: updated.phone || '', delivery_address: updated.delivery_address || '' })
+      setIsEditing(false)
+    } catch (err: any) {
+      alert(err.message || 'Failed to save. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   useEffect(() => { if (user) load() }, [user, load])
 
@@ -438,55 +461,181 @@ export default function ProfilePage() {
           </div>
         </Tile>
 
-        {/* D — Account Info */}
+        {/* D — Account Info (editable) */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile>
-            <Label>Account Info</Label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-              <div>
-                <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                  EMAIL
-                </p>
-                <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                  {user?.email ?? '—'}
-                </p>
-              </div>
-              <div>
-                <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                  CONTACT
-                </p>
-                <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace' }}>
-                  {profile?.phone ?? 'Not set — update in settings'}
-                </p>
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                  DEFAULT DELIVERY ADDRESS
-                </p>
-                <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace' }}>
-                  {profile?.delivery_address ?? 'Not set — update in settings'}
-                </p>
-              </div>
+            {/* Header row: label + edit/save/cancel buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <p style={{
+                fontSize     : '9px',
+                fontWeight   : 900,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color        : '#3E3E52',
+                fontFamily   : 'var(--font-inter, monospace)',
+                margin       : 0,
+              }}>
+                Account Info
+              </p>
+
+              {isEditing ? (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {/* Cancel */}
+                  <button
+                    onClick={() => {
+                      setIsEditing(false)
+                      setForm({ phone: profile?.phone || '', delivery_address: (profile as any)?.delivery_address || '' })
+                    }}
+                    disabled={isSaving}
+                    style={{
+                      display     : 'flex', alignItems: 'center', gap: '5px',
+                      background  : 'none', border: '1px solid #2A2A38',
+                      cursor      : 'pointer', color: '#6B7280',
+                      fontSize    : '9px', fontWeight: 900,
+                      letterSpacing: '0.15em', textTransform: 'uppercase',
+                      fontFamily  : 'monospace', padding: '5px 10px',
+                    }}
+                  >
+                    <Check size={10} /> Cancel
+                  </button>
+                  {/* Save */}
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    style={{
+                      display     : 'flex', alignItems: 'center', gap: '5px',
+                      background  : '#C9A84C', border: 'none',
+                      cursor      : 'pointer', color: '#050508',
+                      fontSize    : '9px', fontWeight: 900,
+                      letterSpacing: '0.15em', textTransform: 'uppercase',
+                      fontFamily  : 'monospace', padding: '5px 12px',
+                      opacity     : isSaving ? 0.6 : 1,
+                    }}
+                  >
+                    {isSaving
+                      ? <Loader2 size={10} className="animate-spin" />
+                      : <Check size={10} />
+                    }
+                    {isSaving ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  style={{
+                    display     : 'flex', alignItems: 'center', gap: '5px',
+                    background  : 'none', border: '1px solid #2A2A38',
+                    cursor      : 'pointer', color: '#C9A84C',
+                    fontSize    : '9px', fontWeight: 900,
+                    letterSpacing: '0.15em', textTransform: 'uppercase',
+                    fontFamily  : 'monospace', padding: '5px 10px',
+                    transition  : 'border-color 150ms ease',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#C9A84C')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#2A2A38')}
+                >
+                  <Pencil size={10} /> Edit
+                </button>
+              )}
             </div>
+
+            {/* Email — always read-only */}
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
+                EMAIL
+              </p>
+              <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {user?.email ?? '—'}
+              </p>
+            </div>
+
+            {isEditing ? (
+              /* ── Edit mode ── */
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+                <div>
+                  <label style={{
+                    display      : 'block',
+                    fontSize     : '9px', color: '#3E3E52',
+                    fontFamily   : 'monospace', letterSpacing: '0.2em',
+                    textTransform: 'uppercase', marginBottom: '8px',
+                  }}>
+                    Contact Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value })}
+                    placeholder="e.g. 08012345678"
+                    style={{
+                      width        : '100%', boxSizing: 'border-box',
+                      background   : '#0A0A0F', border: '1px solid #2A2A38',
+                      color        : '#F7F5F0', fontFamily: 'monospace',
+                      fontSize     : '13px', padding: '12px 14px',
+                      outline      : 'none',
+                    }}
+                    onFocus={e  => (e.target.style.borderColor = '#C9A84C')}
+                    onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
+                  />
+                </div>
+                <div>
+                  <label style={{
+                    display      : 'block',
+                    fontSize     : '9px', color: '#3E3E52',
+                    fontFamily   : 'monospace', letterSpacing: '0.2em',
+                    textTransform: 'uppercase', marginBottom: '8px',
+                  }}>
+                    Default Delivery Address
+                  </label>
+                  <textarea
+                    value={form.delivery_address}
+                    onChange={e => setForm({ ...form, delivery_address: e.target.value })}
+                    placeholder="e.g. Room 12, Block A, Campus Hostel"
+                    rows={3}
+                    style={{
+                      width       : '100%', boxSizing: 'border-box',
+                      background  : '#0A0A0F', border: '1px solid #2A2A38',
+                      color       : '#F7F5F0', fontFamily: 'monospace',
+                      fontSize    : '13px', padding: '12px 14px',
+                      outline     : 'none', resize: 'vertical',
+                    }}
+                    onFocus={e  => (e.target.style.borderColor = '#C9A84C')}
+                    onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* ── Read mode ── */
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                <div>
+                  <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
+                    CONTACT
+                  </p>
+                  <p style={{ fontSize: '12px', color: profile?.phone ? '#F7F5F0' : '#3E3E52', fontFamily: 'monospace' }}>
+                    {profile?.phone ?? 'Not set'}
+                  </p>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
+                    DEFAULT DELIVERY ADDRESS
+                  </p>
+                  <p style={{ fontSize: '12px', color: (profile as any)?.delivery_address ? '#F7F5F0' : '#3E3E52', fontFamily: 'monospace' }}>
+                    {(profile as any)?.delivery_address ?? 'Not set'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div style={{ height: '1px', background: '#1A1A24', margin: '0 0 20px' }} />
 
             <button
               onClick={signOut}
               style={{
-                display      : 'flex',
-                alignItems   : 'center',
-                gap          : '8px',
-                background   : 'none',
-                border       : 'none',
-                cursor       : 'pointer',
-                color        : '#4B1C1C',
-                fontSize     : '9px',
-                fontWeight   : 900,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                fontFamily   : 'monospace',
-                padding      : 0,
+                display      : 'flex', alignItems: 'center', gap: '8px',
+                background   : 'none', border: 'none',
+                cursor       : 'pointer', color: '#4B1C1C',
+                fontSize     : '9px', fontWeight: 900,
+                letterSpacing: '0.2em', textTransform: 'uppercase',
+                fontFamily   : 'monospace', padding: 0,
                 transition   : 'color 150ms ease',
               }}
               onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
