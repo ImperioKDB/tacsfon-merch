@@ -3,37 +3,36 @@
 import { useCallback, useRef, useState } from 'react'
 import { useRouter }                      from 'next/navigation'
 import { UploadCloud, FileText, X }       from 'lucide-react'
+import { createBrowserClient }            from '@/lib/supabase/browser'
 
-interface Props { orderId: string }
-
-const ACCEPTED_MIME  = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const
-const ACCEPTED_EXT   = '.jpg,.jpeg,.png,.webp,.pdf'
-const MAX_BYTES      = 5 * 1024 * 1024   // 5 MB
-
-type MimeType = typeof ACCEPTED_MIME[number]
-
-function isMimeAccepted(mime: string): mime is MimeType {
-  return (ACCEPTED_MIME as readonly string[]).includes(mime)
+interface Props {
+  orderId:   string
+  onSuccess?: () => void
 }
 
-export default function StepUploadProof({ orderId }: Props) {
+const MAX_BYTES   = 5 * 1024 * 1024
+const ACCEPTED    = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+const ACCEPTED_EXT = '.jpg,.jpeg,.png,.webp,.pdf'
+
+function isMimeAccepted(mime: string) {
+  return ACCEPTED.includes(mime)
+}
+
+export default function StepUploadProof({ orderId, onSuccess }: Props) {
   const router = useRouter()
 
-  const [file,       setFile]       = useState<File | null>(null)
-  const [preview,    setPreview]    = useState<string | null>(null)
-  const [dragging,   setDragging]   = useState(false)
-  const [fileError,  setFileError]  = useState<string | null>(null)
-  const [uploading,  setUploading]  = useState(false)
-  const [apiError,   setApiError]   = useState<string | null>(null)
+  const [file,      setFile]      = useState<File | null>(null)
+  const [preview,   setPreview]   = useState<string | null>(null)
+  const [dragging,  setDragging]  = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [apiError,  setApiError]  = useState<string | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // ── File validation ────────────────────────────────────────────────────────
 
   function processFile(f: File) {
     setFileError(null)
     setApiError(null)
-
     if (!isMimeAccepted(f.type)) {
       setFileError('Only JPG, PNG, WebP, and PDF files are accepted.')
       return
@@ -42,10 +41,7 @@ export default function StepUploadProof({ orderId }: Props) {
       setFileError('File is too large. Maximum size is 5MB.')
       return
     }
-
     setFile(f)
-
-    // Generate preview for image types only
     if (f.type !== 'application/pdf') {
       const url = URL.createObjectURL(f)
       setPreview(url)
@@ -62,23 +58,18 @@ export default function StepUploadProof({ orderId }: Props) {
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  // ── Drag and drop ─────────────────────────────────────────────────────────
-
   const onDragOver  = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragging(true)  }, [])
   const onDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragging(false) }, [])
   const onDrop      = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
     const f = e.dataTransfer.files?.[0]
     if (f) processFile(f)
-  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (f) processFile(f)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Upload ────────────────────────────────────────────────────────────────
 
   async function handleSubmit() {
     if (!file) return
@@ -86,23 +77,36 @@ export default function StepUploadProof({ orderId }: Props) {
     setApiError(null)
 
     try {
-      /**
-       * Backend reads raw body bytes (bodyParser: false).
-       * Send the file buffer directly; Content-Type must be the file's MIME.
-       */
-      const res = await fetch(`/api/orders/${orderId}/proof`, {
+      // FIX: Use absolute backend URL + auth token.
+      // The previous relative fetch('/api/...') was hitting Vercel (no such route),
+      // getting a 404 HTML response, failing to parse JSON, and showing "Connection issue."
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+      const res = await fetch(`${apiUrl}/api/orders/${orderId}/proof`, {
         method:  'POST',
-        headers: { 'Content-Type': file.type },
-        body:    file,
+        headers: {
+          'Content-Type': file.type,
+          ...(session?.access_token
+            ? { 'Authorization': `Bearer ${session.access_token}` }
+            : {}),
+        },
+        body: file,
       })
+
       const body = await res.json()
       if (body?.success) {
-        router.push(`/orders/${orderId}?proof=uploaded`)
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push(`/orders/${orderId}?proof=uploaded`)
+        }
       } else {
         setApiError(body?.error?.message ?? 'Upload failed. Please try again.')
       }
     } catch {
-      setApiError('Connection issue. Please check your internet and try again.')
+      setApiError('Upload failed. Please check your connection and try again.')
     } finally {
       setUploading(false)
     }
@@ -112,13 +116,11 @@ export default function StepUploadProof({ orderId }: Props) {
     router.push(`/orders/${orderId}`)
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   const shortId = orderId.slice(0, 8).toUpperCase()
 
   return (
     <div
-      className="rounded-2xl p-6 space-y-5"
+      className="p-6 space-y-5"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
     >
       {/* Heading */}
@@ -130,8 +132,9 @@ export default function StepUploadProof({ orderId }: Props) {
           Upload Payment Proof
         </h2>
         <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-          Order <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>#{shortId}</span> created.
-          Upload your transfer screenshot so we can confirm your payment.
+          Order{' '}
+          <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>#{shortId}</span>{' '}
+          created. Upload your transfer screenshot so we can confirm your payment.
         </p>
       </div>
 
@@ -142,8 +145,7 @@ export default function StepUploadProof({ orderId }: Props) {
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
-          className="rounded-xl flex flex-col items-center justify-center gap-3 py-12 px-6
-                     cursor-pointer transition-all select-none"
+          className="flex flex-col items-center justify-center gap-3 py-12 px-6 cursor-pointer transition-all select-none"
           style={{
             border:     `2px dashed ${dragging ? 'var(--color-gold)' : 'var(--color-border)'}`,
             background: dragging ? 'var(--color-gold-muted)' : 'var(--color-surface-2)',
@@ -158,7 +160,10 @@ export default function StepUploadProof({ orderId }: Props) {
               Drag &amp; drop your screenshot here
             </p>
             <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              or <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>click to browse</span>
+              or{' '}
+              <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>
+                click to browse
+              </span>
             </p>
             <p className="text-xs" style={{ color: 'var(--color-text-disabled)' }}>
               JPG, PNG, WebP, or PDF — max 5MB
@@ -173,28 +178,26 @@ export default function StepUploadProof({ orderId }: Props) {
           />
         </div>
       ) : (
-        /* File selected — show preview or PDF icon */
         <div
-          className="rounded-xl p-4 flex items-center gap-4"
+          className="p-4 flex items-center gap-4"
           style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}
         >
           {preview ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={preview}
               alt="Payment proof preview"
-              className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+              className="w-16 h-16 object-cover flex-shrink-0"
               style={{ border: '1px solid var(--color-border)' }}
             />
           ) : (
             <div
-              className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-16 h-16 flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
             >
               <FileText size={24} style={{ color: 'var(--color-gold)' }} />
             </div>
           )}
-
           <div className="flex-1 min-w-0">
             <p
               className="text-sm font-semibold truncate"
@@ -206,10 +209,9 @@ export default function StepUploadProof({ orderId }: Props) {
               {(file.size / 1024).toFixed(1)} KB
             </p>
           </div>
-
           <button
             onClick={clearFile}
-            className="p-1.5 rounded-lg flex-shrink-0 transition-all hover:opacity-80"
+            className="p-1.5 flex-shrink-0 hover:opacity-80 transition-all"
             style={{ background: 'var(--color-surface)', color: 'var(--color-error)' }}
             aria-label="Remove file"
           >
@@ -218,29 +220,22 @@ export default function StepUploadProof({ orderId }: Props) {
         </div>
       )}
 
-      {/* File error */}
       {fileError && (
         <p className="text-xs" style={{ color: 'var(--color-error)' }}>{fileError}</p>
       )}
-
-      {/* API error */}
       {apiError && (
         <p className="text-sm" style={{ color: 'var(--color-error)' }}>{apiError}</p>
       )}
 
-      {/* Submit */}
       <button
         onClick={handleSubmit}
         disabled={!file || uploading}
-        className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all
-                   hover:opacity-90 active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3.5 text-sm font-bold tracking-wide transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ background: 'var(--color-gold)', color: '#000' }}
       >
         {uploading ? (
           <span className="flex items-center justify-center gap-2">
-            <span
-              className="inline-block w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin"
-            />
+            <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black animate-spin" />
             Uploading…
           </span>
         ) : (
@@ -248,12 +243,11 @@ export default function StepUploadProof({ orderId }: Props) {
         )}
       </button>
 
-      {/* Skip */}
       <div className="text-center">
         <button
           onClick={handleSkip}
           disabled={uploading}
-          className="text-xs transition-all hover:underline disabled:opacity-40"
+          className="text-xs hover:underline disabled:opacity-40 transition-all"
           style={{ color: 'var(--color-text-disabled)' }}
         >
           Skip for now — I'll upload from my order page

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ShoppingBag }         from 'lucide-react'
 import OrderCard               from './OrderCard'
+import { apiFetch }            from '@/lib/api/fetch'
 import type { Order, OrderStatus } from '@/types'
 
 type Tab = 'all' | OrderStatus
@@ -21,12 +22,10 @@ function EmptyState({ tab }: { tab: Tab }) {
   const label = tab === 'all' ? 'orders' : 'matching orders'
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-surface-2)' }}>
-        <ShoppingBag size={28} style={{ color: 'var(--color-text-disabled)' }} />
+      <div className="w-16 h-16 flex items-center justify-center bg-zinc-900">
+        <ShoppingBag size={28} className="text-zinc-600" />
       </div>
-      <div className="text-center space-y-1">
-        <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>No {label} yet</p>
-      </div>
+      <p className="font-semibold text-white">No {label} yet</p>
     </div>
   )
 }
@@ -40,13 +39,13 @@ export default function OrdersClient() {
     async function load() {
       setLoadState('loading')
       try {
-        const res  = await fetch('/api/orders', { cache: 'no-store' })
-        const body = await res.json()
-        if (body?.success) {
-          setOrders(body.data ?? [])
-          setLoadState('ready')
-        } else { setLoadState('error') }
-      } catch { setLoadState('error') }
+        // apiFetch prepends NEXT_PUBLIC_API_URL and attaches auth token
+        const data = await apiFetch<Order[]>('/orders')
+        setOrders(data ?? [])
+        setLoadState('ready')
+      } catch {
+        setLoadState('error')
+      }
     }
     load()
   }, [])
@@ -56,19 +55,19 @@ export default function OrdersClient() {
     : orders.filter(o => o.status === activeTab)
 
   return (
-    <main className="min-h-screen px-4 py-10 md:px-8 lg:px-16" style={{ background: 'var(--color-bg)' }}>
+    <main className="min-h-screen px-4 py-10 md:px-8 lg:px-16 bg-[#0A0A0F]">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6" style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-urbanist)' }}>My Orders</h1>
-        
-        <div className="flex gap-1 p-1 rounded-xl mb-6 overflow-x-auto" style={{ background: 'var(--color-surface)' }}>
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-white">My Orders</h1>
+
+        <div className="flex gap-1 p-1 bg-zinc-900 mb-6 overflow-x-auto">
           {TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+              className="flex-shrink-0 px-4 py-2 text-sm font-semibold transition-all"
               style={{
                 background: activeTab === tab.key ? 'var(--color-gold)' : 'transparent',
-                color: activeTab === tab.key ? '#000' : 'var(--color-text-secondary)',
+                color: activeTab === tab.key ? '#000' : '#9CA3AF',
               }}
             >
               {tab.label}
@@ -76,13 +75,24 @@ export default function OrdersClient() {
           ))}
         </div>
 
-        {loadState === 'loading' && <div className="h-20 animate-pulse bg-zinc-900 rounded-xl" />}
+        {loadState === 'loading' && (
+          <div className="h-20 animate-pulse bg-zinc-900" />
+        )}
+        {loadState === 'error' && (
+          <p className="text-center text-zinc-500 py-10">
+            Could not load orders. Please refresh.
+          </p>
+        )}
         {loadState === 'ready' && (
-          filtered.length === 0 ? <EmptyState tab={activeTab} /> : (
-            <div className="space-y-3">
-              {filtered.map(order => <OrderCard key={order.id} order={order} />)}
-            </div>
-          )
+          filtered.length === 0
+            ? <EmptyState tab={activeTab} />
+            : (
+              <div className="space-y-3">
+                {filtered.map(order => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            )
         )}
       </div>
     </main>
