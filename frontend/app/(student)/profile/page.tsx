@@ -9,14 +9,14 @@ import { useNotificationStore }             from '@/store/notifications'
 import {
   Bell, ShoppingBag, Package2,
   LogOut, ShieldCheck, ChevronRight,
-  RefreshCw, Zap, AlertCircle,
+  RefreshCw, Zap,
 } from 'lucide-react'
-import type { Order, Profile } from '@/types'
+import type { Order, Profile, Notification } from '@/types'
 
-// ─── Status stepper ──────────────────────────────────────────
-const STEPS        = ['pending_payment', 'payment_submitted', 'confirmed', 'dispatched'] as const
-const STEP_LABELS  = ['Placed', 'Verified', 'Confirmed', 'Dispatched']
-const TERMINAL     = ['received', 'cancelled']
+// ─── Status stepper ───────────────────────────────────────────
+const STEPS       = ['pending_payment', 'payment_submitted', 'confirmed', 'dispatched'] as const
+const STEP_LABELS = ['Placed', 'Verified', 'Confirmed', 'Dispatched']
+const TERMINAL    = ['received', 'cancelled']
 
 function OrderStepper({ status }: { status: string }) {
   const idx = STEPS.indexOf(status as typeof STEPS[number])
@@ -28,9 +28,9 @@ function OrderStepper({ status }: { status: string }) {
             <div
               className="w-2 h-2 rounded-full transition-all duration-500"
               style={{
-                background : i <= idx ? '#C9A84C' : '#2A2A38',
-                boxShadow  : i === idx ? '0 0 8px 2px rgba(201,168,76,0.5)' : 'none',
-                transform  : i === idx ? 'scale(1.4)' : 'scale(1)',
+                background: i <= idx ? '#C9A84C' : '#2A2A38',
+                boxShadow : i === idx ? '0 0 8px 2px rgba(201,168,76,0.5)' : 'none',
+                transform : i === idx ? 'scale(1.4)' : 'scale(1)',
               }}
             />
             <p
@@ -70,6 +70,7 @@ function Tile({
     flexDirection: 'column',
     transition   : 'transform 120ms ease, border-color 200ms ease, box-shadow 200ms ease',
     cursor       : href || onClick ? 'pointer' : 'default',
+    textDecoration: 'none',
     ...style,
   }
 
@@ -101,7 +102,9 @@ function Tile({
     </div>
   )
 
-  return href ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link> : inner
+  return href
+    ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link>
+    : inner
 }
 
 // ─── Eyebrow label ────────────────────────────────────────────
@@ -126,10 +129,10 @@ export default function ProfilePage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth()
   const supabase = createBrowserClient()
 
-  const [profile,      setProfile]      = useState<Profile | null>(null)
-  const [pageLoading,  setPageLoading]  = useState(true)
-  const [activeOrder,  setActiveOrder]  = useState<Order | null>(null)
-  const [latestNotif,  setLatestNotif]  = useState<{ message: string; is_read: boolean } | null>(null)
+  const [profile,     setProfile]     = useState<Profile | null>(null)
+  const [pageLoading, setPageLoading] = useState(true)
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null)
+  const [latestNotif, setLatestNotif] = useState<Notification | null>(null)
 
   const unread = useNotificationStore(s => s.unreadCount)
 
@@ -138,23 +141,27 @@ export default function ProfilePage() {
     try {
       const [{ data: prof }, ordersData, notifsData] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
-        apiFetch<{ products: Order[]; data?: { orders?: Order[] } }>('/orders?limit=5').catch(() => null),
-        apiFetch<{ notifications: { message: string; is_read: boolean }[] }>('/notifications').catch(() => null),
+
+        // FIX (a): GET /orders returns Order[] directly via apiFetch (body.data is the array).
+        //          Do NOT do ordersData?.orders — that is always undefined.
+        apiFetch<Order[]>('/orders').catch(() => null),
+
+        // GET /notifications returns { notifications: Notification[], unread: number }
+        apiFetch<{ notifications: Notification[]; unread: number }>('/notifications').catch(() => null),
       ])
 
       if (prof) setProfile(prof as Profile)
 
-      // Find most recent non-terminal order
-      const orders: Order[] = (ordersData as any)?.orders
-        ?? (ordersData as any)?.data?.orders
-        ?? []
+      // FIX (a) continued: guard with Array.isArray
+      const orders: Order[] = Array.isArray(ordersData) ? ordersData : []
       const active = orders.find(o => !TERMINAL.includes(o.status))
       setActiveOrder(active ?? null)
 
-      if (notifsData?.notifications?.length) {
-        setLatestNotif(notifsData.notifications[0])
-      }
+      const notifs = notifsData?.notifications
+      if (notifs?.length) setLatestNotif(notifs[0])
+
     } finally {
+      // FIX (b): always clear loading, even if fetches fail
       setPageLoading(false)
     }
   }, [user, supabase])
@@ -169,29 +176,24 @@ export default function ProfilePage() {
     )
   }
 
-  const firstName  = profile?.full_name?.split(' ')[0]?.toUpperCase() || 'MEMBER'
-  const memberId   = user?.id?.slice(0, 8).toUpperCase() ?? '--------'
-  const sinceYear  = profile?.created_at
+  const firstName = profile?.full_name?.split(' ')[0]?.toUpperCase() || 'MEMBER'
+  const memberId  = user?.id?.slice(0, 8).toUpperCase() ?? '--------'
+  const sinceYear = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase()
     : '---'
 
   return (
     <div style={{ minHeight: '100vh', background: '#050508', color: '#F7F5F0', paddingBottom: '80px' }}>
 
-      {/* ── Header ────────────────────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────── */}
       <div style={{ maxWidth: '720px', margin: '0 auto', padding: '80px 24px 40px' }}>
-
-        {/* Ambient glow behind name */}
-        <div style={{
-          position        : 'relative',
-          marginBottom    : '6px',
-        }}>
+        <div style={{ position: 'relative', marginBottom: '6px' }}>
           <div style={{
-            position   : 'absolute',
-            top        : '50%', left: '-10%',
-            width      : '60%', height: '120%',
-            background : 'radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%)',
-            transform  : 'translateY(-50%)',
+            position    : 'absolute',
+            top         : '50%', left: '-10%',
+            width       : '60%', height: '120%',
+            background  : 'radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%)',
+            transform   : 'translateY(-50%)',
             pointerEvents: 'none',
           }} />
           <h1 style={{
@@ -209,7 +211,6 @@ export default function ProfilePage() {
           </h1>
         </div>
 
-        {/* ID card line */}
         <p style={{
           fontFamily   : 'monospace',
           fontSize     : '10px',
@@ -221,7 +222,6 @@ export default function ProfilePage() {
           MEMBER · {memberId} · SINCE {sinceYear}
         </p>
 
-        {/* Access badge */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <ShieldCheck size={12} style={{ color: isAdmin ? '#C9A84C' : '#3E3E52' }} />
           <span style={{
@@ -237,18 +237,17 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Bento Grid ────────────────────────────────────────── */}
+      {/* ── Bento Grid ─────────────────────────────────────── */}
       <div style={{
-        maxWidth    : '720px',
-        margin      : '0 auto',
-        padding     : '0 24px',
-        display     : 'grid',
+        maxWidth           : '720px',
+        margin             : '0 auto',
+        padding            : '0 24px',
+        display            : 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
-        gridTemplateRows   : 'auto auto auto',
-        gap         : '12px',
+        gap                : '12px',
       }}>
 
-        {/* A — Notification Portal (full width) */}
+        {/* A — Notification Portal */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile href="/notifications">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -288,31 +287,32 @@ export default function ProfilePage() {
                 <Bell size={16} style={{ color: unread > 0 ? '#C9A84C' : '#3E3E52' }} />
                 {unread > 0 && (
                   <span style={{
-                    position : 'absolute', top: '-4px', right: '-4px',
-                    width    : '8px', height: '8px',
+                    position  : 'absolute', top: '-4px', right: '-4px',
+                    width     : '8px', height: '8px',
                     background: '#C9A84C', borderRadius: '50%',
-                    boxShadow: '0 0 6px #C9A84C',
-                    animation: 'pulse 2s infinite',
+                    boxShadow : '0 0 6px #C9A84C',
+                    animation : 'pulse 2s infinite',
                   }} />
                 )}
               </div>
+
               <div style={{ flex: 1, minWidth: 0 }}>
                 {latestNotif ? (
                   <>
                     <p style={{
-                      fontSize   : '13px',
-                      fontWeight : latestNotif.is_read ? 400 : 700,
-                      color      : latestNotif.is_read ? '#6B7280' : '#F7F5F0',
-                      lineHeight : 1.4,
-                      overflow   : 'hidden',
-                      display    : '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
+                      fontSize        : '13px',
+                      fontWeight      : latestNotif.is_read ? 400 : 700,
+                      color           : latestNotif.is_read ? '#6B7280' : '#F7F5F0',
+                      lineHeight      : 1.4,
+                      overflow        : 'hidden',
+                      display         : '-webkit-box',
+                      WebkitLineClamp : 2,
+                      WebkitBoxOrient : 'vertical',
                     }}>
                       {latestNotif.message}
                     </p>
                     <p style={{ fontSize: '10px', color: '#3E3E52', marginTop: '4px', fontFamily: 'monospace' }}>
-                      Tap to view all notifications →
+                      Tap to view all →
                     </p>
                   </>
                 ) : (
@@ -333,7 +333,7 @@ export default function ProfilePage() {
           </Tile>
         </div>
 
-        {/* B — Active Order Snapshot (full width) */}
+        {/* B — Active Order Snapshot */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile href={activeOrder ? `/orders/${activeOrder.id}` : '/orders'}>
             <Label>Active Order</Label>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                     border       : '1px solid rgba(201,168,76,0.2)',
                     padding      : '4px 10px',
                   }}>
-                    {activeOrder.status.replace('_', ' ')}
+                    {activeOrder.status.replace(/_/g, ' ')}
                   </p>
                 </div>
                 <OrderStepper status={activeOrder.status} />
@@ -372,9 +372,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Package2 size={20} style={{ color: '#3E3E52' }} />
                 <div>
-                  <p style={{ fontSize: '13px', color: '#3E3E52', fontWeight: 600 }}>
-                    No active orders
-                  </p>
+                  <p style={{ fontSize: '13px', color: '#3E3E52', fontWeight: 600 }}>No active orders</p>
                   <p style={{ fontSize: '10px', color: '#2A2A38', marginTop: '2px', fontFamily: 'monospace' }}>
                     VIEW ORDER HISTORY →
                   </p>
@@ -412,7 +410,7 @@ export default function ProfilePage() {
           </div>
         </Tile>
 
-        {/* C2 — View Bag */}
+        {/* C2 — Cart */}
         <Tile href="/cart">
           <Label>Cart</Label>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
@@ -440,7 +438,7 @@ export default function ProfilePage() {
           </div>
         </Tile>
 
-        {/* D — Security Vault (full width) */}
+        {/* D — Account Info */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile>
             <Label>Account Info</Label>
@@ -458,12 +456,19 @@ export default function ProfilePage() {
                   CONTACT
                 </p>
                 <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace' }}>
-                  {profile?.phone ?? 'Not set'}
+                  {profile?.phone ?? 'Not set — update in settings'}
+                </p>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
+                  DEFAULT DELIVERY ADDRESS
+                </p>
+                <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace' }}>
+                  {profile?.delivery_address ?? 'Not set — update in settings'}
                 </p>
               </div>
             </div>
 
-            {/* Divider */}
             <div style={{ height: '1px', background: '#1A1A24', margin: '0 0 20px' }} />
 
             <button
@@ -481,8 +486,8 @@ export default function ProfilePage() {
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
                 fontFamily   : 'monospace',
-                transition   : 'color 150ms ease',
                 padding      : 0,
+                transition   : 'color 150ms ease',
               }}
               onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
               onMouseLeave={e => (e.currentTarget.style.color = '#4B1C1C')}
@@ -497,7 +502,7 @@ export default function ProfilePage() {
 
       <style>{`
         @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
+          0%, 100% { opacity: 1; transform: scale(1);    }
           50%       { opacity: 0.6; transform: scale(0.85); }
         }
       `}</style>

@@ -1,19 +1,19 @@
-
 // --- Auth & Profiles ---
 export interface Profile {
   id: string;
   full_name: string;
   email: string;
   phone: string | null;
+  delivery_address: string | null;   // ← ADDED: backed by DB migration
   role: 'student' | 'admin';
-  created_at: string; product?: Product;
+  created_at: string;
 }
 
 // --- Catalogue ---
 export interface Category {
   id: string;
   name: string;
-  created_at: string; product?: Product;
+  created_at: string;
 }
 
 export interface ProductVariant {
@@ -23,7 +23,8 @@ export interface ProductVariant {
   color: string | null;
   stock_qty: number;
   price_override: number | null;
-  created_at: string; product?: Product;
+  created_at: string;
+  product?: Product;
 }
 
 export interface Product {
@@ -36,7 +37,7 @@ export interface Product {
   model_url: string | null;
   is_available: boolean;
   stock_type: 'stock' | 'preorder' | 'both';
-  created_at: string; product?: Product;
+  created_at: string;
   updated_at: string;
   category?: Category;
   variants?: ProductVariant[];
@@ -60,17 +61,16 @@ export interface Cart {
 }
 
 // --- Orders ---
-// ALIGNED WITH DB: 'pending' is NOT a valid status. We use 'pending_payment'.
-export type OrderStatus = 
-  | 'pending_payment' 
-  | 'payment_submitted' 
-  | 'confirmed' 
-  | 'dispatched' 
-  | 'received' 
+export type OrderStatus =
+  | 'pending_payment'
+  | 'payment_submitted'
+  | 'confirmed'
+  | 'dispatched'
+  | 'received'
   | 'cancelled';
 
 export type PaymentStatus = 'unpaid' | 'paid' | 'incomplete';
-export type OrderType = 'online' | 'walkin';
+export type OrderType     = 'online' | 'walkin';
 
 export interface Order {
   id: string;
@@ -83,7 +83,7 @@ export interface Order {
   phone: string | null;
   customer_name: string | null;
   proof_url: string | null;
-  created_at: string; product?: Product;
+  created_at: string;
   updated_at: string;
   items?: any[];
   profile?: Profile;
@@ -95,9 +95,8 @@ export interface Notification {
   user_id: string;
   message: string;
   is_read: boolean;
-  created_at: string; product?: Product;
+  created_at: string;
 }
-
 
 export interface OrderItem {
   id: string;
@@ -107,7 +106,6 @@ export interface OrderItem {
   unit_price: number;
   variant?: ProductVariant & { product?: Product };
 }
-
 
 export interface BankDetails {
   bank_name: string;
