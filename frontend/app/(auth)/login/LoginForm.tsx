@@ -20,7 +20,7 @@ export default function LoginForm() {
       toast.error(error.message)
       setLoading(false)
     } else {
-      window.location.href = '/profile'
+      window.location.href = '/products'
     }
   }
 
