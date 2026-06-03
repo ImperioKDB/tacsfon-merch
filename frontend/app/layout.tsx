@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import './styles/globals.css'
+import '../styles/globals.css'
 
 export const metadata: Metadata = {
   title:       'TACSFON Merch Store',
@@ -12,9 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/*
           Runs synchronously before React hydrates.
-          Reads saved preference and applies data-theme to <html> with zero flash.
-          suppressHydrationWarning on <html> is required because the attribute
-          value may differ between server render ("dark") and client read.
+          Reads saved preference and applies data-theme with zero flash.
         */}
         <script
           dangerouslySetInnerHTML={{
