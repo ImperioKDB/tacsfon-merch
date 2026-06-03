@@ -1,14 +1,9 @@
-import type { Metadata } from 'next'
 import OrderDetailClient from '@/components/orders/OrderDetailClient'
 
-export const metadata: Metadata = {
-  title: 'Order Detail — TACSFON Merch',
+interface Props {
+  params: { id: string }
 }
 
-export default function OrderDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function OrderDetailPage({ params }: Props) {
   return <OrderDetailClient orderId={params.id} />
 }
