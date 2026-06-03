@@ -12,8 +12,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { UploadCloud, FileImage, X, CheckCircle2 } from 'lucide-react'
-import { apiFetch } from '@/lib/api/fetch'
-import { toast }    from 'sonner'
+import { toast } from 'sonner'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_MB        = 5
@@ -25,11 +24,11 @@ interface Props {
 }
 
 export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
-  const [file,       setFile]       = useState<File | null>(null)
-  const [preview,    setPreview]    = useState<string | null>(null)
-  const [dragging,   setDragging]   = useState(false)
-  const [uploading,  setUploading]  = useState(false)
-  const [uploaded,   setUploaded]   = useState(false)
+  const [file,      setFile]      = useState<File | null>(null)
+  const [preview,   setPreview]   = useState<string | null>(null)
+  const [dragging,  setDragging]  = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploaded,  setUploaded]  = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const pick = useCallback((f: File) => {
@@ -58,9 +57,23 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     if (!file) return
     setUploading(true)
     try {
-      const form = new FormData()
+      const API    = process.env.NEXT_PUBLIC_API_URL ?? ''
+      const form   = new FormData()
       form.append('proof', file)
-      await apiFetch(`/orders/${orderId}/proof`, { method: 'POST', body: form, isFormData: true })
+
+      // Use native fetch for multipart so the browser sets the correct
+      // Content-Type boundary automatically (apiFetch would force JSON headers).
+      const res = await fetch(`${API}/api/orders/${orderId}/proof`, {
+        method:      'POST',
+        body:        form,
+        credentials: 'include',
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.message ?? `Upload failed (${res.status})`)
+      }
+
       setUploaded(true)
       toast.success('Payment proof uploaded successfully!')
     } catch (e: any) {
@@ -72,14 +85,36 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
 
   if (uploaded) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', padding: '48px 0', textAlign: 'center' }}>
+      <div style={{
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        gap:            '24px',
+        padding:        '48px 0',
+        textAlign:      'center',
+      }}>
         <CheckCircle2 size={56} style={{ color: 'var(--success)' }} strokeWidth={1.5} />
         <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '0.04em', color: 'var(--text-primary)', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
+          <h2 style={{
+            fontFamily:    'var(--font-display)',
+            fontSize:      '32px',
+            letterSpacing: '0.04em',
+            color:         'var(--text-primary)',
+            margin:        '0 0 8px 0',
+            textTransform: 'uppercase',
+          }}>
             Order Placed!
           </h2>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '320px', margin: '0 auto' }}>
-            Your order has been submitted. The TACSFON team will confirm your payment shortly and you'll receive a notification.
+          <p style={{
+            fontFamily:  'var(--font-body)',
+            fontSize:    '14px',
+            color:       'var(--text-muted)',
+            lineHeight:  1.6,
+            maxWidth:    '320px',
+            margin:      '0 auto',
+          }}>
+            Your order has been submitted. The TACSFON team will confirm your
+            payment shortly and you'll receive a notification.
           </p>
         </div>
         <button
@@ -114,7 +149,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         onDrop={onDrop}
         onClick={() => !file && inputRef.current?.click()}
         style={{
-          border:         `2px dashed ${dragging ? 'var(--accent)' : file ? 'var(--border)' : 'var(--border)'}`,
+          border:         `2px dashed ${dragging ? 'var(--accent)' : 'var(--border)'}`,
           background:     dragging ? 'rgba(201,168,76,0.06)' : 'var(--bg-surface)',
           padding:        '40px 24px',
           display:        'flex',
@@ -138,7 +173,6 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
 
         {preview ? (
           <>
-            {/* Preview */}
             <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -174,10 +208,20 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         ) : (
           <>
             <div style={{ color: dragging ? 'var(--accent)' : 'var(--text-muted)', transition: 'color 150ms' }}>
-              {dragging ? <UploadCloud size={40} strokeWidth={1.2} /> : <FileImage size={40} strokeWidth={1.2} />}
+              {dragging
+                ? <UploadCloud size={40} strokeWidth={1.2} />
+                : <FileImage  size={40} strokeWidth={1.2} />
+              }
             </div>
             <div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: dragging ? 'var(--accent)' : 'var(--text-primary)', fontWeight: 600, margin: '0 0 4px 0', transition: 'color 150ms' }}>
+              <p style={{
+                fontFamily: 'var(--font-body)',
+                fontSize:   '14px',
+                color:      dragging ? 'var(--accent)' : 'var(--text-primary)',
+                fontWeight: 600,
+                margin:     '0 0 4px 0',
+                transition: 'color 150ms',
+              }}>
                 {dragging ? 'Drop it here' : 'Upload your payment screenshot'}
               </p>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
@@ -193,19 +237,19 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
           onClick={onBack}
           disabled={uploading}
           style={{
-            flex:           '0 0 auto',
-            minHeight:      '52px',
-            padding:        '0 24px',
-            background:     'var(--bg-surface)',
-            border:         '1px solid var(--border)',
-            color:          'var(--text-muted)',
-            fontFamily:     'var(--font-body)',
-            fontSize:       '12px',
-            fontWeight:     700,
-            letterSpacing:  '0.12em',
-            textTransform:  'uppercase',
-            cursor:         uploading ? 'not-allowed' : 'pointer',
-            opacity:        uploading ? 0.5 : 1,
+            flex:          '0 0 auto',
+            minHeight:     '52px',
+            padding:       '0 24px',
+            background:    'var(--bg-surface)',
+            border:        '1px solid var(--border)',
+            color:         'var(--text-muted)',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '12px',
+            fontWeight:    700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            cursor:        uploading ? 'not-allowed' : 'pointer',
+            opacity:       uploading ? 0.5 : 1,
           }}
         >
           ← Back
