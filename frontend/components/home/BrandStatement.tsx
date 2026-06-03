@@ -1,54 +1,64 @@
-'use client'
-
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 export default function BrandStatement() {
   return (
     <section
       aria-labelledby="brand-heading"
       style={{
-        background: 'var(--color-surface)',
-        borderTop: '1px solid var(--color-border)',
-        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--bg-surface)',
+        borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)',
         padding: '100px 24px',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* Decorative corner marks */}
-      {(['top-left','top-right','bottom-left','bottom-right'] as const).map((pos) => {
-        const [v, h] = pos.split('-') as ['top'|'bottom', 'left'|'right']
-        return (
-          <div
-            key={pos}
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              [v]: '24px',
-              [h]: '24px',
-              width: '20px',
-              height: '20px',
-              borderTop:    v === 'top'    ? `1px solid var(--color-gold)` : 'none',
-              borderBottom: v === 'bottom' ? `1px solid var(--color-gold)` : 'none',
-              borderLeft:   h === 'left'   ? `1px solid var(--color-gold)` : 'none',
-              borderRight:  h === 'right'  ? `1px solid var(--color-gold)` : 'none',
-            }}
-          />
-        )
-      })}
+      {/* Background glow */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      {/* Corner marks */}
+      {([
+        { top: '24px',    left: '24px',  borderTop: '1px solid', borderLeft: '1px solid',  borderBottom: 'none', borderRight: 'none' },
+        { top: '24px',    right: '24px', borderTop: '1px solid', borderRight: '1px solid', borderBottom: 'none', borderLeft: 'none'  },
+        { bottom: '24px', left: '24px',  borderBottom: '1px solid', borderLeft: '1px solid',  borderTop: 'none', borderRight: 'none' },
+        { bottom: '24px', right: '24px', borderBottom: '1px solid', borderRight: '1px solid', borderTop: 'none', borderLeft: 'none'  },
+      ] as const).map((style, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            width: '20px',
+            height: '20px',
+            borderColor: 'rgba(201,168,76,0.3)',
+            borderStyle: 'solid',
+            ...style,
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      <div style={{ maxWidth: '720px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <span
           style={{
             display: 'block',
-            fontFamily: 'var(--font-inter)',
-            fontSize: '0.625rem',
-            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            fontSize: '10px',
+            fontWeight: 600,
             letterSpacing: '0.28em',
             textTransform: 'uppercase',
-            color: 'var(--color-gold)',
-            marginBottom: '24px',
+            color: 'var(--accent)',
+            marginBottom: '28px',
           }}
         >
           Who We Are
@@ -57,45 +67,75 @@ export default function BrandStatement() {
         <h2
           id="brand-heading"
           style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontWeight: 700,
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(36px, 6vw, 72px)',
             lineHeight: 1,
-            letterSpacing: '0.02em',
-            color: 'var(--color-text-primary)',
-            marginBottom: '32px',
+            letterSpacing: '0.04em',
+            color: 'var(--text-primary)',
+            marginBottom: '8px',
           }}
         >
-          Premium Merch.<br />
-          <span style={{ color: 'var(--color-gold)' }}>Fellowship Spirit.</span>
+          PREMIUM MERCH.
+        </h2>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(36px, 6vw, 72px)',
+            lineHeight: 1,
+            letterSpacing: '0.04em',
+            color: 'var(--accent)',
+            marginBottom: '36px',
+          }}
+        >
+          FELLOWSHIP SPIRIT.
         </h2>
 
+        {/* Gold rule */}
         <div
+          aria-hidden="true"
           style={{
             width: '48px',
             height: '2px',
-            background: 'var(--color-gold)',
-            margin: '0 auto 28px',
+            background: 'var(--accent)',
+            margin: '0 auto 32px',
           }}
         />
 
         <p
           style={{
-            fontFamily: 'var(--font-inter)',
-            fontSize: 'clamp(0.9375rem, 1.5vw, 1.0625rem)',
-            color: 'var(--color-text-secondary)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'clamp(15px, 1.5vw, 17px)',
+            color: 'var(--text-muted)',
             lineHeight: 1.8,
-            maxWidth: '560px',
+            maxWidth: '520px',
             margin: '0 auto 40px',
           }}
         >
-          TACSFON Merch exists to outfit the community with quality that
-          reflects our values. Every piece is designed with intention —
-          because what you wear says who you are.
+          TACSFON Merch exists to outfit the community with quality that reflects
+          our values. Every piece is designed with intention — because what you
+          wear says who you are.
         </p>
 
-        <Link href="/about" className="cta-outline">
-          Our Story
+        <Link
+          href="/about"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'var(--font-body)',
+            fontSize: '12px',
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
+            padding: '14px 28px',
+            textDecoration: 'none',
+            transition: 'border-color 150ms ease, color 150ms ease',
+          }}
+          className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          Our Story <ArrowRight size={13} strokeWidth={2} />
         </Link>
       </div>
     </section>

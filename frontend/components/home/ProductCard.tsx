@@ -1,89 +1,214 @@
 'use client'
+
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react'
+import { ShoppingCart, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatPrice, resolveImageUrl } from '@/lib/utils/formatters'
 import { useCartStore } from '@/store/cart'
 import { apiFetch } from '@/lib/api/fetch'
 import type { Product } from '@/types'
 
-export default function ProductCard({ product }: { product: Product }) {
-  const [qty, setQty] = useState(1)
-  const [isAdding, setIsAdding] = useState(false)
-  const incrementCart = useCartStore(s => s.increment)
+interface HomeProductCardProps {
+  product:  Product
+  priority?: boolean
+}
 
-  const variants = product.variants || (product as any).product_variants || []
+export default function HomeProductCard({ product, priority = false }: HomeProductCardProps) {
+  const [isAdding, setIsAdding] = useState(false)
+  const incrementCart = useCartStore((s) => s.increment)
+
+  const variants     = product.variants || (product as any).product_variants || []
   const firstVariant = variants[0]
   const displayPrice = formatPrice(firstVariant?.price_override ?? product.base_price)
-  const img = resolveImageUrl(product.image_url)
+  const img          = resolveImageUrl(product.image_url)
+
+  // Stock badge
+  const totalQty = variants.reduce((sum: number, v: any) => sum + (v.stock_qty ?? 0), 0)
+  const badge =
+    product.stock_type === 'preorder'
+      ? { label: 'Pre-order', color: 'var(--accent)',   bg: 'rgba(201,168,76,0.12)' }
+      : totalQty <= 3 && totalQty > 0
+      ? { label: 'Low Stock', color: 'var(--danger)',   bg: 'rgba(224,82,82,0.12)' }
+      : totalQty === 0
+      ? { label: 'Sold Out',  color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
+      : null
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevents clicking the card from opening the product page
-    e.stopPropagation();
-    
-    if (!firstVariant) return toast.error("Product configuration missing");
-    
-    setIsAdding(true);
+    e.preventDefault()
+    e.stopPropagation()
+    if (!firstVariant) return toast.error('Please select a variant on the product page')
+    setIsAdding(true)
     try {
       await apiFetch('/cart/items', {
         method: 'POST',
-        body: JSON.stringify({ variant_id: firstVariant.id, quantity: qty })
-      });
-      incrementCart(qty);
-      toast.success(`${qty} Added to Cart`);
+        body: JSON.stringify({ variant_id: firstVariant.id, quantity: 1 }),
+      })
+      incrementCart(1)
+      toast.success(`${product.name} added to cart`)
     } catch (err: any) {
-      toast.error(err.message || "Login required to shop");
+      toast.error(err.message || 'Sign in to add items to cart')
     } finally {
-      setIsAdding(false);
+      setIsAdding(false)
     }
   }
 
   return (
-    <div className="group bg-zinc-900/40 border border-zinc-800 hover:border-gold/30 transition-all flex flex-col">
-      <Link href={`/products/${product.id}`} className="block relative aspect-square overflow-hidden bg-zinc-950">
+    <div className="product-card">
+      <Link
+        href={`/products/${product.id}`}
+        style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}
+        aria-label={`View ${product.name} — ${displayPrice}`}
+        tabIndex={0}
+      >
+        {/* Image */}
         {img ? (
-          <Image src={img} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" unoptimized />
+          <Image
+            src={img}
+            alt={product.name}
+            fill
+            priority={priority}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="product-card__image"
+            style={{ objectFit: 'cover' }}
+            unoptimized
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-zinc-800">NO IMAGE</div>
-        )}
-      </Link>
-      
-      <div className="p-4 flex-1 flex flex-col">
-        <div className="mb-4">
-          <h3 className="text-white font-bold text-sm uppercase tracking-tight truncate">{product.name}</h3>
-          <p className="text-gold font-black text-lg font-mono">{displayPrice}</p>
-        </div>
-
-        {/* INTERACTIVE ROW */}
-        <div className="mt-auto space-y-3">
-          <div className="flex items-center justify-between bg-black/40 border border-zinc-800 p-1">
-            <button 
-              onClick={(e) => { e.preventDefault(); setQty(Math.max(1, qty - 1)); }}
-              className="p-2 text-zinc-500 hover:text-white"
-            >
-              <Minus size={14}/>
-            </button>
-            <span className="text-xs font-black text-white w-8 text-center">{qty}</span>
-            <button 
-              onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
-              className="p-2 text-zinc-500 hover:text-white"
-            >
-              <Plus size={14}/>
-            </button>
-          </div>
-
-          <button 
-            onClick={handleQuickAdd}
-            disabled={isAdding}
-            className="w-full bg-white text-black py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gold transition-all"
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: 'var(--bg-elevated)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            {isAdding ? <Loader2 size={12} className="animate-spin"/> : <ShoppingCart size={12}/>}
-            {isAdding ? "Adding..." : "Add to Cart"}
+            <ShoppingCart size={32} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
+          </div>
+        )}
+
+        {/* Hover overlay */}
+        <div className="product-card__overlay" aria-hidden="true" />
+
+        {/* Hover info panel */}
+        <div className="product-card__info">
+          <p
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '18px',
+              letterSpacing: '0.04em',
+              color: '#fff',
+              lineHeight: 1.1,
+              marginBottom: '4px',
+              textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+            }}
+          >
+            {product.name}
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--accent)',
+              marginBottom: '12px',
+            }}
+          >
+            {displayPrice}
+          </p>
+          {/* Quick Add */}
+          <button
+            onClick={handleQuickAdd}
+            disabled={isAdding || totalQty === 0}
+            aria-label={`Quick add ${product.name} to cart`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#000',
+              background: isAdding ? 'var(--accent-hover)' : 'var(--accent)',
+              border: 'none',
+              padding: '10px 18px',
+              cursor: isAdding || totalQty === 0 ? 'not-allowed' : 'pointer',
+              opacity: totalQty === 0 ? 0.5 : 1,
+              transition: 'background 150ms ease',
+              minHeight: '40px',
+            }}
+          >
+            {isAdding
+              ? <Loader2 size={12} className="animate-spin" />
+              : <ShoppingCart size={12} strokeWidth={2} />
+            }
+            {isAdding ? 'Adding…' : 'Quick Add'}
           </button>
         </div>
+
+        {/* Stock badge */}
+        {badge && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: badge.color,
+              background: badge.bg,
+              padding: '4px 10px',
+              border: `1px solid ${badge.color}40`,
+            }}
+          >
+            {badge.label}
+          </div>
+        )}
+      </Link>
+
+      {/* Below-image info — visible on mobile (no hover) */}
+      <div
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--text-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '60%',
+          }}
+        >
+          {product.name}
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '14px',
+            fontWeight: 700,
+            color: 'var(--accent)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {displayPrice}
+        </p>
       </div>
     </div>
-  );
+  )
 }

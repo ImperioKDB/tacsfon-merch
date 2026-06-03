@@ -1,19 +1,14 @@
-'use client';
-
-/**
- * ProductCard
- *
- * - Square aspect-ratio image container
- * - "Quick View" overlay button fades in on hover
- * - Stock badges: In Stock (green), Pre-order (gold), Low Stock ≤3 (red), Out of Stock (grey)
- * - Price: "from ₦X" when variant prices differ
- */
 'use client'
 
-import Image              from 'next/image'
-import Link               from 'next/link'
-import { useState }       from 'react'
-import { Eye, ShoppingBag } from 'lucide-react'
+/**
+ * ProductCard — used in the /products grid page.
+ * Matches the home ProductCard aesthetic but is self-contained
+ * (no quick-add, just a clean click-through to the detail page).
+ */
+
+import Image from 'next/image'
+import Link  from 'next/link'
+import { ShoppingBag } from 'lucide-react'
 
 interface Variant {
   id:             string
@@ -36,121 +31,151 @@ interface Product {
 function getStockBadge(product: Product) {
   const variants = product.product_variants ?? []
   const totalQty = variants.reduce((sum, v) => sum + (v.stock_qty ?? 0), 0)
-
-  if (product.stock_type === 'preorder') {
-    return { label: 'Pre-order',   color: 'var(--color-gold)',          bg: 'var(--color-gold-muted)' }
-  }
-  if (totalQty <= 3 && totalQty > 0) {
-    return { label: 'Low Stock',   color: 'var(--color-error)',         bg: 'rgba(217,79,79,0.15)' }
-  }
-  if (totalQty === 0) {
-    return { label: 'Out of Stock',color: 'var(--color-text-disabled)', bg: 'rgba(74,72,68,0.2)' }
-  }
-  return   { label: 'In Stock',    color: 'var(--color-success)',       bg: 'rgba(45,158,107,0.15)' }
+  if (product.stock_type === 'preorder')    return { label: 'Pre-order', color: 'var(--accent)',    bg: 'rgba(201,168,76,0.12)' }
+  if (totalQty <= 3 && totalQty > 0)        return { label: 'Low Stock', color: 'var(--danger)',    bg: 'rgba(224,82,82,0.12)' }
+  if (totalQty === 0)                       return { label: 'Sold Out',  color: 'var(--text-muted)',bg: 'rgba(255,255,255,0.06)' }
+  return null
 }
 
 function getDisplayPrice(product: Product): string {
   const variants = product.product_variants ?? []
-  const prices   = variants.map(v => v.price_override ?? product.base_price)
-
-  if (prices.length === 0) return `₦${product.base_price.toLocaleString()}`
-
+  const prices   = variants.map((v) => v.price_override ?? product.base_price)
+  if (!prices.length) return `₦${product.base_price.toLocaleString()}`
   const min = Math.min(...prices)
   const max = Math.max(...prices)
-  return min === max
-    ? `₦${min.toLocaleString()}`
-    : `from ₦${min.toLocaleString()}`
+  return min === max ? `₦${min.toLocaleString()}` : `from ₦${min.toLocaleString()}`
 }
 
 export default function ProductCard({ product }: { product: Product }) {
-  const [hovered, setHovered] = useState(false)
   const badge        = getStockBadge(product)
   const displayPrice = getDisplayPrice(product)
 
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group block"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="product-card"
+      style={{ display: 'block', textDecoration: 'none' }}
+      aria-label={`${product.name} — ${displayPrice}`}
     >
-      <div
-        className="overflow-hidden rounded-2xl"
-        style={{
-          background:     'var(--glass-bg)',
-          border:         '1px solid var(--glass-border)',
-          backdropFilter: 'var(--glass-blur)',
-          boxShadow:      hovered ? 'var(--shadow-gold)' : 'var(--shadow-sm)',
-          transform:      hovered ? 'translateY(-4px)' : 'translateY(0)',
-          transition:     'transform 250ms cubic-bezier(0.4,0,0.2,1), box-shadow 250ms cubic-bezier(0.4,0,0.2,1)',
-        }}
-      >
-        {/* Image */}
-        <div className="relative aspect-square w-full overflow-hidden">
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover"
-              style={{
-                transform:  hovered ? 'scale(1.06)' : 'scale(1)',
-                transition: 'transform 500ms cubic-bezier(0.4,0,0.2,1)',
-              }}
-            />
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center"
-              style={{ background: 'var(--color-surface-2)' }}
-            >
-              <ShoppingBag size={40} strokeWidth={1.5} style={{ color: 'var(--color-text-disabled)' }} />
-            </div>
-          )}
-
-          {/* Quick View overlay */}
+      {/* Image */}
+      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
+        {product.image_url ? (
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="product-card__image"
+            style={{ objectFit: 'cover' }}
+            unoptimized
+          />
+        ) : (
           <div
-            className="absolute inset-0 flex items-center justify-center"
             style={{
-              background: 'rgba(10,10,15,0.55)',
-              opacity:    hovered ? 1 : 0,
-              transition: 'opacity 200ms ease',
+              width: '100%',
+              height: '100%',
+              background: 'var(--bg-elevated)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <span
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
-              style={{ background: 'var(--color-gold)', color: '#0A0A0F', minHeight: '44px' }}
-            >
-              <Eye size={16} strokeWidth={1.5} />
-              Quick View
-            </span>
+            <ShoppingBag size={32} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
           </div>
+        )}
 
-          {/* Stock badge */}
-          <div
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold"
+        {/* Hover overlay */}
+        <div className="product-card__overlay" aria-hidden="true" />
+
+        {/* Hover label */}
+        <div
+          className="product-card__info"
+          style={{ pointerEvents: 'none' }}
+        >
+          <p
             style={{
-              color:      badge.color,
+              fontFamily: 'var(--font-display)',
+              fontSize: '20px',
+              letterSpacing: '0.04em',
+              color: '#fff',
+              lineHeight: 1.1,
+              marginBottom: '4px',
+              textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+            }}
+          >
+            {product.name}
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: 'var(--accent)',
+            }}
+          >
+            {displayPrice}
+          </p>
+        </div>
+
+        {/* Stock badge */}
+        {badge && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: badge.color,
               background: badge.bg,
-              border:     `1px solid ${badge.color}40`,
+              padding: '4px 10px',
+              border: `1px solid ${badge.color}40`,
             }}
           >
             {badge.label}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Info */}
-        <div className="p-4">
-          <h3
-            className="line-clamp-2 text-sm font-semibold leading-snug"
-            style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-urbanist)' }}
-          >
-            {product.name}
-          </h3>
-          <p className="mt-1.5 text-base font-bold" style={{ color: 'var(--color-gold)' }}>
-            {displayPrice}
-          </p>
-        </div>
+      {/* Below-image info */}
+      <div
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'var(--text-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {product.name}
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '14px',
+            fontWeight: 700,
+            color: 'var(--accent)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {displayPrice}
+        </p>
       </div>
     </Link>
   )
