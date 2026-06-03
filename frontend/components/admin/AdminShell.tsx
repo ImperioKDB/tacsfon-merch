@@ -3,9 +3,8 @@
 /**
  * AdminShell
  *
- * Phase 10 — Admin UI.
- * Left sidebar nav (collapsible on desktop, overlay drawer on mobile).
- * Admin accent: #5B8CFF (blue) — distinct from storefront gold.
+ * Phase 10 (patch) — Added adminName prop.
+ * Displays the logged-in admin's name in the sidebar footer.
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -136,11 +135,16 @@ const NAV_ITEMS: NavItem[] = [
 
 // ── AdminShell ────────────────────────────────────────────────────────────────
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+interface AdminShellProps {
+  children:   React.ReactNode
+  adminName?: string
+}
+
+export default function AdminShell({ children, adminName }: AdminShellProps) {
   const pathname = usePathname()
-  const [collapsed,   setCollapsed]   = useState(false)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
-  const [ordersOpen,  setOrdersOpen]  = useState(() =>
+  const [collapsed,  setCollapsed]  = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [ordersOpen, setOrdersOpen] = useState(() =>
     ORDER_CHILDREN.some(c => pathname.startsWith(c.href))
   )
   const drawerRef = useRef<HTMLDivElement>(null)
@@ -170,27 +174,27 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     const isHighlighted  = active || anyChildActive
 
     const baseStyle: React.CSSProperties = {
-      display:        'flex',
-      alignItems:     'center',
-      gap:            '10px',
-      padding:        compact ? '10px 0' : '10px 12px',
-      justifyContent: compact ? 'center' : 'flex-start',
-      background:     isHighlighted ? `${ADMIN_ACCENT}14` : 'transparent',
-      borderLeft:     isHighlighted ? `2px solid ${ADMIN_ACCENT}` : '2px solid transparent',
-      color:          isHighlighted ? ADMIN_ACCENT : 'var(--text-muted)',
-      fontFamily:     'var(--font-body)',
-      fontSize:       '13px',
-      fontWeight:     isHighlighted ? 600 : 400,
-      letterSpacing:  '0.04em',
-      textDecoration: 'none',
-      cursor:         'pointer',
-      transition:     'all 0.15s ease',
-      borderRadius:   '0 4px 4px 0',
-      width:          '100%',
-      border:         'none',
+      display:         'flex',
+      alignItems:      'center',
+      gap:             '10px',
+      padding:         compact ? '10px 0' : '10px 12px',
+      justifyContent:  compact ? 'center' : 'flex-start',
+      background:      isHighlighted ? `${ADMIN_ACCENT}14` : 'transparent',
+      borderLeft:      isHighlighted ? `2px solid ${ADMIN_ACCENT}` : '2px solid transparent',
+      color:           isHighlighted ? ADMIN_ACCENT : 'var(--text-muted)',
+      fontFamily:      'var(--font-body)',
+      fontSize:        '13px',
+      fontWeight:      isHighlighted ? 600 : 400,
+      letterSpacing:   '0.04em',
+      textDecoration:  'none',
+      cursor:          'pointer',
+      transition:      'all 0.15s ease',
+      borderRadius:    '0 4px 4px 0',
+      width:           '100%',
+      border:          'none',
       borderLeftWidth: '2px',
       borderLeftStyle: 'solid',
-      boxSizing:      'border-box' as const,
+      boxSizing:       'border-box' as const,
     }
 
     if (item.children) {
@@ -247,6 +251,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   // ── Sidebar ───────────────────────────────────────────────────────────────
   function Sidebar({ compact, mobile = false }: { compact: boolean; mobile?: boolean }) {
+    const isCompact = compact && !mobile
     return (
       <div style={{
         width:         mobile ? '260px' : compact ? '56px' : '220px',
@@ -262,16 +267,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         overflowX:     'hidden',
         overflowY:     'auto',
       }}>
+
         {/* Header */}
         <div style={{
           display:        'flex',
           alignItems:     'center',
-          justifyContent: compact && !mobile ? 'center' : 'space-between',
-          padding:        compact && !mobile ? '20px 0' : '20px 16px',
+          justifyContent: isCompact ? 'center' : 'space-between',
+          padding:        isCompact ? '20px 0' : '20px 16px',
           borderBottom:   `1px solid rgba(91,140,255,0.08)`,
           flexShrink:     0,
         }}>
-          {(!compact || mobile) && (
+          {!isCompact && (
             <div>
               <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', color: ADMIN_ACCENT, letterSpacing: '0.2em' }}>
                 TACSFON
@@ -310,26 +316,120 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 0', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {NAV_ITEMS.map(item => (
-            <NavItemEl key={item.href} item={item} compact={compact && !mobile} />
+            <NavItemEl key={item.href} item={item} compact={isCompact} />
           ))}
         </nav>
 
-        {/* Back to store */}
-        <div style={{ padding: compact && !mobile ? '16px 0' : '16px', borderTop: `1px solid rgba(91,140,255,0.08)`, flexShrink: 0 }}>
+        {/* Footer — admin name + back to store */}
+        <div style={{
+          padding:     isCompact ? '16px 0' : '14px 16px',
+          borderTop:   `1px solid rgba(91,140,255,0.08)`,
+          flexShrink:  0,
+          display:     'flex',
+          flexDirection: 'column',
+          gap:         '10px',
+        }}>
+          {/* Admin name badge */}
+          {!isCompact && adminName && (
+            <div style={{
+              display:      'flex',
+              alignItems:   'center',
+              gap:          '8px',
+              padding:      '8px 10px',
+              background:   `${ADMIN_ACCENT}0D`,
+              border:       `1px solid ${ADMIN_ACCENT}20`,
+              borderRadius: '6px',
+            }}>
+              {/* Avatar circle with initial */}
+              <div style={{
+                width:          '26px',
+                height:         '26px',
+                borderRadius:   '50%',
+                background:     `${ADMIN_ACCENT}22`,
+                border:         `1px solid ${ADMIN_ACCENT}44`,
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                flexShrink:     0,
+              }}>
+                <span style={{
+                  fontFamily:  'var(--font-body)',
+                  fontSize:    '11px',
+                  fontWeight:  700,
+                  color:       ADMIN_ACCENT,
+                  lineHeight:  1,
+                }}>
+                  {adminName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{
+                  margin:       0,
+                  fontFamily:   'var(--font-body)',
+                  fontSize:     '12px',
+                  fontWeight:   600,
+                  color:        'var(--text-primary)',
+                  whiteSpace:   'nowrap',
+                  overflow:     'hidden',
+                  textOverflow: 'ellipsis',
+                }}>
+                  {adminName}
+                </p>
+                <p style={{
+                  margin:      '1px 0 0',
+                  fontFamily:  'var(--font-mono)',
+                  fontSize:    '9px',
+                  color:       ADMIN_ACCENT,
+                  letterSpacing: '0.15em',
+                }}>
+                  ADMIN
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Compact mode: just show avatar initial */}
+          {isCompact && adminName && (
+            <div style={{
+              display:        'flex',
+              justifyContent: 'center',
+            }}>
+              <div style={{
+                width:          '30px',
+                height:         '30px',
+                borderRadius:   '50%',
+                background:     `${ADMIN_ACCENT}22`,
+                border:         `1px solid ${ADMIN_ACCENT}44`,
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, color: ADMIN_ACCENT }}>
+                  {adminName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Back to store link */}
           <Link href="/" style={{
             display:        'flex',
             alignItems:     'center',
             gap:            '8px',
-            justifyContent: compact && !mobile ? 'center' : 'flex-start',
+            justifyContent: isCompact ? 'center' : 'flex-start',
             fontFamily:     'var(--font-body)',
             fontSize:       '12px',
             color:          'var(--text-muted)',
             textDecoration: 'none',
-          }}>
+            transition:     'color 0.15s',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            {(!compact || mobile) && <span>Back to Store</span>}
+            {!isCompact && <span>Back to Store</span>}
           </Link>
         </div>
       </div>
@@ -367,7 +467,25 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '0.1em' }}>
             ADMIN
           </p>
-          <div style={{ width: '20px' }} />
+          {/* Mobile: avatar initial top-right */}
+          {adminName ? (
+            <div style={{
+              width:          '28px',
+              height:         '28px',
+              borderRadius:   '50%',
+              background:     `${ADMIN_ACCENT}22`,
+              border:         `1px solid ${ADMIN_ACCENT}44`,
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+            }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 700, color: ADMIN_ACCENT }}>
+                {adminName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          ) : (
+            <div style={{ width: '28px' }} />
+          )}
         </div>
       </div>
 
