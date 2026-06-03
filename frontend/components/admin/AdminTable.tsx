@@ -7,45 +7,26 @@ export interface Column<T> {
   render: (row: T) => React.ReactNode 
 }
 
-interface AdminTableProps<T> { 
-  columns: Column<T>[]; 
-  rows: T[]; 
-  loading: boolean; 
-  emptyMessage?: string 
-}
-
 export default function AdminTable<T extends { id: string }>({ 
   columns, rows, loading, emptyMessage = 'No data.' 
-}: AdminTableProps<T>) {
+}: { columns: Column<T>[], rows: T[], loading: boolean, emptyMessage?: string }) {
   return (
     <div className="border border-white/5 overflow-x-auto">
-      <table className="w-full border-collapse text-[11px] font-body uppercase tracking-wider">
+      <table className="w-full text-[10px] font-body uppercase tracking-wider">
         <thead>
-          <tr className="bg-white/5">
-            {columns.map(col => (
-              <th key={col.key} className="p-4 text-left font-black text-zinc-500 border-b border-white/5 whitespace-nowrap">
-                {col.label}
-              </th>
-            ))}
+          <tr className="bg-white/5 text-zinc-500">
+            {columns.map(col => <th key={col.key} className="p-4 text-left font-black">{col.label}</th>)}
           </tr>
         </thead>
         <tbody>
           {loading ? (
-            [1,2,3].map(i => (
-              <tr key={i} className="border-b border-white/5 animate-pulse">
-                {columns.map(c => <td key={c.key} className="p-4"><div className="h-2 bg-white/5 w-12" /></td>)}
-              </tr>
-            ))
+             <tr className="animate-pulse"><td colSpan={columns.length} className="p-12 text-center text-zinc-800">SYNCING_VAULT...</td></tr>
           ) : rows.length === 0 ? (
-            <tr><td colSpan={columns.length} className="p-12 text-center text-zinc-600 italic">{emptyMessage}</td></tr>
+             <tr><td colSpan={columns.length} className="p-12 text-center text-zinc-600">{emptyMessage}</td></tr>
           ) : (
             rows.map(row => (
-              <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                {columns.map(col => (
-                  <td key={col.key} className="p-4 text-[#F5F0E8] vertical-middle">
-                    {col.render(row)}
-                  </td>
-                ))}
+              <tr key={row.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
+                {columns.map(col => <td key={col.key} className="p-4 text-[#F5F0E8]">{col.render(row)}</td>)}
               </tr>
             ))
           )}
