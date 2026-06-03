@@ -1,21 +1,27 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import Link                                 from 'next/link'
-import Image                                from 'next/image'
-import { Trash2, ShoppingBag }              from 'lucide-react'
-import { toast }                            from 'sonner'
-import { useCartStore }                     from '@/store/cart'
-import { apiFetch }                         from '@/lib/api/fetch'
-import { formatPrice }                      from '@/lib/utils/formatters'
+/**
+ * CartClient — Phase 6
+ *
+ * Orchestrates the /cart page.
+ * Inline CSS only — no Tailwind utility classes.
+ */
 
-interface Variant {
+import { useState, useEffect, useCallback } from 'react'
+import { toast }                             from 'sonner'
+import { apiFetch }                          from '@/lib/api/fetch'
+import { useCartStore }                      from '@/store/cart'
+import CartItemRow                           from './CartItemRow'
+import CartSummary                           from './CartSummary'
+import ClearCartDialog                       from './ClearCartDialog'
+import EmptyCart                             from './EmptyCart'
+
+interface CartVariant {
   id:             string
-  size:           string
-  color:          string
+  size:           string | null
+  color:          string | null
   price_override: number | null
-  product: {
-    id:         string
+  product?: {
     name:       string
     base_price: number
     image_url:  string | null
@@ -23,351 +29,157 @@ interface Variant {
 }
 
 interface CartItem {
-  id:       string
-  quantity: number
-  variant:  Variant
+  id:         string
+  variant_id: string
+  quantity:   number
+  unit_price: number
+  variant?:   CartVariant
+}
+
+interface CartData {
+  id:    string
+  items: CartItem[]
+  total: number
+}
+
+function buildVariantLabel(v: CartVariant | undefined): string {
+  if (!v) return ''
+  const parts = []
+  if (v.size  && v.size  !== 'Default') parts.push(v.size)
+  if (v.color && v.color !== 'Default') parts.push(v.color)
+  return parts.join(' · ')
 }
 
 export default function CartClient() {
-  const [items,   setItems]   = useState<CartItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const setCount              = useCartStore((s) => s.setCount)
+  const [cart,         setCart]         = useState<CartData | null>(null)
+  const [loading,      setLoading]      = useState(true)
+  const [updatingId,   setUpdatingId]   = useState<string | null>(null)
+  const [showClearDlg, setShowClearDlg] = useState(false)
+  const [isClearing,   setIsClearing]   = useState(false)
 
-  // useCallback so fetchCart is stable and safe to list as a useEffect dep
+  const setCartCount = useCartStore(s => s.setCount)
+
   const fetchCart = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: CartItem[] }>('/cart')
-      setItems(res.data ?? [])
-      setCount((res.data ?? []).reduce((n, i) => n + i.quantity, 0))
+      const data = await apiFetch<CartData>('/cart')
+      setCart(data)
+      const count = (data.items ?? []).reduce((acc, i) => acc + i.quantity, 0)
+      setCartCount(count)
     } catch {
-      setItems([])
+      setCart(null)
     } finally {
       setLoading(false)
     }
-  }, [setCount])
+  }, [setCartCount])
 
   useEffect(() => { fetchCart() }, [fetchCart])
 
-  const removeItem = async (id: string) => {
+  const handleQuantityChange = async (itemId: string, qty: number) => {
+    setUpdatingId(itemId)
     try {
-      await apiFetch(`/cart/items/${id}`, { method: 'DELETE' })
+      await apiFetch(`/cart/items/${itemId}`, { method: 'PATCH', body: JSON.stringify({ quantity: qty }) })
+      await fetchCart()
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update quantity')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const handleRemove = async (itemId: string) => {
+    setUpdatingId(itemId)
+    try {
+      await apiFetch(`/cart/items/${itemId}`, { method: 'DELETE' })
       await fetchCart()
       toast.success('Item removed')
-    } catch {
-      toast.error('Failed to remove item')
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to remove item')
+    } finally {
+      setUpdatingId(null)
     }
   }
 
-  const updateQty = async (id: string, quantity: number) => {
-    if (quantity < 1) return removeItem(id)
+  const handleClearCart = async () => {
+    setShowClearDlg(false)
+    setIsClearing(true)
     try {
-      await apiFetch(`/cart/items/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ quantity }),
-      })
+      const items = cart?.items ?? []
+      await Promise.all(items.map(i => apiFetch(`/cart/items/${i.id}`, { method: 'DELETE' })))
       await fetchCart()
-    } catch {
-      toast.error('Failed to update quantity')
+      toast.success('Cart cleared')
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to clear cart')
+    } finally {
+      setIsClearing(false)
     }
   }
-
-  const subtotal = items.reduce((sum, item) => {
-    const price = item.variant.price_override ?? item.variant.product.base_price
-    return sum + price * item.quantity
-  }, 0)
 
   if (loading) {
     return (
-      <div style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        Loading cart…
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 24px' }}>
+        <div style={{ height: '32px', width: '160px', background: 'var(--bg-surface)', marginBottom: '32px', animation: 'pulse 1.4s ease infinite' }} />
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{ display: 'flex', gap: '16px', paddingBottom: '24px', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
+            <div style={{ width: '80px', height: '96px', background: 'var(--bg-surface)', flexShrink: 0, animation: 'pulse 1.4s ease infinite' }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ height: '20px', width: '70%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
+              <div style={{ height: '14px', width: '40%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
+              <div style={{ height: '18px', width: '30%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
+            </div>
+          </div>
+        ))}
+        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
       </div>
     )
   }
 
-  if (!items.length) {
-    return (
-      <div
-        style={{
-          padding: '96px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '20px',
-        }}
-      >
-        <ShoppingBag size={48} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '28px',
-            color: 'var(--text-muted)',
-            letterSpacing: '0.04em',
-          }}
-        >
-          YOUR CART IS EMPTY
-        </p>
-        <Link
-          href="/products"
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '12px',
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#000',
-            background: 'var(--accent)',
-            padding: '14px 32px',
-            textDecoration: 'none',
-          }}
-        >
-          Shop Now
-        </Link>
-      </div>
-    )
-  }
+  const items     = cart?.items ?? []
+  if (items.length === 0) return <EmptyCart />
+
+  const subtotal  = cart?.total ?? items.reduce((a, i) => a + i.unit_price * i.quantity, 0)
+  const itemCount = items.reduce((a, i) => a + i.quantity, 0)
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '64px 24px' }}>
-      <h1
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(36px, 5vw, 56px)',
-          letterSpacing: '0.04em',
-          color: 'var(--text-primary)',
-          marginBottom: '40px',
-        }}
-      >
-        YOUR CART
-      </h1>
+    <>
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 24px 240px 24px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 6vw, 48px)', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
+          Your Cart
+        </h1>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 32px 0' }}>
+          {itemCount} item{itemCount !== 1 ? 's' : ''}
+        </p>
 
-      {/* Items */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
-        {items.map((item) => {
-          const price  = item.variant.price_override ?? item.variant.product.base_price
-          const imgSrc = item.variant.product.image_url
-          const name   = item.variant.product.name
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, var(--accent) 0%, transparent 100%)', marginBottom: '8px' }} />
 
-          return (
-            <div
-              key={item.id}
-              style={{
-                background: 'var(--bg-base)',
-                display: 'flex',
-                gap: '20px',
-                padding: '20px',
-                alignItems: 'flex-start',
-              }}
-            >
-              {/* Thumbnail */}
-              <div
-                style={{
-                  position: 'relative',
-                  width: '80px',
-                  height: '107px',
-                  flexShrink: 0,
-                  background: 'var(--bg-elevated)',
-                  overflow: 'hidden',
-                }}
-              >
-                {imgSrc ? (
-                  <Image
-                    src={imgSrc}
-                    alt={name}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    sizes="80px"
-                    unoptimized
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <ShoppingBag size={20} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    marginBottom: '4px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {name}
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '12px',
-                    color: 'var(--text-muted)',
-                    marginBottom: '12px',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {item.variant.size} · {item.variant.color}
-                </p>
-
-                {/* Qty stepper + price row */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)' }}>
-                    {[
-                      { label: '−', action: () => updateQty(item.id, item.quantity - 1) },
-                      { label: String(item.quantity), action: null },
-                      { label: '+', action: () => updateQty(item.id, item.quantity + 1) },
-                    ].map(({ label, action }, i) =>
-                      action === null ? (
-                        <span
-                          key="qty"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: '13px',
-                            color: 'var(--text-primary)',
-                            padding: '6px 14px',
-                            borderLeft: '1px solid var(--border)',
-                            borderRight: '1px solid var(--border)',
-                            minWidth: '40px',
-                            textAlign: 'center',
-                          }}
-                        >
-                          {label}
-                        </span>
-                      ) : (
-                        <button
-                          key={i}
-                          onClick={action}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'var(--text-muted)',
-                            padding: '6px 12px',
-                            fontSize: '16px',
-                            minWidth: '36px',
-                            minHeight: '36px',
-                          }}
-                        >
-                          {label}
-                        </button>
-                      )
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '15px',
-                        fontWeight: 700,
-                        color: 'var(--accent)',
-                      }}
-                    >
-                      {formatPrice(price * item.quantity)}
-                    </p>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      aria-label={`Remove ${name}`}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text-muted)',
-                        display: 'flex',
-                        minWidth: '36px',
-                        minHeight: '36px',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {items.map(item => (
+          <CartItemRow
+            key={item.id}
+            id={item.id}
+            name={item.variant?.product?.name ?? 'Product'}
+            variantLabel={buildVariantLabel(item.variant)}
+            unitPrice={item.unit_price}
+            quantity={item.quantity}
+            imageUrl={item.variant?.product?.image_url ?? null}
+            onQuantityChange={handleQuantityChange}
+            onRemove={handleRemove}
+            isUpdating={updatingId === item.id}
+          />
+        ))}
       </div>
 
-      {/* Summary */}
-      <div
-        style={{
-          marginTop: '1px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          padding: '24px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '13px',
-              color: 'var(--text-muted)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Subtotal
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '20px',
-              fontWeight: 700,
-              color: 'var(--accent)',
-            }}
-          >
-            {formatPrice(subtotal)}
-          </span>
-        </div>
-        <Link
-          href="/checkout"
-          style={{
-            display: 'block',
-            width: '100%',
-            textAlign: 'center',
-            fontFamily: 'var(--font-body)',
-            fontSize: '13px',
-            fontWeight: 700,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#000',
-            background: 'var(--accent)',
-            padding: '18px',
-            textDecoration: 'none',
-          }}
-        >
-          Proceed to Checkout
-        </Link>
-      </div>
-    </div>
+      <CartSummary
+        subtotal={subtotal}
+        itemCount={itemCount}
+        onClearCart={() => setShowClearDlg(true)}
+        isClearing={isClearing}
+      />
+
+      {showClearDlg && (
+        <ClearCartDialog
+          onConfirm={handleClearCart}
+          onCancel={() => setShowClearDlg(false)}
+        />
+      )}
+    </>
   )
 }
