@@ -1,256 +1,239 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
-import { useRouter }                      from 'next/navigation'
-import { UploadCloud, FileText, X }       from 'lucide-react'
-import { createBrowserClient }            from '@/lib/supabase/browser'
+/**
+ * StepUploadProof — Phase 7
+ *
+ * Checkout step 3: student uploads payment screenshot / receipt.
+ * - Drag-and-drop zone: dashed border turns gold on drag-over
+ * - File thumbnail preview after selection
+ * - Client-side size/type validation before submit
+ * - Inline CSS only — no Tailwind utility classes
+ */
+
+import { useState, useCallback, useRef } from 'react'
+import { UploadCloud, FileImage, X, CheckCircle2 } from 'lucide-react'
+import { apiFetch } from '@/lib/api/fetch'
+import { toast }    from 'sonner'
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_MB        = 5
 
 interface Props {
-  orderId:   string
-  onSuccess?: () => void
+  orderId: string
+  onDone:  () => void
+  onBack:  () => void
 }
 
-const MAX_BYTES   = 5 * 1024 * 1024
-const ACCEPTED    = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-const ACCEPTED_EXT = '.jpg,.jpeg,.png,.webp,.pdf'
-
-function isMimeAccepted(mime: string) {
-  return ACCEPTED.includes(mime)
-}
-
-export default function StepUploadProof({ orderId, onSuccess }: Props) {
-  const router = useRouter()
-
-  const [file,      setFile]      = useState<File | null>(null)
-  const [preview,   setPreview]   = useState<string | null>(null)
-  const [dragging,  setDragging]  = useState(false)
-  const [fileError, setFileError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [apiError,  setApiError]  = useState<string | null>(null)
-
+export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
+  const [file,       setFile]       = useState<File | null>(null)
+  const [preview,    setPreview]    = useState<string | null>(null)
+  const [dragging,   setDragging]   = useState(false)
+  const [uploading,  setUploading]  = useState(false)
+  const [uploaded,   setUploaded]   = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  function processFile(f: File) {
-    setFileError(null)
-    setApiError(null)
-    if (!isMimeAccepted(f.type)) {
-      setFileError('Only JPG, PNG, WebP, and PDF files are accepted.')
+  const pick = useCallback((f: File) => {
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      toast.error('Only JPG, PNG, or WebP files are accepted.')
       return
     }
-    if (f.size > MAX_BYTES) {
-      setFileError('File is too large. Maximum size is 5MB.')
+    if (f.size > MAX_MB * 1024 * 1024) {
+      toast.error(`File must be under ${MAX_MB} MB.`)
       return
     }
     setFile(f)
-    if (f.type !== 'application/pdf') {
-      const url = URL.createObjectURL(f)
-      setPreview(url)
-    } else {
-      setPreview(null)
-    }
-  }
+    const reader = new FileReader()
+    reader.onload = e => setPreview(e.target?.result as string)
+    reader.readAsDataURL(f)
+  }, [])
 
-  function clearFile() {
-    if (preview) URL.revokeObjectURL(preview)
-    setFile(null)
-    setPreview(null)
-    setFileError(null)
-    if (inputRef.current) inputRef.current.value = ''
-  }
+  const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setDragging(false)
+    const dropped = e.dataTransfer.files[0]
+    if (dropped) pick(dropped)
+  }, [pick])
 
-  const onDragOver  = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragging(true)  }, [])
-  const onDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragging(false) }, [])
-  const onDrop      = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); setDragging(false)
-    const f = e.dataTransfer.files?.[0]
-    if (f) processFile(f)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const onInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (f) processFile(f)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function handleSubmit() {
+  const handleSubmit = async () => {
     if (!file) return
     setUploading(true)
-    setApiError(null)
-
     try {
-      // FIX: Use absolute backend URL + auth token.
-      // The previous relative fetch('/api/...') was hitting Vercel (no such route),
-      // getting a 404 HTML response, failing to parse JSON, and showing "Connection issue."
-      const supabase = createBrowserClient()
-      const { data: { session } } = await supabase.auth.getSession()
-
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
-      const res = await fetch(`${apiUrl}/api/orders/${orderId}/proof`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': file.type,
-          ...(session?.access_token
-            ? { 'Authorization': `Bearer ${session.access_token}` }
-            : {}),
-        },
-        body: file,
-      })
-
-      const body = await res.json()
-      if (body?.success) {
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          router.push(`/orders/${orderId}?proof=uploaded`)
-        }
-      } else {
-        setApiError(body?.error?.message ?? 'Upload failed. Please try again.')
-      }
-    } catch {
-      setApiError('Upload failed. Please check your connection and try again.')
+      const form = new FormData()
+      form.append('proof', file)
+      await apiFetch(`/orders/${orderId}/proof`, { method: 'POST', body: form, isFormData: true })
+      setUploaded(true)
+      toast.success('Payment proof uploaded successfully!')
+    } catch (e: any) {
+      toast.error(e.message || 'Upload failed. Please try again.')
     } finally {
       setUploading(false)
     }
   }
 
-  function handleSkip() {
-    router.push(`/orders/${orderId}`)
-  }
-
-  const shortId = orderId.slice(0, 8).toUpperCase()
-
-  return (
-    <div
-      className="p-6 space-y-5"
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-    >
-      {/* Heading */}
-      <div className="space-y-1">
-        <h2
-          className="text-lg font-semibold"
-          style={{ color: 'var(--color-text-primary)', fontFamily: 'Urbanist, sans-serif' }}
-        >
-          Upload Payment Proof
-        </h2>
-        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-          Order{' '}
-          <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>#{shortId}</span>{' '}
-          created. Upload your transfer screenshot so we can confirm your payment.
-        </p>
-      </div>
-
-      {/* Drop zone */}
-      {!file ? (
-        <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 py-12 px-6 cursor-pointer transition-all select-none"
+  if (uploaded) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', padding: '48px 0', textAlign: 'center' }}>
+        <CheckCircle2 size={56} style={{ color: 'var(--success)' }} strokeWidth={1.5} />
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '0.04em', color: 'var(--text-primary)', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
+            Order Placed!
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '320px', margin: '0 auto' }}>
+            Your order has been submitted. The TACSFON team will confirm your payment shortly and you'll receive a notification.
+          </p>
+        </div>
+        <button
+          onClick={onDone}
           style={{
-            border:     `2px dashed ${dragging ? 'var(--color-gold)' : 'var(--color-border)'}`,
-            background: dragging ? 'var(--color-gold-muted)' : 'var(--color-surface-2)',
+            minHeight:     '52px',
+            padding:       '0 40px',
+            background:    'var(--accent)',
+            border:        'none',
+            color:         '#0A0A0A',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '13px',
+            fontWeight:    700,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            cursor:        'pointer',
           }}
         >
-          <UploadCloud
-            size={36}
-            style={{ color: dragging ? 'var(--color-gold)' : 'var(--color-text-disabled)' }}
-          />
-          <div className="text-center space-y-1">
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              Drag &amp; drop your screenshot here
-            </p>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              or{' '}
-              <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>
-                click to browse
-              </span>
-            </p>
-            <p className="text-xs" style={{ color: 'var(--color-text-disabled)' }}>
-              JPG, PNG, WebP, or PDF — max 5MB
-            </p>
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPTED_EXT}
-            onChange={onInputChange}
-            className="hidden"
-          />
-        </div>
-      ) : (
-        <div
-          className="p-4 flex items-center gap-4"
-          style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}
-        >
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview}
-              alt="Payment proof preview"
-              className="w-16 h-16 object-cover flex-shrink-0"
-              style={{ border: '1px solid var(--color-border)' }}
-            />
-          ) : (
-            <div
-              className="w-16 h-16 flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-            >
-              <FileText size={24} style={{ color: 'var(--color-gold)' }} />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-sm font-semibold truncate"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              {file.name}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-              {(file.size / 1024).toFixed(1)} KB
-            </p>
-          </div>
-          <button
-            onClick={clearFile}
-            className="p-1.5 flex-shrink-0 hover:opacity-80 transition-all"
-            style={{ background: 'var(--color-surface)', color: 'var(--color-error)' }}
-            aria-label="Remove file"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+          View My Orders
+        </button>
+      </div>
+    )
+  }
 
-      {fileError && (
-        <p className="text-xs" style={{ color: 'var(--color-error)' }}>{fileError}</p>
-      )}
-      {apiError && (
-        <p className="text-sm" style={{ color: 'var(--color-error)' }}>{apiError}</p>
-      )}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      <button
-        onClick={handleSubmit}
-        disabled={!file || uploading}
-        className="w-full py-3.5 text-sm font-bold tracking-wide transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ background: 'var(--color-gold)', color: '#000' }}
+      {/* Drop zone */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        onClick={() => !file && inputRef.current?.click()}
+        style={{
+          border:         `2px dashed ${dragging ? 'var(--accent)' : file ? 'var(--border)' : 'var(--border)'}`,
+          background:     dragging ? 'rgba(201,168,76,0.06)' : 'var(--bg-surface)',
+          padding:        '40px 24px',
+          display:        'flex',
+          flexDirection:  'column',
+          alignItems:     'center',
+          justifyContent: 'center',
+          gap:            '16px',
+          cursor:         file ? 'default' : 'pointer',
+          transition:     'border-color 150ms, background 150ms',
+          position:       'relative',
+          textAlign:      'center',
+        }}
       >
-        {uploading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black animate-spin" />
-            Uploading…
-          </span>
-        ) : (
-          'Submit Proof'
-        )}
-      </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ALLOWED_TYPES.join(',')}
+          style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) pick(f) }}
+        />
 
-      <div className="text-center">
+        {preview ? (
+          <>
+            {/* Preview */}
+            <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={preview}
+                alt="Payment proof preview"
+                style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', display: 'block' }}
+              />
+              <button
+                onClick={e => { e.stopPropagation(); setFile(null); setPreview(null) }}
+                style={{
+                  position:       'absolute',
+                  top:            '-10px',
+                  right:          '-10px',
+                  width:          '28px',
+                  height:         '28px',
+                  borderRadius:   '50%',
+                  background:     'var(--bg-elevated)',
+                  border:         '1px solid var(--border)',
+                  color:          'var(--text-primary)',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  cursor:         'pointer',
+                }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+              {file?.name}
+            </p>
+          </>
+        ) : (
+          <>
+            <div style={{ color: dragging ? 'var(--accent)' : 'var(--text-muted)', transition: 'color 150ms' }}>
+              {dragging ? <UploadCloud size={40} strokeWidth={1.2} /> : <FileImage size={40} strokeWidth={1.2} />}
+            </div>
+            <div>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: dragging ? 'var(--accent)' : 'var(--text-primary)', fontWeight: 600, margin: '0 0 4px 0', transition: 'color 150ms' }}>
+                {dragging ? 'Drop it here' : 'Upload your payment screenshot'}
+              </p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                Drag & drop or click to browse · JPG, PNG, WebP · Max {MAX_MB} MB
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
         <button
-          onClick={handleSkip}
+          onClick={onBack}
           disabled={uploading}
-          className="text-xs hover:underline disabled:opacity-40 transition-all"
-          style={{ color: 'var(--color-text-disabled)' }}
+          style={{
+            flex:           '0 0 auto',
+            minHeight:      '52px',
+            padding:        '0 24px',
+            background:     'var(--bg-surface)',
+            border:         '1px solid var(--border)',
+            color:          'var(--text-muted)',
+            fontFamily:     'var(--font-body)',
+            fontSize:       '12px',
+            fontWeight:     700,
+            letterSpacing:  '0.12em',
+            textTransform:  'uppercase',
+            cursor:         uploading ? 'not-allowed' : 'pointer',
+            opacity:        uploading ? 0.5 : 1,
+          }}
         >
-          Skip for now — I'll upload from my order page
+          ← Back
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!file || uploading}
+          style={{
+            flex:           1,
+            minHeight:      '52px',
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+            gap:            '10px',
+            background:     file && !uploading ? 'var(--accent)' : 'var(--bg-elevated)',
+            border:         'none',
+            color:          file && !uploading ? '#0A0A0A' : 'var(--text-muted)',
+            fontFamily:     'var(--font-body)',
+            fontSize:       '13px',
+            fontWeight:     700,
+            letterSpacing:  '0.15em',
+            textTransform:  'uppercase',
+            cursor:         file && !uploading ? 'pointer' : 'not-allowed',
+            transition:     'background 200ms, color 200ms',
+          }}
+        >
+          <UploadCloud size={16} />
+          {uploading ? 'Uploading…' : 'Submit Order'}
         </button>
       </div>
     </div>
