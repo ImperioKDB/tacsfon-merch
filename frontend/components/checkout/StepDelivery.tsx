@@ -1,125 +1,179 @@
 'use client'
 
+/**
+ * StepDelivery — Phase 7
+ *
+ * Checkout step 1: student enters delivery / pickup details.
+ * - Full name, phone, delivery method (Campus Pickup | Home Delivery)
+ * - If Home Delivery: shows address field
+ * - Gold focus ring on inputs, sharp corners, no border-radius
+ * - Inline CSS only — no Tailwind utility classes
+ */
+
 import { useState } from 'react'
-import type { Profile } from '@/types'
-import type { DeliveryData } from './CheckoutClient'
+import { MapPin, Phone, User } from 'lucide-react'
+
+export interface DeliveryData {
+  fullName:       string
+  phone:          string
+  method:         'pickup' | 'delivery'
+  address:        string
+}
 
 interface Props {
-  profile:    Profile | null
-  onComplete: (data: DeliveryData) => void
+  data:     DeliveryData
+  onChange: (data: DeliveryData) => void
+  onNext:   () => void
 }
 
-interface FieldErrors {
-  fullName?:        string
-  phone?:           string
-  deliveryAddress?: string
+const inputBase: React.CSSProperties = {
+  width:           '100%',
+  height:          '52px',
+  padding:         '0 16px',
+  background:      'var(--bg-surface)',
+  border:          '1px solid var(--border)',
+  color:           'var(--text-primary)',
+  fontFamily:      'var(--font-body)',
+  fontSize:        '14px',
+  outline:         'none',
+  boxSizing:       'border-box' as const,
+  transition:      'border-color 150ms',
 }
 
-export default function StepDelivery({ profile, onComplete }: Props) {
-  const [fullName,        setFullName]        = useState(profile?.full_name ?? '')
-  const [phone,           setPhone]           = useState(profile?.phone     ?? '')
-  const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [errors,          setErrors]          = useState<FieldErrors>({})
+function Field({
+  label, icon, value, onChange, placeholder, type = 'text',
+}: {
+  label: string; icon: React.ReactNode; value: string
+  onChange: (v: string) => void; placeholder: string; type?: string
+}) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <label style={{
+        fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 700,
+        letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)',
+        display: 'flex', alignItems: 'center', gap: '6px',
+      }}>
+        <span style={{ color: 'var(--accent)' }}>{icon}</span>
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          ...inputBase,
+          borderColor: focused ? 'var(--accent)' : 'var(--border)',
+        }}
+      />
+    </div>
+  )
+}
 
-  function validate(): boolean {
-    const e: FieldErrors = {}
-    if (!fullName.trim())        e.fullName        = 'Full name is required.'
-    if (!phone.trim())           e.phone           = 'Phone number is required.'
-    if (!deliveryAddress.trim()) e.deliveryAddress = 'Delivery address is required.'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
+export default function StepDelivery({ data, onChange, onNext }: Props) {
+  const set = (key: keyof DeliveryData) => (val: string) =>
+    onChange({ ...data, [key]: val })
 
-  function handleSubmit() {
-    if (!validate()) return
-    onComplete({
-      fullName:        fullName.trim(),
-      phone:           phone.trim(),
-      deliveryAddress: deliveryAddress.trim(),
-    })
-  }
+  const isValid =
+    data.fullName.trim().length >= 2 &&
+    data.phone.trim().length    >= 7 &&
+    (data.method === 'pickup' || data.address.trim().length >= 5)
 
-  const inputBase =
-    'w-full rounded-xl px-4 py-3 text-sm outline-none transition-all'
-  const inputStyle = {
-    background:  'var(--color-surface)',
-    border:      '1.5px solid var(--color-border)',
-    color:       'var(--color-text-primary)',
-  }
-  const inputFocusClass = 'focus:ring-2 focus:ring-[var(--color-gold)] focus:border-[var(--color-gold)]'
-  const labelStyle = { color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }
-  const errorStyle = { color: 'var(--color-error)',          fontSize: '0.75rem'   }
+  const methodBtn = (value: 'pickup' | 'delivery', label: string): React.CSSProperties => ({
+    flex:           1,
+    minHeight:      '52px',
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            '8px',
+    fontFamily:     'var(--font-body)',
+    fontSize:       '12px',
+    fontWeight:     700,
+    letterSpacing:  '0.12em',
+    textTransform:  'uppercase' as const,
+    cursor:         'pointer',
+    border:         data.method === value ? '1px solid var(--accent)' : '1px solid var(--border)',
+    background:     data.method === value ? 'rgba(201,168,76,0.10)' : 'var(--bg-surface)',
+    color:          data.method === value ? 'var(--accent)' : 'var(--text-muted)',
+    transition:     'border-color 150ms, background 150ms, color 150ms',
+  })
 
   return (
-    <div
-      className="rounded-2xl p-6 space-y-5"
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-    >
-      <h2
-        className="text-lg font-semibold"
-        style={{ color: 'var(--color-text-primary)', fontFamily: 'Urbanist, sans-serif' }}
-      >
-        Delivery Details
-      </h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* Full name */}
-      <div className="space-y-1.5">
-        <label className="block font-medium" style={labelStyle}>Full Name</label>
-        <input
-          type="text"
-          value={fullName}
-          onChange={e => setFullName(e.target.value)}
-          onBlur={validate}
-          placeholder="e.g. Amaka Johnson"
-          className={`${inputBase} ${inputFocusClass}`}
-          style={inputStyle}
-        />
-        {errors.fullName && <p style={errorStyle}>{errors.fullName}</p>}
+      <Field
+        label="Full Name"
+        icon={<User size={11} />}
+        value={data.fullName}
+        onChange={set('fullName')}
+        placeholder="e.g. Chukwuemeka Obi"
+      />
+
+      <Field
+        label="Phone Number"
+        icon={<Phone size={11} />}
+        value={data.phone}
+        onChange={set('phone')}
+        placeholder="e.g. 08012345678"
+        type="tel"
+      />
+
+      {/* Delivery method toggle */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <p style={{
+          fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 700,
+          letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)',
+          display: 'flex', alignItems: 'center', gap: '6px', margin: 0,
+        }}>
+          <span style={{ color: 'var(--accent)' }}><MapPin size={11} /></span>
+          Delivery Method
+        </p>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button style={methodBtn('pickup', 'Campus Pickup')} onClick={() => set('method')('pickup')}>
+            🏛 Campus Pickup
+          </button>
+          <button style={methodBtn('delivery', 'Home Delivery')} onClick={() => set('method')('delivery')}>
+            🚚 Home Delivery
+          </button>
+        </div>
       </div>
 
-      {/* Phone */}
-      <div className="space-y-1.5">
-        <label className="block font-medium" style={labelStyle}>Phone Number</label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          onBlur={validate}
-          placeholder="e.g. 08012345678"
-          className={`${inputBase} ${inputFocusClass}`}
-          style={inputStyle}
+      {data.method === 'delivery' && (
+        <Field
+          label="Delivery Address"
+          icon={<MapPin size={11} />}
+          value={data.address}
+          onChange={set('address')}
+          placeholder="Street, area, city"
         />
-        {errors.phone && <p style={errorStyle}>{errors.phone}</p>}
-      </div>
+      )}
 
-      {/* Delivery address */}
-      <div className="space-y-1.5">
-        <label className="block font-medium" style={labelStyle}>
-          Delivery Address
-          <span className="ml-1" style={{ color: 'var(--color-text-disabled)', fontWeight: 400 }}>
-            (hostel name, room, street)
-          </span>
-        </label>
-        <textarea
-          rows={3}
-          value={deliveryAddress}
-          onChange={e => setDeliveryAddress(e.target.value)}
-          onBlur={validate}
-          placeholder="e.g. Block C, Room 12, Amina Hall, FUTA"
-          className={`${inputBase} ${inputFocusClass} resize-none`}
-          style={inputStyle}
-        />
-        {errors.deliveryAddress && <p style={errorStyle}>{errors.deliveryAddress}</p>}
-      </div>
-
-      {/* Continue */}
       <button
-        onClick={handleSubmit}
-        className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all
-                   hover:opacity-90 active:scale-[.98]"
-        style={{ background: 'var(--color-gold)', color: '#000' }}
+        onClick={onNext}
+        disabled={!isValid}
+        style={{
+          width:          '100%',
+          minHeight:      '52px',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          background:     isValid ? 'var(--accent)' : 'var(--bg-elevated)',
+          border:         'none',
+          color:          isValid ? '#0A0A0A' : 'var(--text-muted)',
+          fontFamily:     'var(--font-body)',
+          fontSize:       '13px',
+          fontWeight:     700,
+          letterSpacing:  '0.15em',
+          textTransform:  'uppercase',
+          cursor:         isValid ? 'pointer' : 'not-allowed',
+          transition:     'background 200ms, color 200ms',
+          marginTop:      '8px',
+        }}
       >
-        Continue →
+        Continue to Payment →
       </button>
     </div>
   )
