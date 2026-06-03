@@ -1,100 +1,135 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { ShoppingBag }         from 'lucide-react'
-import OrderCard               from './OrderCard'
+/**
+ * OrdersClient
+ *
+ * Fetches and lists all orders for the authenticated student.
+ * Renders a grid of OrderCard components.
+ */
+
+import { useState, useEffect } from 'react'
 import { apiFetch }            from '@/lib/api/fetch'
-import type { Order, OrderStatus } from '@/types'
-
-type Tab = 'all' | OrderStatus
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'all',             label: 'All'        },
-  { key: 'pending_payment', label: 'Pending'    },
-  { key: 'confirmed',       label: 'Confirmed'  },
-  { key: 'dispatched',      label: 'Dispatched' },
-  { key: 'received',        label: 'Received'   },
-]
-
-type LoadState = 'loading' | 'ready' | 'error'
-
-function EmptyState({ tab }: { tab: Tab }) {
-  const label = tab === 'all' ? 'orders' : 'matching orders'
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <div className="w-16 h-16 flex items-center justify-center bg-zinc-900">
-        <ShoppingBag size={28} className="text-zinc-600" />
-      </div>
-      <p className="font-semibold text-white">No {label} yet</p>
-    </div>
-  )
-}
+import OrderCard               from '@/components/orders/OrderCard'
+import type { Order }          from '@/types'
 
 export default function OrdersClient() {
-  const [orders,    setOrders]    = useState<Order[]>([])
-  const [loadState, setLoadState] = useState<LoadState>('loading')
-  const [activeTab, setActiveTab] = useState<Tab>('all')
+  const [orders,  setOrders]  = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState<string | null>(null)
 
   useEffect(() => {
-    async function load() {
-      setLoadState('loading')
-      try {
-        // apiFetch prepends NEXT_PUBLIC_API_URL and attaches auth token
-        const data = await apiFetch<Order[]>('/orders')
-        setOrders(data ?? [])
-        setLoadState('ready')
-      } catch {
-        setLoadState('error')
-      }
-    }
-    load()
+    apiFetch<{ data: Order[] }>('/orders')
+      .then(res => setOrders(res.data ?? []))
+      .catch(err => setError(err.message || 'Failed to load orders.'))
+      .finally(() => setLoading(false))
   }, [])
 
-  const filtered = activeTab === 'all'
-    ? orders
-    : orders.filter(o => o.status === activeTab)
-
-  return (
-    <main className="min-h-screen px-4 py-10 md:px-8 lg:px-16 bg-[#0A0A0F]">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-white">My Orders</h1>
-
-        <div className="flex gap-1 p-1 bg-zinc-900 mb-6 overflow-x-auto">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex-shrink-0 px-4 py-2 text-sm font-semibold transition-all"
-              style={{
-                background: activeTab === tab.key ? 'var(--color-gold)' : 'transparent',
-                color: activeTab === tab.key ? '#000' : '#9CA3AF',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {loadState === 'loading' && (
-          <div className="h-20 animate-pulse bg-zinc-900" />
-        )}
-        {loadState === 'error' && (
-          <p className="text-center text-zinc-500 py-10">
-            Could not load orders. Please refresh.
-          </p>
-        )}
-        {loadState === 'ready' && (
-          filtered.length === 0
-            ? <EmptyState tab={activeTab} />
-            : (
-              <div className="space-y-3">
-                {filtered.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            )
-        )}
+  /* ── Loading skeleton ── */
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{
+            height:     '88px',
+            background: 'var(--bg-surface)',
+            border:     '1px solid var(--border)',
+            animation:  'pulse 1.5s ease-in-out infinite',
+            opacity:    1 - i * 0.15,
+          }} />
+        ))}
       </div>
-    </main>
+    )
+  }
+
+  /* ── Error ── */
+  if (error) {
+    return (
+      <div style={{
+        padding:        '48px 16px',
+        textAlign:      'center',
+        fontFamily:     'var(--font-body)',
+        fontSize:       '14px',
+        color:          'var(--danger)',
+      }}>
+        {error}
+      </div>
+    )
+  }
+
+  /* ── Empty state ── */
+  if (orders.length === 0) {
+    return (
+      <div style={{
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: 'center',
+        minHeight:      '40vh',
+        gap:            '20px',
+        fontFamily:     'var(--font-body)',
+        textAlign:      'center',
+      }}>
+        {/* Icon */}
+        <div style={{
+          width:      '56px',
+          height:     '56px',
+          border:     '1px solid var(--border)',
+          display:    'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <div>
+          <p style={{
+            margin:        '0 0 6px',
+            fontFamily:    'var(--font-display)',
+            fontSize:      '20px',
+            letterSpacing: '0.08em',
+            color:         'var(--text-primary)',
+          }}>
+            NO ORDERS YET
+          </p>
+          <p style={{
+            margin:     0,
+            fontSize:   '13px',
+            color:      'var(--text-muted)',
+            lineHeight: 1.5,
+          }}>
+            Your order history will appear here once you place your first order.
+          </p>
+        </div>
+        <a
+          href="/products"
+          style={{
+            display:       'inline-block',
+            padding:       '13px 32px',
+            background:    'var(--accent)',
+            color:         '#0A0A0A',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '12px',
+            fontWeight:    700,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+          }}
+        >
+          Shop Now
+        </a>
+      </div>
+    )
+  }
+
+  /* ── List ── */
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {orders.map(order => (
+        <OrderCard key={order.id} order={order} />
+      ))}
+    </div>
   )
 }
