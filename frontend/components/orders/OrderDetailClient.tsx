@@ -41,7 +41,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         </div>
 
         <div className="space-y-4">
-          <p className="font-mono text-[10px] text-zinc-700 tracking-tighter uppercase italic">SHIPMENT_FILE // {order.id.toUpperCase()}</p>
+          <p className="font-mono text-[10px] text-zinc-700 tracking-tighter uppercase italic">{"SHIPMENT_FILE / " + order.id.toUpperCase()}</p>
           <h1 className="font-display text-[32px] leading-none uppercase tracking-tighter italic">
             Order <span className="text-[#C9A84C]">Manifest.</span>
           </h1>
@@ -59,7 +59,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-display text-base uppercase tracking-wider text-white leading-none mb-1">{item.variant?.product?.name}</h3>
-                    <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{item.variant?.size} // {item.variant?.color}</p>
+                    <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{item.variant?.size} / {item.variant?.color}</p>
                   </div>
                   <p className="font-mono text-[10px] text-white">x{item.quantity}</p>
                 </div>
