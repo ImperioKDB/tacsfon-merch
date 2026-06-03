@@ -1,48 +1,65 @@
-'use client';
+'use client'
 
 /**
- * QuantitySelector
+ * QuantitySelector — Phase 5
  *
- * Minus / number display / plus stepper.
- * Clamps value between 1 and maxQty.
- * Minus disabled at 1, Plus disabled at maxQty.
+ * Minimal − / count / + stepper.
+ * - Clamps between 1 and 9 999 (bulk ordering enabled)
+ * - Minus disabled at 1
+ * - Inline CSS only — no Tailwind utility classes
  */
-'use client'
 
 import { Minus, Plus } from 'lucide-react'
 
 interface Props {
   value:    number
-  maxQty:   number
   onChange: (value: number) => void
+  maxQty?:  number
 }
 
-export default function QuantitySelector({ value, maxQty, onChange }: Props) {
-  const dec = () => onChange(Math.max(1, value - 1))
+export default function QuantitySelector({ value, onChange, maxQty = 9999 }: Props) {
+  const dec = () => onChange(Math.max(1,      value - 1))
   const inc = () => onChange(Math.min(maxQty, value + 1))
 
+  const btnBase: React.CSSProperties = {
+    width:          '44px',
+    height:         '44px',
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    background:     'var(--bg-surface)',
+    border:         '1px solid var(--border)',
+    color:          'var(--text-primary)',
+    cursor:         'pointer',
+    transition:     'border-color 150ms, color 150ms',
+    flexShrink:     0,
+  }
+
   return (
-    <div className="flex items-center gap-1">
+    <div style={{ display: 'flex', alignItems: 'center', height: '44px', width: 'fit-content' }}>
       <button
         onClick={dec}
         disabled={value <= 1}
         aria-label="Decrease quantity"
-        className="flex h-11 w-11 items-center justify-center rounded-xl transition-all disabled:opacity-40"
-        style={{
-          background: 'var(--color-surface-2)',
-          border:     '1px solid var(--color-border)',
-          color:      'var(--color-text-primary)',
-        }}
+        style={{ ...btnBase, borderRight: 'none', opacity: value <= 1 ? 0.35 : 1, cursor: value <= 1 ? 'not-allowed' : 'pointer' }}
       >
-        <Minus size={16} strokeWidth={1.5} />
+        <Minus size={14} strokeWidth={2} />
       </button>
 
       <div
-        className="flex h-11 w-14 items-center justify-center rounded-xl text-base font-semibold"
         style={{
-          background: 'var(--color-surface)',
-          border:     '1px solid var(--color-border)',
-          color:      'var(--color-text-primary)',
+          width:          '56px',
+          height:         '44px',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          background:     'var(--bg-surface)',
+          border:         '1px solid var(--border)',
+          color:          'var(--text-primary)',
+          fontFamily:     'var(--font-body)',
+          fontSize:       '15px',
+          fontWeight:     600,
+          userSelect:     'none',
         }}
       >
         {value}
@@ -52,14 +69,9 @@ export default function QuantitySelector({ value, maxQty, onChange }: Props) {
         onClick={inc}
         disabled={value >= maxQty}
         aria-label="Increase quantity"
-        className="flex h-11 w-11 items-center justify-center rounded-xl transition-all disabled:opacity-40"
-        style={{
-          background: 'var(--color-surface-2)',
-          border:     '1px solid var(--color-border)',
-          color:      'var(--color-text-primary)',
-        }}
+        style={{ ...btnBase, borderLeft: 'none', opacity: value >= maxQty ? 0.35 : 1, cursor: value >= maxQty ? 'not-allowed' : 'pointer' }}
       >
-        <Plus size={16} strokeWidth={1.5} />
+        <Plus size={14} strokeWidth={2} />
       </button>
     </div>
   )
