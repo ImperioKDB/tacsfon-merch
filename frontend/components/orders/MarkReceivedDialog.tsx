@@ -1,101 +1,157 @@
 'use client'
 
-import { useState }        from 'react'
-import { PackageCheck }    from 'lucide-react'
-import { apiFetch }        from '@/lib/api/fetch'
+/**
+ * MarkReceivedDialog
+ *
+ * Modal that confirms the student received their order.
+ * Calls PATCH /orders/[id]/received.
+ *
+ * Props:
+ *   orderId   — the order UUID
+ *   onSuccess — called after successful mark
+ *   onCancel  — called when dismissed
+ */
+
+import { useState }   from 'react'
+import { apiFetch }   from '@/lib/api/fetch'
 
 interface Props {
-  orderId  : string
+  orderId:   string
   onSuccess: () => void
-  onCancel : () => void
+  onCancel:  () => void
 }
 
 export default function MarkReceivedDialog({ orderId, onSuccess, onCancel }: Props) {
-  const [loading,  setLoading]  = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState<string | null>(null)
 
   async function handleConfirm() {
     setLoading(true)
-    setApiError(null)
+    setError(null)
     try {
-      // FIX: apiFetch hits the Render backend (NEXT_PUBLIC_API_URL + /api/...)
-      //      and attaches the Bearer token automatically.
       await apiFetch(`/orders/${orderId}/received`, { method: 'PATCH' })
       onSuccess()
     } catch (err: any) {
-      setApiError(err.message || 'Connection failed. Please try again.')
+      setError(err.message || 'Failed to update order.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
+    /* Backdrop */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+      onClick={onCancel}
+      style={{
+        position:        'fixed',
+        inset:           0,
+        background:      'rgba(10,10,10,0.85)',
+        backdropFilter:  'blur(4px)',
+        zIndex:          50,
+        display:         'flex',
+        alignItems:      'center',
+        justifyContent:  'center',
+        padding:         '16px',
+      }}
     >
+      {/* Modal panel */}
       <div
-        className="w-full max-w-sm p-6 space-y-5"
-        style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        onClick={e => e.stopPropagation()}
+        style={{
+          background:  'var(--bg-surface)',
+          border:      '1px solid var(--border)',
+          padding:     '32px 28px',
+          maxWidth:    '400px',
+          width:       '100%',
+          fontFamily:  'var(--font-body)',
+        }}
       >
         {/* Icon */}
-        <div className="flex justify-center">
-          <div
-            className="w-14 h-14 flex items-center justify-center"
-            style={{
-              background: 'var(--color-gold-muted)',
-              border    : '1px solid var(--color-gold)',
-            }}
-          >
-            <PackageCheck size={26} style={{ color: 'var(--color-gold)' }} />
-          </div>
+        <div style={{
+          width:       '44px',
+          height:      '44px',
+          border:      '1px solid var(--success)',
+          display:     'flex',
+          alignItems:  'center',
+          justifyContent: 'center',
+          marginBottom: '20px',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF7D" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
         </div>
 
-        {/* Text */}
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-bold uppercase" style={{ color: 'var(--color-text-primary)' }}>
-            Confirm Receipt
-          </h3>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Confirm you have physically received your order.
-            This action cannot be undone.
-          </p>
-        </div>
+        <h2 style={{
+          margin:        '0 0 8px',
+          fontFamily:    'var(--font-display)',
+          fontSize:      '20px',
+          letterSpacing: '0.08em',
+          color:         'var(--text-primary)',
+        }}>
+          CONFIRM RECEIPT
+        </h2>
 
-        {/* Error */}
-        {apiError && (
-          <p className="text-xs text-center font-bold" style={{ color: 'var(--color-error)' }}>
-            {apiError}
+        <p style={{
+          margin:     '0 0 28px',
+          fontSize:   '13px',
+          color:      'var(--text-muted)',
+          lineHeight: 1.6,
+        }}>
+          Confirm you have received your order. This action cannot be undone.
+        </p>
+
+        {error && (
+          <p style={{
+            margin:     '0 0 16px',
+            fontSize:   '12px',
+            color:      'var(--danger)',
+          }}>
+            {error}
           </p>
         )}
 
-        {/* Buttons */}
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 py-3 text-sm font-semibold transition-all hover:opacity-80 disabled:opacity-40"
             style={{
-              background: 'var(--color-surface-2)',
-              color     : 'var(--color-text-secondary)',
-              border    : '1px solid var(--color-border)',
+              flex:          1,
+              minHeight:     '48px',
+              background:    'none',
+              border:        '1px solid var(--border)',
+              color:         'var(--text-muted)',
+              fontFamily:    'var(--font-body)',
+              fontSize:      '12px',
+              fontWeight:    600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor:        loading ? 'not-allowed' : 'pointer',
+              opacity:       loading ? 0.5 : 1,
             }}
           >
             Cancel
           </button>
+
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 py-3 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-60"
-            style={{ background: 'var(--color-gold)', color: '#000' }}
+            style={{
+              flex:          1,
+              minHeight:     '48px',
+              background:    'var(--success)',
+              border:        'none',
+              color:         '#0A0A0A',
+              fontFamily:    'var(--font-body)',
+              fontSize:      '12px',
+              fontWeight:    700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor:        loading ? 'not-allowed' : 'pointer',
+              opacity:       loading ? 0.7 : 1,
+              transition:    'opacity 0.2s',
+            }}
           >
-            {loading
-              ? <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                  Confirming…
-                </span>
-              : 'Yes, I received it'
-            }
+            {loading ? 'Confirming…' : 'Yes, Received'}
           </button>
         </div>
       </div>
