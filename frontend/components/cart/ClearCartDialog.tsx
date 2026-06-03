@@ -1,65 +1,40 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Loader2, Trash2 } from 'lucide-react'
+/**
+ * ClearCartDialog — Phase 6
+ * Inline CSS only — no Tailwind utility classes.
+ */
 
-interface Props {
-  open:      boolean
-  isLoading: boolean
+interface ClearCartDialogProps {
   onConfirm: () => void
   onCancel:  () => void
 }
 
-export default function ClearCartDialog({ open, isLoading, onConfirm, onCancel }: Props) {
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onCancel])
-
-  if (!open) return null
-
+export default function ClearCartDialog({ onConfirm, onCancel }: ClearCartDialogProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
-      onClick={onCancel} role="dialog" aria-modal="true"
-      aria-labelledby="clear-dialog-title">
-      <div className="relative w-full max-w-sm p-6 rounded-2xl border"
-        style={{
-          background: 'var(--color-surface)',
-          borderColor: 'var(--color-border)',
-          boxShadow: 'var(--shadow-lg)',
-        }}
-        onClick={e => e.stopPropagation()}>
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-          style={{ background: 'rgba(217,79,79,0.12)' }}>
-          <Trash2 size={22} style={{ color: 'var(--color-error)' }} />
+    <div
+      onClick={onCancel}
+      style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', animation: 'cfFadeIn 180ms ease forwards' }}
+    >
+      <style>{`@keyframes cfFadeIn { from { opacity:0 } to { opacity:1 } }`}</style>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', padding: '32px 28px', width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
+            Clear Cart?
+          </h3>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+            All items will be removed from your cart. This cannot be undone.
+          </p>
         </div>
-
-        <h3 id="clear-dialog-title" className="text-lg font-bold mb-2"
-          style={{ color: 'var(--color-text-primary)', fontFamily: 'Urbanist, sans-serif' }}>
-          Clear your cart?
-        </h3>
-        <p className="text-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-          This will remove all items from your cart. This action cannot be undone.
-        </p>
-
-        <div className="flex gap-3">
-          <button onClick={onCancel} disabled={isLoading}
-            className="flex-1 h-11 rounded-xl border text-sm font-semibold transition-colors"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)', background: 'transparent' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={onCancel} style={{ flex: 1, minHeight: '48px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
             Cancel
           </button>
-          <button onClick={onConfirm} disabled={isLoading}
-            className="flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-            style={{ background: 'var(--color-error)', color: '#fff', opacity: isLoading ? 0.7 : 1 }}>
-            {isLoading
-              ? <><Loader2 size={15} className="animate-spin" /> Clearing…</>
-              : 'Yes, Clear Cart'
-            }
+          <button onClick={onConfirm} style={{ flex: 1, minHeight: '48px', background: 'var(--danger)', border: 'none', color: '#ffffff', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
+            Clear All
           </button>
         </div>
       </div>
