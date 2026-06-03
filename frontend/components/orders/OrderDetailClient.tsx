@@ -1,355 +1,272 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import Link                                  from 'next/link'
-import Image                                 from 'next/image'
-import { ArrowLeft, Bell }                   from 'lucide-react'
-import { StatusBadge }                       from './OrderCard'
-import StatusTimeline                        from './StatusTimeline'
-import MarkReceivedDialog                    from './MarkReceivedDialog'
-import StepUploadProof                       from '@/components/checkout/StepUploadProof'
-import { apiFetch }                          from '@/lib/api/fetch'
-import { resolveImageUrl }                   from '@/lib/utils/formatters'
-import type { Order }                        from '@/types'
+/**
+ * OrderDetailClient
+ *
+ * Renders a single order's full detail view for a student.
+ * - Shows order status timeline
+ * - Allows proof upload (step 3 of checkout flow) when status = pending_payment
+ * - Allows "mark as received" when status = dispatched
+ */
 
-type Props      = { orderId: string }
-type LoadState  = 'loading' | 'ready' | 'error'
+import { useState }              from 'react'
+import { useRouter }             from 'next/navigation'
+import { apiFetch }              from '@/lib/api/apiFetch'
+import { StatusTimeline }        from '@/components/orders/StatusTimeline'
+import { MarkReceivedDialog }    from '@/components/orders/MarkReceivedDialog'
+import StepUploadProof           from '@/components/checkout/StepUploadProof'
+import type { Order, OrderStatus } from '@/types'
 
-export default function OrderDetailClient({ orderId }: Props) {
-  const [order,       setOrder]       = useState<Order | null>(null)
-  const [loadState,   setLoadState]   = useState<LoadState>('loading')
-  const [showReceive, setShowReceive] = useState(false)
-  const [showUpload,  setShowUpload]  = useState(false)
+interface Props {
+  order: Order
+}
 
-  // ── Notifications ─────────────────────────────────────────
-  const [notifs,      setNotifs]      = useState<Array<{
-    id: string
-    message: string
-    is_read: boolean
-    created_at: string
-  }>>([])
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  pending_payment:    'Awaiting Payment',
+  payment_submitted:  'Payment Submitted',
+  confirmed:          'Confirmed',
+  dispatched:         'Dispatched',
+  received:           'Received',
+  cancelled:          'Cancelled',
+}
 
-  useEffect(() => {
-    apiFetch<{ notifications: Array<{ id: string; message: string; is_read: boolean; created_at: string }>; unread: number }>('/notifications')
-      .then(d => setNotifs(d.notifications.slice(0, 5)))
-      .catch(() => {/* non-critical */})
-  }, [])
+const STATUS_COLOR: Record<OrderStatus, string> = {
+  pending_payment:   'var(--accent)',
+  payment_submitted: '#60A5FA',
+  confirmed:         '#2DD4BF',
+  dispatched:        '#C084FC',
+  received:          'var(--success)',
+  cancelled:         'var(--danger)',
+}
 
-  function formatRelTime(dateString: string): string {
-    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000)
-    if (seconds < 60)  return 'Just now'
-    const minutes = Math.floor(seconds / 60)
-    if (minutes < 60)  return `${minutes}m ago`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24)    return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return days === 1  ? 'Yesterday' : `${days}d ago`
-  }
+export default function OrderDetailClient({ order }: Props) {
+  const router = useRouter()
+  const [showReceived, setShowReceived] = useState(false)
+  const [marking,      setMarking]      = useState(false)
 
-  async function markNotifRead(id: string) {
+  const handleMarkReceived = async () => {
+    setMarking(true)
     try {
-      await apiFetch(`/notifications/${id}/read`, { method: 'PATCH' })
-      setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-    } catch {/* non-blocking */}
-  }
-
-  const fetchOrder = useCallback(async () => {
-    setLoadState('loading')
-    try {
-      // apiFetch prepends NEXT_PUBLIC_API_URL and attaches auth token
-      const data = await apiFetch<Order>(`/orders/${orderId}`)
-      setOrder(data)
-      setLoadState('ready')
-    } catch {
-      setLoadState('error')
+      await apiFetch(`/api/orders/${order.id}/received`, { method: 'POST' })
+      router.refresh()
+    } finally {
+      setMarking(false)
+      setShowReceived(false)
     }
-  }, [orderId])
-
-  useEffect(() => { fetchOrder() }, [fetchOrder])
-
-  const showUploadBtn  = order?.status === 'pending_payment' && !order?.proof_url
-  const showReceiveBtn = order?.status === 'dispatched'
-  const showReceiptBtn = order?.status === 'received' && order?.payment_status === 'paid'
-
-  const displayItems = (order as any)?.order_items ?? order?.items ?? []
-
-  // ── Loading ──────────────────────────────────────────────────────────────────
-  if (loadState === 'loading') {
-    return (
-      <main className="min-h-screen px-4 py-32 bg-[#0A0A0F]">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="h-4 w-24 animate-pulse bg-zinc-800" />
-          <div className="h-48 animate-pulse bg-zinc-900 border border-zinc-800" />
-          <div className="h-32 animate-pulse bg-zinc-900 border border-zinc-800" />
-        </div>
-      </main>
-    )
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────────
-  if (loadState === 'error' || !order) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-4 bg-[#0A0A0F]">
-        <div className="text-center space-y-6">
-          <p className="text-xs font-black text-zinc-500 uppercase tracking-widest">
-            Order Not Found
-          </p>
-          <Link
-            href="/orders"
-            className="inline-block bg-[#C9A84C] text-black px-8 py-3 font-black uppercase text-[10px] tracking-widest"
-          >
-            Return to Orders
-          </Link>
-        </div>
-      </main>
-    )
-  }
+  const statusColor = STATUS_COLOR[order.status] ?? 'var(--text-muted)'
+  const statusLabel = STATUS_LABEL[order.status] ?? order.status
 
-  // ── Ready ────────────────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen px-4 py-24 md:px-8 bg-[#0A0A0F] text-[#F7F5F0]">
-      <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
+    <div style={{
+      maxWidth:   '720px',
+      margin:     '0 auto',
+      padding:    '32px 16px 80px',
+      fontFamily: 'var(--font-body)',
+    }}>
 
-        <div className="flex items-center justify-between">
-          <Link
-            href="/orders"
-            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to orders
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#C9A84C] hover:text-white transition-colors"
-          >
-            Return Home
-          </Link>
-        </div>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: '32px' }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            background:    'none',
+            border:        'none',
+            color:         'var(--text-muted)',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '13px',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor:        'pointer',
+            padding:       '0 0 16px 0',
+            display:       'block',
+          }}
+        >
+          ← Back to orders
+        </button>
 
-        {/* Status header */}
-        <div className="p-8 bg-[#13131A] border border-[#2A2A38] space-y-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[10px] font-black text-[#C9A84C] uppercase tracking-[0.3em] mb-2">
-                Order ID
-              </p>
-              <h2 className="text-2xl font-black text-white font-mono">
-                #{order.id.slice(0, 8).toUpperCase()}
-              </h2>
-            </div>
-            <StatusBadge status={order.status} />
-          </div>
-          <StatusTimeline status={order.status} />
-        </div>
-
-
-        {/* Status notification */}
-        {order.status === 'payment_submitted' && (
-          <div className="px-6 py-4 bg-blue-950/40 border border-blue-800/50 text-blue-300 text-[10px] font-black uppercase tracking-widest">
-            Payment proof received — awaiting admin verification
-          </div>
-        )}
-        {order.status === 'confirmed' && (
-          <div className="px-6 py-4 bg-amber-950/40 border border-[#C9A84C]/40 text-[#C9A84C] text-[10px] font-black uppercase tracking-widest">
-            Payment confirmed — your order is being prepared
-          </div>
-        )}
-        {order.status === 'dispatched' && (
-          <div className="px-6 py-4 bg-green-950/40 border border-green-800/50 text-green-400 text-[10px] font-black uppercase tracking-widest">
-            Order dispatched — ready for collection / out for delivery
-          </div>
-        )}
-        {order.status === 'received' && (
-          <div className="px-6 py-4 bg-green-950/40 border border-green-800/50 text-green-400 text-[10px] font-black uppercase tracking-widest">
-            Order received — thank you!
-          </div>
-        )}
-        {order.status === 'cancelled' && (
-          <div className="px-6 py-4 bg-red-950/40 border border-red-800/50 text-red-400 text-[10px] font-black uppercase tracking-widest">
-            This order has been cancelled
-          </div>
-        )}
-
-        {/* Items */}
-        {displayItems.length > 0 && (
-          <div className="bg-black border border-[#2A2A38] overflow-hidden">
-            <div className="p-4 border-b border-[#2A2A38] bg-[#13131A]/30">
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                Items
-              </p>
-            </div>
-            <div className="divide-y divide-zinc-900">
-              {displayItems.map((item: any, i: number) => {
-                const img = resolveImageUrl(item.variant?.product?.image_url)
-                return (
-                  <div key={i} className="p-6 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-[#0A0A0F] border border-[#2A2A38] overflow-hidden shrink-0">
-                        {img && (
-                          <Image
-                            src={img}
-                            alt="Merch"
-                            width={64}
-                            height={64}
-                            className="object-cover"
-                            unoptimized
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase">
-                          {item.variant?.product?.name || 'TACSFON Item'}
-                        </p>
-                        <p className="text-[10px] font-black text-[#C9A84C] uppercase mt-1">
-                          {item.variant?.size || 'Standard'} • {item.variant?.color || 'Default'}
-                        </p>
-                        <p className="text-xs text-zinc-500 mt-1">Qty: {item.quantity}</p>
-                      </div>
-                    </div>
-                    <p className="font-mono font-bold text-white">
-                      ₦{(item.unit_price * item.quantity).toLocaleString()}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="p-6 bg-[#13131A] flex justify-between items-center border-t border-[#2A2A38]">
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                Total
-              </span>
-              <span className="text-2xl font-black text-[#C9A84C]">
-                ₦{Number(order.total).toLocaleString()}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Delivery */}
-        <div className="p-8 bg-[#13131A]/20 border border-[#2A2A38]">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">
-            Delivery
-          </p>
-          <p className="text-white text-sm">
-            {order.delivery_address || 'Collection at store'}
-          </p>
-          <p className="text-zinc-500 text-xs mt-2 font-mono">
-            {order.phone || 'No contact provided'}
-          </p>
-        </div>
-
-
-        {/* Order Updates */}
-        <div className="bg-[#13131A] border border-[#2A2A38] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#2A2A38] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bell size={14} className="text-[#C9A84C]" />
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                Order Updates
-              </p>
-            </div>
-            <Link
-              href="/notifications"
-              className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] hover:text-white transition-colors"
-            >
-              View all
-            </Link>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{
+              fontFamily:    'var(--font-display)',
+              fontSize:      '28px',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color:         'var(--text-primary)',
+              margin:        '0 0 4px 0',
+            }}>
+              Order Detail
+            </h1>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+              #{order.id.slice(0, 8).toUpperCase()}
+            </p>
           </div>
 
-          {notifs.length === 0 ? (
-            <div className="px-6 py-8 text-center">
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">
-                No updates yet
-              </p>
-              <p className="text-[10px] text-zinc-700 mt-1">
-                You'll be notified when your order status changes.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#1E1E2A]">
-              {notifs.map((notif) => (
-                <button
-                  key={notif.id}
-                  onClick={() => markNotifRead(notif.id)}
-                  className="w-full flex items-start gap-3 px-6 py-4 text-left hover:bg-[#0F0F16] transition-colors"
-                >
-                  <span
-                    className="mt-[6px] shrink-0 w-2 h-2 rounded-full"
-                    style={{ background: notif.is_read ? 'transparent' : 'var(--color-gold, #C9A84C)' }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs leading-relaxed"
-                      style={{ color: notif.is_read ? 'var(--color-text-secondary, #6B7280)' : 'var(--color-text-primary, #F7F5F0)' }}
-                    >
-                      {notif.message}
-                    </p>
-                    <p className="text-[10px] text-zinc-600 mt-1">
-                      {formatRelTime(notif.created_at)}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-4 pt-4 pb-20">
-          {showUploadBtn && (
-            <button
-              onClick={() => setShowUpload(true)}
-              className="w-full py-5 font-black uppercase text-xs tracking-[0.2em] hover:opacity-90 transition-all"
-              style={{ background: 'var(--color-gold)', color: '#000' }}
-            >
-              Upload Payment Proof
-            </button>
-          )}
-          {showReceiveBtn && (
-            <button
-              onClick={() => setShowReceive(true)}
-              className="w-full py-5 bg-white text-black font-black uppercase text-xs tracking-[0.2em] hover:bg-[#C9A84C] transition-all"
-            >
-              Mark as Received
-            </button>
-          )}
-          {showReceiptBtn && (
-            <Link
-              href={`/orders/${orderId}/receipt`}
-              className="block w-full py-5 border border-[#2A2A38] text-[#C9A84C] text-center font-black uppercase text-xs tracking-[0.2em] hover:bg-[#13131A] transition-all"
-            >
-              View Digital Receipt
-            </Link>
-          )}
+          <span style={{
+            display:       'inline-block',
+            padding:       '6px 14px',
+            background:    `${statusColor}22`,
+            border:        `1px solid ${statusColor}55`,
+            color:         statusColor,
+            fontFamily:    'var(--font-body)',
+            fontSize:      '12px',
+            fontWeight:    700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+          }}>
+            {statusLabel}
+          </span>
         </div>
       </div>
 
-      {/* Upload proof modal */}
-      {showUpload && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#13131A] border border-[#2A2A38] p-8 space-y-6">
-            <div className="flex justify-between items-center border-b border-[#2A2A38] pb-4">
-              <h3 className="text-xl font-black text-white uppercase italic">
-                Upload Proof
-              </h3>
-              <button
-                onClick={() => setShowUpload(false)}
-                className="text-zinc-500 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
+      {/* ── Timeline ── */}
+      <div style={{
+        background:   'var(--bg-surface)',
+        border:       '1px solid var(--border)',
+        padding:      '24px',
+        marginBottom: '24px',
+      }}>
+        <StatusTimeline status={order.status} />
+      </div>
+
+      {/* ── Items ── */}
+      <div style={{
+        background:   'var(--bg-surface)',
+        border:       '1px solid var(--border)',
+        padding:      '24px',
+        marginBottom: '24px',
+      }}>
+        <h2 style={{
+          fontFamily:    'var(--font-display)',
+          fontSize:      '18px',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color:         'var(--text-primary)',
+          margin:        '0 0 20px 0',
+        }}>
+          Items
+        </h2>
+
+        {order.items?.map((item, i) => (
+          <div key={i} style={{
+            display:       'flex',
+            justifyContent:'space-between',
+            alignItems:    'center',
+            padding:       '12px 0',
+            borderBottom:  i < (order.items?.length ?? 0) - 1 ? '1px solid var(--border)' : 'none',
+          }}>
+            <div>
+              <p style={{ margin: '0 0 2px 0', color: 'var(--text-primary)', fontWeight: 600, fontSize: '14px' }}>
+                {item.product_name ?? 'Product'}
+              </p>
+              {item.variant_label && (
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '12px' }}>
+                  {item.variant_label} · Qty: {item.quantity}
+                </p>
+              )}
             </div>
-            <StepUploadProof orderId={orderId} />
+            <p style={{ margin: 0, color: 'var(--accent)', fontWeight: 700, fontSize: '14px' }}>
+              ₦{((item.unit_price ?? 0) * item.quantity).toLocaleString()}
+            </p>
           </div>
+        ))}
+
+        <div style={{
+          display:        'flex',
+          justifyContent: 'space-between',
+          paddingTop:     '16px',
+          marginTop:      '8px',
+          borderTop:      '1px solid var(--border)',
+        }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Total</span>
+          <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '18px' }}>
+            ₦{(order.total_amount ?? 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Delivery info ── */}
+      {order.delivery_address && (
+        <div style={{
+          background:   'var(--bg-surface)',
+          border:       '1px solid var(--border)',
+          padding:      '24px',
+          marginBottom: '24px',
+        }}>
+          <h2 style={{
+            fontFamily:    'var(--font-display)',
+            fontSize:      '18px',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color:         'var(--text-primary)',
+            margin:        '0 0 12px 0',
+          }}>
+            Delivery
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
+            {order.delivery_address}
+          </p>
         </div>
       )}
 
-      {/* Mark received dialog */}
-      {showReceive && (
+      {/* ── Proof upload — shown when student still needs to pay ── */}
+      {order.status === 'pending_payment' && (
+        <div style={{
+          background:   'var(--bg-surface)',
+          border:       '1px solid var(--border)',
+          padding:      '24px',
+          marginBottom: '24px',
+        }}>
+          <h2 style={{
+            fontFamily:    'var(--font-display)',
+            fontSize:      '18px',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color:         'var(--text-primary)',
+            margin:        '0 0 20px 0',
+          }}>
+            Upload Payment Proof
+          </h2>
+          <StepUploadProof
+            orderId={order.id}
+            onDone={() => router.push('/orders')}
+            onBack={() => router.back()}
+          />
+        </div>
+      )}
+
+      {/* ── Mark as received ── */}
+      {order.status === 'dispatched' && (
+        <div style={{ marginTop: '24px' }}>
+          <button
+            onClick={() => setShowReceived(true)}
+            style={{
+              width:         '100%',
+              minHeight:     '52px',
+              background:    'var(--success)',
+              border:        'none',
+              color:         '#0A0A0A',
+              fontFamily:    'var(--font-body)',
+              fontSize:      '13px',
+              fontWeight:    700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              cursor:        'pointer',
+            }}
+          >
+            Mark as Received
+          </button>
+        </div>
+      )}
+
+      {showReceived && (
         <MarkReceivedDialog
-          orderId={orderId}
-          onSuccess={() => { setShowReceive(false); fetchOrder() }}
-          onCancel={() => setShowReceive(false)}
+          onConfirm={handleMarkReceived}
+          onCancel={() => setShowReceived(false)}
+          loading={marking}
         />
       )}
-    </main>
+    </div>
   )
 }
