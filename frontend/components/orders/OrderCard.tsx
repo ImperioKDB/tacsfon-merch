@@ -1,61 +1,184 @@
 'use client'
 
-import Link               from 'next/link'
-import { ChevronRight }   from 'lucide-react'
+/**
+ * OrderCard
+ *
+ * Dark surface card for the orders list.
+ * Shows: order number (Space Mono), item count, total, status badge,
+ * and the first item's thumbnail.
+ *
+ * Props: order: Order
+ * Navigates to /orders/[id] on click.
+ */
+
+import { useRouter } from 'next/navigation'
 import type { Order, OrderStatus } from '@/types'
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; bg: string; color: string; }> = {
-  pending_payment:    { label: 'Awaiting Payment', bg: '#78350f26', color: '#F59E0B' },
-  payment_submitted:  { label: 'Proof Submitted',  bg: '#1e3a5f26', color: '#60A5FA' },
-  confirmed:          { label: 'Confirmed',         bg: '#1e3a5f26', color: '#60A5FA' },
-  dispatched:         { label: 'Dispatched',        bg: '#3b1f6126', color: '#A78BFA' },
-  received:           { label: 'Received',          bg: '#05422126', color: '#34D399' },
-  cancelled:          { label: 'Cancelled',         bg: '#3f1f1f26', color: '#F87171' },
+interface Props {
+  order: Order
 }
 
-export function StatusBadge({ status }: { status: OrderStatus }) {
-  const cfg = STATUS_CONFIG[status] || {
-    label: status, bg: 'var(--color-surface-2)', color: 'var(--color-text-secondary)',
-  }
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
-      style={{ background: cfg.bg, color: cfg.color }}
-    >
-      {cfg.label}
-    </span>
-  )
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  pending_payment:   'AWAITING PAYMENT',
+  payment_submitted: 'PROOF SUBMITTED',
+  confirmed:         'CONFIRMED',
+  dispatched:        'DISPATCHED',
+  received:          'RECEIVED',
+  cancelled:         'CANCELLED',
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-NG', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
+const STATUS_COLOR: Record<OrderStatus, string> = {
+  pending_payment:   '#C9A84C',
+  payment_submitted: '#60A5FA',
+  confirmed:         '#2DD4BF',
+  dispatched:        '#C084FC',
+  received:          '#4CAF7D',
+  cancelled:         '#E05252',
 }
 
-function naira(n: number) {
-  return `₦${n.toLocaleString('en-NG')}`
-}
-
-export default function OrderCard({ order }: { order: Order }) {
-  const shortId = order.id.slice(0, 8).toUpperCase()
+export default function OrderCard({ order }: Props) {
+  const router     = useRouter()
+  const color      = STATUS_COLOR[order.status] ?? '#888880'
+  const label      = STATUS_LABEL[order.status] ?? order.status
+  const itemCount  = order.items?.length ?? 0
+  const firstItem  = order.items?.[0]
+  const thumbUrl   = (firstItem as any)?.variant?.product?.image_url ?? null
 
   return (
-    <Link
-      href={`/orders/${order.id}`}
-      className="flex items-center gap-4 p-4 rounded-2xl transition-all border border-zinc-800 hover:border-gold group bg-zinc-900/50"
+    <div
+      onClick={() => router.push(`/orders/${order.id}`)}
+      style={{
+        display:       'flex',
+        alignItems:    'stretch',
+        gap:           '0',
+        background:    'var(--bg-surface)',
+        border:        '1px solid var(--border)',
+        cursor:        'pointer',
+        overflow:      'hidden',
+        transition:    'border-color 0.2s ease, transform 0.15s ease',
+        position:      'relative',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(201,168,76,0.35)'
+        ;(e.currentTarget as HTMLDivElement).style.transform  = 'translateY(-1px)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
+        ;(e.currentTarget as HTMLDivElement).style.transform  = 'translateY(0)'
+      }}
     >
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-bold font-mono text-white">#{shortId}</span>
-          <StatusBadge status={order.status} />
+      {/* ── Thumbnail strip ── */}
+      <div style={{
+        width:      '72px',
+        minHeight:  '88px',
+        background: 'var(--bg-elevated)',
+        flexShrink: 0,
+        overflow:   'hidden',
+        position:   'relative',
+      }}>
+        {thumbUrl ? (
+          <img
+            src={thumbUrl}
+            alt=""
+            style={{
+              width:      '100%',
+              height:     '100%',
+              objectFit:  'cover',
+              display:    'block',
+            }}
+          />
+        ) : (
+          /* Placeholder grid pattern */
+          <div style={{
+            width:      '100%',
+            height:     '100%',
+            background: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 12px)',
+          }} />
+        )}
+      </div>
+
+      {/* ── Main content ── */}
+      <div style={{
+        flex:           1,
+        padding:        '14px 16px',
+        display:        'flex',
+        flexDirection:  'column',
+        justifyContent: 'space-between',
+        gap:            '10px',
+        minWidth:       0,
+      }}>
+        {/* Top row: order number + status */}
+        <div style={{
+          display:        'flex',
+          justifyContent: 'space-between',
+          alignItems:     'flex-start',
+          gap:            '8px',
+          flexWrap:       'wrap',
+        }}>
+          <p style={{
+            margin:        0,
+            fontFamily:    'var(--font-mono)',
+            fontSize:      '12px',
+            color:         'var(--text-muted)',
+            letterSpacing: '0.06em',
+            whiteSpace:    'nowrap',
+          }}>
+            #{order.id.slice(0, 8).toUpperCase()}
+          </p>
+
+          {/* Status badge */}
+          <span style={{
+            display:       'inline-block',
+            padding:       '3px 10px',
+            background:    `${color}1A`,
+            border:        `1px solid ${color}44`,
+            color:         color,
+            fontFamily:    'var(--font-body)',
+            fontSize:      '10px',
+            fontWeight:    700,
+            letterSpacing: '0.1em',
+            whiteSpace:    'nowrap',
+          }}>
+            {label}
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-500">{formatDate(order.created_at)}</span>
-          <span className="text-sm font-bold text-gold">{naira(order.total)}</span>
+
+        {/* Bottom row: item count + total */}
+        <div style={{
+          display:        'flex',
+          justifyContent: 'space-between',
+          alignItems:     'center',
+        }}>
+          <p style={{
+            margin:     0,
+            fontFamily: 'var(--font-body)',
+            fontSize:   '12px',
+            color:      'var(--text-muted)',
+          }}>
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
+          </p>
+          <p style={{
+            margin:     0,
+            fontFamily: 'var(--font-body)',
+            fontSize:   '16px',
+            fontWeight: 600,
+            color:      'var(--accent)',
+          }}>
+            ₦{(order.total ?? 0).toLocaleString()}
+          </p>
         </div>
       </div>
-      <ChevronRight size={18} className="text-zinc-700 transition-transform group-hover:translate-x-0.5" />
-    </Link>
+
+      {/* ── Gold left-edge accent on hover ── */}
+      <div style={{
+        position:   'absolute',
+        left:       0,
+        top:        0,
+        bottom:     0,
+        width:      '2px',
+        background: color,
+        opacity:    0.6,
+      }} />
+    </div>
   )
 }
