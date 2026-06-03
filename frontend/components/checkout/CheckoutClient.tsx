@@ -13,8 +13,6 @@
  * - Inline CSS only — no Tailwind utility classes
  */
 
-'use client'
-
 import { useState }          from 'react'
 import { useRouter }         from 'next/navigation'
 import { toast }             from 'sonner'
@@ -42,8 +40,8 @@ type StepIndex = 0 | 1 | 2
 export default function CheckoutClient({ cartItems, subtotal }: Props) {
   const router = useRouter()
 
-  const [step,     setStep]    = useState<StepIndex>(0)
-  const [orderId,  setOrderId] = useState<string | null>(null)
+  const [step,     setStep]     = useState<StepIndex>(0)
+  const [orderId,  setOrderId]  = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
   const [delivery, setDelivery] = useState<DeliveryData>({
@@ -55,7 +53,6 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
 
   const goNext = async () => {
     if (step === 1) {
-      // Create the order before going to upload step
       setCreating(true)
       try {
         const res = await apiFetch('/orders', {
@@ -66,8 +63,11 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
             contact_name:     delivery.fullName,
             contact_phone:    delivery.phone,
           }),
-        })
-        setOrderId(res.data?.id ?? res.id)
+        }) as { data?: { id?: string }; id?: string }
+
+        const id = res?.data?.id ?? res?.id
+        if (!id) throw new Error('Order ID missing from response')
+        setOrderId(id)
         setStep(2)
       } catch (e: any) {
         toast.error(e.message || 'Failed to create order. Please try again.')
@@ -85,9 +85,9 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
 
   return (
     <div style={{
-      minHeight:   '100vh',
-      background:  'var(--bg-base)',
-      padding:     'clamp(24px, 5vw, 64px) clamp(16px, 5vw, 32px)',
+      minHeight: '100vh',
+      background: 'var(--bg-base)',
+      padding:   'clamp(24px, 5vw, 64px) clamp(16px, 5vw, 32px)',
     }}>
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
 
@@ -105,12 +105,7 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
         </h1>
 
         {/* Step indicator */}
-        <div style={{
-          display:       'flex',
-          alignItems:    'center',
-          marginBottom:  '48px',
-          gap:           0,
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '48px' }}>
           {STEPS.map((label, i) => {
             const isActive    = i === step
             const isCompleted = i < step
@@ -118,14 +113,14 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
               <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                   <div style={{
-                    width:      '10px',
-                    height:     '10px',
+                    width:        '10px',
+                    height:       '10px',
                     borderRadius: '50%',
-                    background:  isCompleted ? 'var(--accent)' : isActive ? 'var(--accent)' : 'var(--bg-elevated)',
-                    border:      isActive ? '2px solid var(--accent)' : isCompleted ? 'none' : '2px solid var(--border)',
-                    boxShadow:   isActive ? '0 0 0 3px rgba(201,168,76,0.25)' : 'none',
-                    transition:  'all 200ms ease',
-                    flexShrink:  0,
+                    background:   isCompleted || isActive ? 'var(--accent)' : 'var(--bg-elevated)',
+                    border:       isActive ? '2px solid var(--accent)' : isCompleted ? 'none' : '2px solid var(--border)',
+                    boxShadow:    isActive ? '0 0 0 3px rgba(201,168,76,0.25)' : 'none',
+                    transition:   'all 200ms ease',
+                    flexShrink:   0,
                   }} />
                   <span style={{
                     fontSize:      '9px',
@@ -133,7 +128,7 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
                     fontWeight:    700,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color:         isActive ? 'var(--accent)' : isCompleted ? 'var(--text-muted)' : 'var(--bg-elevated)',
+                    color:         isActive ? 'var(--accent)' : isCompleted ? 'var(--text-muted)' : 'var(--border)',
                     whiteSpace:    'nowrap',
                     transition:    'color 200ms',
                   }}>
@@ -142,13 +137,13 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
                 </div>
                 {i < STEPS.length - 1 && (
                   <div style={{
-                    flex:       1,
-                    height:     '1px',
-                    background: isCompleted ? 'var(--accent)' : 'var(--border)',
+                    flex:         1,
+                    height:       '1px',
+                    background:   isCompleted ? 'var(--accent)' : 'var(--border)',
                     marginBottom: '16px',
-                    marginLeft:  '8px',
-                    marginRight: '8px',
-                    transition:  'background 200ms',
+                    marginLeft:   '8px',
+                    marginRight:  '8px',
+                    transition:   'background 200ms',
                   }} />
                 )}
               </div>
@@ -183,6 +178,7 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
           />
         )}
 
+        {/* Full-screen overlay while creating order */}
         {creating && (
           <div style={{
             position:       'fixed',
