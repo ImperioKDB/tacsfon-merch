@@ -1,17 +1,16 @@
 'use client'
 
-import { useEffect }    from 'react'
-import Image            from 'next/image'
-import { X, ZoomIn }   from 'lucide-react'
+import { useEffect }  from 'react'
+import Image          from 'next/image'
+import { X, ZoomIn } from 'lucide-react'
 
 interface ProofModalProps {
-  src:     string | null
+  src?:    string | null   // optional — modal is a no-op when absent
   orderId: string
   onClose: () => void
 }
 
 export default function ProofModal({ src, orderId, onClose }: ProofModalProps) {
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -112,7 +111,7 @@ export default function ProofModal({ src, orderId, onClose }: ProofModalProps) {
             </button>
           </div>
 
-          {/* Image — next/image with unoptimized for external Supabase URLs */}
+          {/* Image */}
           <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}>
             <Image
               src={src}

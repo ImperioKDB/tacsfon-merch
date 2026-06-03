@@ -1,18 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link                    from 'next/link'
-import Image                   from 'next/image'
-import { Trash2, ShoppingBag } from 'lucide-react'
-import { toast }               from 'sonner'
-import { useCartStore }        from '@/store/cart'
-import { apiFetch }            from '@/lib/api/fetch'
-import { formatPrice }         from '@/lib/utils/formatters'
+import { useEffect, useState, useCallback } from 'react'
+import Link                                 from 'next/link'
+import Image                                from 'next/image'
+import { Trash2, ShoppingBag }              from 'lucide-react'
+import { toast }                            from 'sonner'
+import { useCartStore }                     from '@/store/cart'
+import { apiFetch }                         from '@/lib/api/fetch'
+import { formatPrice }                      from '@/lib/utils/formatters'
 
 interface Variant {
-  id:    string
-  size:  string
-  color: string
+  id:             string
+  size:           string
+  color:          string
   price_override: number | null
   product: {
     id:         string
@@ -33,7 +33,8 @@ export default function CartClient() {
   const [loading, setLoading] = useState(true)
   const setCount              = useCartStore((s) => s.setCount)
 
-  const fetchCart = async () => {
+  // useCallback so fetchCart is stable and safe to list as a useEffect dep
+  const fetchCart = useCallback(async () => {
     try {
       const res = await apiFetch<{ data: CartItem[] }>('/cart')
       setItems(res.data ?? [])
@@ -43,9 +44,9 @@ export default function CartClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setCount])
 
-  useEffect(() => { fetchCart() }, [])
+  useEffect(() => { fetchCart() }, [fetchCart])
 
   const removeItem = async (id: string) => {
     try {
@@ -95,7 +96,14 @@ export default function CartClient() {
         }}
       >
         <ShoppingBag size={48} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
-        <p style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '28px',
+            color: 'var(--text-muted)',
+            letterSpacing: '0.04em',
+          }}
+        >
           YOUR CART IS EMPTY
         </p>
         <Link
@@ -135,9 +143,9 @@ export default function CartClient() {
       {/* Items */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
         {items.map((item) => {
-          const price    = item.variant.price_override ?? item.variant.product.base_price
-          const imgSrc   = item.variant.product.image_url
-          const name     = item.variant.product.name
+          const price  = item.variant.price_override ?? item.variant.product.base_price
+          const imgSrc = item.variant.product.image_url
+          const name   = item.variant.product.name
 
           return (
             <div
@@ -150,12 +158,12 @@ export default function CartClient() {
                 alignItems: 'flex-start',
               }}
             >
-              {/* Thumbnail — next/image */}
+              {/* Thumbnail */}
               <div
                 style={{
                   position: 'relative',
                   width: '80px',
-                  height: '107px',   /* 3:4 ratio */
+                  height: '107px',
                   flexShrink: 0,
                   background: 'var(--bg-elevated)',
                   overflow: 'hidden',
@@ -214,16 +222,21 @@ export default function CartClient() {
                 </p>
 
                 {/* Qty stepper + price row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {(['−', item.quantity, '+'] as const).map((v, i) => (
-                      i === 1 ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)' }}>
+                    {[
+                      { label: '−', action: () => updateQty(item.id, item.quantity - 1) },
+                      { label: String(item.quantity), action: null },
+                      { label: '+', action: () => updateQty(item.id, item.quantity + 1) },
+                    ].map(({ label, action }, i) =>
+                      action === null ? (
                         <span
                           key="qty"
                           style={{
@@ -237,12 +250,12 @@ export default function CartClient() {
                             textAlign: 'center',
                           }}
                         >
-                          {v}
+                          {label}
                         </span>
                       ) : (
                         <button
-                          key={v as string}
-                          onClick={() => updateQty(item.id, item.quantity + (v === '+' ? 1 : -1))}
+                          key={i}
+                          onClick={action}
                           style={{
                             background: 'none',
                             border: 'none',
@@ -254,10 +267,10 @@ export default function CartClient() {
                             minHeight: '36px',
                           }}
                         >
-                          {v}
+                          {label}
                         </button>
                       )
-                    ))}
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -313,10 +326,25 @@ export default function CartClient() {
             marginBottom: '20px',
           }}
         >
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--text-muted)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
             Subtotal
           </span>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '20px', fontWeight: 700, color: 'var(--accent)' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '20px',
+              fontWeight: 700,
+              color: 'var(--accent)',
+            }}
+          >
             {formatPrice(subtotal)}
           </span>
         </div>
