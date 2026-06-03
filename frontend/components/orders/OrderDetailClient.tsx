@@ -1,385 +1,85 @@
 'use client'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowLeft, Home } from 'lucide-react'
+import { apiFetch } from '@/lib/api/fetch'
+import { resolveImageUrl } from '@/lib/utils/formatters'
+import StatusTimeline from './StatusTimeline'
+import type { Order } from '@/types'
 
-/**
- * OrderDetailClient
- *
- * Full order detail view for a student.
- * Phase 8 — TACSFON Merch editorial streetwear design system.
- *
- * Typography scale (tightened vs old version):
- *   - Page title:    Bebas Neue 24px (was 28px)
- *   - Section heads: Bebas Neue 16px (was 18px)
- *   - Body:          DM Sans 13–14px
- *   - Order ID:      Space Mono 11px
- */
+export default function OrderDetailClient({ orderId }: { orderId: string }) {
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
 
-import { useState, useEffect }    from 'react'
-import { useRouter }               from 'next/navigation'
-import { apiFetch }                from '@/lib/api/fetch'
-import StatusTimeline              from '@/components/orders/StatusTimeline'
-import MarkReceivedDialog          from '@/components/orders/MarkReceivedDialog'
-import StepUploadProof             from '@/components/checkout/StepUploadProof'
-import type { Order, OrderStatus } from '@/types'
-
-interface Props {
-  orderId: string
-}
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending_payment:   'AWAITING PAYMENT',
-  payment_submitted: 'PROOF SUBMITTED',
-  confirmed:         'CONFIRMED',
-  dispatched:        'DISPATCHED',
-  received:          'RECEIVED',
-  cancelled:         'CANCELLED',
-}
-
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  pending_payment:   '#C9A84C',
-  payment_submitted: '#60A5FA',
-  confirmed:         '#2DD4BF',
-  dispatched:        '#C084FC',
-  received:          '#4CAF7D',
-  cancelled:         '#E05252',
-}
-
-/* ── Reusable section wrapper ── */
-function Section({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      background:   'var(--bg-surface)',
-      border:       '1px solid var(--border)',
-      padding:      '20px',
-      marginBottom: '12px',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-/* ── Section heading ── */
-function SectionHead({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{
-      margin:        '0 0 16px',
-      fontFamily:    'var(--font-display)',
-      fontSize:      '16px',
-      letterSpacing: '0.08em',
-      color:         'var(--text-primary)',
-    }}>
-      {children}
-    </p>
-  )
-}
-
-export default function OrderDetailClient({ orderId }: Props) {
-  const router = useRouter()
-
-  const [order,        setOrder]        = useState<Order | null>(null)
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState<string | null>(null)
-  const [showReceived, setShowReceived] = useState(false)
-
-  useEffect(() => {
-    apiFetch<{ data: Order }>(`/orders/${orderId}`)
-      .then(res => setOrder(res.data))
-      .catch(err => setError(err.message || 'Failed to load order.'))
-      .finally(() => setLoading(false))
+  const fetchOrder = useCallback(async () => {
+    try {
+      const res = await apiFetch<any>(`/orders/${orderId}`)
+      setOrder(res.data || res)
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }, [orderId])
 
-  /* ── Loading ── */
-  if (loading) {
-    return (
-      <div style={{
-        display:        'flex',
-        alignItems:     'center',
-        justifyContent: 'center',
-        minHeight:      '40vh',
-        fontFamily:     'var(--font-body)',
-        fontSize:       '13px',
-        color:          'var(--text-muted)',
-        letterSpacing:  '0.05em',
-      }}>
-        Loading order…
-      </div>
-    )
-  }
+  useEffect(() => { fetchOrder() }, [fetchOrder])
 
-  /* ── Error ── */
-  if (error || !order) {
-    return (
-      <div style={{
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        justifyContent: 'center',
-        minHeight:      '40vh',
-        gap:            '16px',
-        fontFamily:     'var(--font-body)',
-        textAlign:      'center',
-        padding:        '24px',
-      }}>
-        <p style={{ color: 'var(--danger)', fontSize: '13px', margin: 0 }}>
-          {error ?? 'Order not found.'}
-        </p>
-        <button
-          onClick={() => router.push('/orders')}
-          style={{
-            background:    'none',
-            border:        '1px solid var(--border)',
-            color:         'var(--text-muted)',
-            padding:       '10px 24px',
-            fontSize:      '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            fontFamily:    'var(--font-body)',
-            cursor:        'pointer',
-          }}
-        >
-          Back to Orders
-        </button>
-      </div>
-    )
-  }
-
-  const statusColor = STATUS_COLOR[order.status] ?? 'var(--text-muted)'
-  const statusLabel = STATUS_LABEL[order.status] ?? order.status
+  if (loading) return <div className="min-h-screen bg-black" />
+  if (!order) return <div className="text-white p-20 text-center font-display text-xl uppercase tracking-widest">MANIFEST_NOT_FOUND</div>
 
   return (
-    <div style={{
-      maxWidth:   '680px',
-      margin:     '0 auto',
-      padding:    '24px 16px 96px',
-      fontFamily: 'var(--font-body)',
-    }}>
+    <main className="min-h-screen bg-[#050505] text-[#F5F0E8] pt-20 pb-32 px-6">
+      <div className="max-w-2xl mx-auto space-y-10">
+        
+        <div className="flex justify-between items-center border-b border-white/5 pb-4">
+          <Link href="/orders" className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 hover:text-white transition-colors">
+            <ArrowLeft size={12} /> BACK
+          </Link>
+          <Link href="/" className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-[#C9A84C] hover:text-white transition-colors">
+             STOREFRONT <Home size={12} />
+          </Link>
+        </div>
 
-      {/* ── Back button ── */}
-      <button
-        onClick={() => router.back()}
-        style={{
-          background:    'none',
-          border:        'none',
-          color:         'var(--text-muted)',
-          fontFamily:    'var(--font-body)',
-          fontSize:      '11px',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          cursor:        'pointer',
-          padding:       '0 0 20px 0',
-          display:       'flex',
-          alignItems:    'center',
-          gap:           '6px',
-        }}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-        Orders
-      </button>
-
-      {/* ── Page header ── */}
-      <div style={{
-        display:        'flex',
-        alignItems:     'center',
-        justifyContent: 'space-between',
-        flexWrap:       'wrap',
-        gap:            '10px',
-        marginBottom:   '20px',
-      }}>
-        <div>
-          <h1 style={{
-            margin:        '0 0 3px',
-            fontFamily:    'var(--font-display)',
-            fontSize:      '24px',
-            letterSpacing: '0.08em',
-            color:         'var(--text-primary)',
-          }}>
-            ORDER DETAIL
+        <div className="space-y-3">
+          <p className="font-mono text-[10px] text-zinc-600 tracking-tighter uppercase italic">LOGISTICS_FILE // {order.id.toUpperCase()}</p>
+          <h1 className="font-display text-3xl leading-none uppercase tracking-tighter">
+            Order <span className="text-[#C9A84C]">Manifest.</span>
           </h1>
-          <p style={{
-            margin:        0,
-            fontFamily:    'var(--font-mono)',
-            fontSize:      '11px',
-            color:         'var(--text-muted)',
-            letterSpacing: '0.06em',
-          }}>
-            #{order.id.slice(0, 8).toUpperCase()}
-          </p>
+          <StatusTimeline status={order.status} />
         </div>
 
-        {/* Status badge */}
-        <span style={{
-          display:       'inline-block',
-          padding:       '5px 12px',
-          background:    `${statusColor}1A`,
-          border:        `1px solid ${statusColor}44`,
-          color:         statusColor,
-          fontFamily:    'var(--font-body)',
-          fontSize:      '10px',
-          fontWeight:    700,
-          letterSpacing: '0.12em',
-        }}>
-          {statusLabel}
-        </span>
-      </div>
-
-      {/* ── Timeline ── */}
-      <Section>
-        <SectionHead>PROGRESS</SectionHead>
-        <StatusTimeline status={order.status} />
-      </Section>
-
-      {/* ── Items ── */}
-      {order.items && order.items.length > 0 && (
-        <Section>
-          <SectionHead>ITEMS</SectionHead>
-          {order.items.map((item: any, i: number) => {
-            const name   = item.variant?.product?.name ?? item.product_name ?? 'Product'
-            const price  = (item.unit_price ?? 0) * (item.quantity ?? 1)
-            const label  = [item.variant?.size, item.variant?.color].filter(Boolean).join(' / ')
-            const isLast = i === order.items!.length - 1
-
-            return (
-              <div key={item.id ?? i} style={{
-                display:        'flex',
-                justifyContent: 'space-between',
-                alignItems:     'flex-start',
-                gap:            '12px',
-                padding:        '10px 0',
-                borderBottom:   isLast ? 'none' : '1px solid var(--border)',
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{
-                    margin:      '0 0 2px',
-                    fontFamily:  'var(--font-display)',
-                    fontSize:    '15px',
-                    letterSpacing: '0.04em',
-                    color:       'var(--text-primary)',
-                    overflow:    'hidden',
-                    whiteSpace:  'nowrap',
-                    textOverflow:'ellipsis',
-                  }}>
-                    {name}
-                  </p>
-                  {label && (
-                    <p style={{
-                      margin:     0,
-                      fontFamily: 'var(--font-body)',
-                      fontSize:   '11px',
-                      color:      'var(--text-muted)',
-                    }}>
-                      {label} · Qty: {item.quantity}
-                    </p>
-                  )}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+          <div className="md:col-span-8 space-y-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-600">Inventory_Contents</p>
+            <div className="divide-y divide-white/5 border-y border-white/5">
+              {order.items?.map((item: any) => (
+                <div key={item.id} className="py-4 flex gap-4 items-center">
+                  <div className="relative w-14 h-18 bg-[#111] overflow-hidden border border-white/5 shrink-0">
+                    <Image src={resolveImageUrl(item.variant?.product?.image_url) || ''} alt="merch" fill className="object-cover grayscale" unoptimized />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-lg uppercase tracking-tight text-white leading-none mb-1">{item.variant?.product?.name}</h3>
+                    <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{item.variant?.size} • {item.variant?.color}</p>
+                  </div>
+                  <p className="font-body text-xs font-bold text-[#F5F0E8]">₦{(item.unit_price * item.quantity).toLocaleString()}</p>
                 </div>
-                <p style={{
-                  margin:     0,
-                  fontFamily: 'var(--font-body)',
-                  fontSize:   '14px',
-                  fontWeight: 600,
-                  color:      'var(--accent)',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}>
-                  ₦{price.toLocaleString()}
-                </p>
-              </div>
-            )
-          })}
-
-          {/* Total */}
-          <div style={{
-            display:        'flex',
-            justifyContent: 'space-between',
-            alignItems:     'center',
-            paddingTop:     '14px',
-            marginTop:      '4px',
-            borderTop:      '1px solid var(--border)',
-          }}>
-            <span style={{
-              fontFamily:    'var(--font-body)',
-              fontSize:      '11px',
-              letterSpacing: '0.1em',
-              color:         'var(--text-muted)',
-              textTransform: 'uppercase',
-            }}>
-              Total
-            </span>
-            <span style={{
-              fontFamily: 'var(--font-body)',
-              fontSize:   '18px',
-              fontWeight: 700,
-              color:      'var(--accent)',
-            }}>
-              ₦{(order.total ?? 0).toLocaleString()}
-            </span>
+              ))}
+            </div>
           </div>
-        </Section>
-      )}
 
-      {/* ── Delivery ── */}
-      {order.delivery_address && (
-        <Section>
-          <SectionHead>DELIVERY ADDRESS</SectionHead>
-          <p style={{
-            margin:     0,
-            fontFamily: 'var(--font-body)',
-            fontSize:   '13px',
-            color:      'var(--text-muted)',
-            lineHeight: 1.6,
-          }}>
-            {order.delivery_address}
-          </p>
-        </Section>
-      )}
-
-      {/* ── Upload proof — when pending payment ── */}
-      {order.status === 'pending_payment' && (
-        <Section>
-          <SectionHead>UPLOAD PAYMENT PROOF</SectionHead>
-          <StepUploadProof
-            orderId={order.id}
-            onDone={() => router.push('/orders')}
-            onBack={() => router.back()}
-          />
-        </Section>
-      )}
-
-      {/* ── Mark received CTA — when dispatched ── */}
-      {order.status === 'dispatched' && (
-        <div style={{ marginTop: '12px' }}>
-          <button
-            onClick={() => setShowReceived(true)}
-            style={{
-              width:         '100%',
-              minHeight:     '52px',
-              background:    'var(--success)',
-              border:        'none',
-              color:         '#0A0A0A',
-              fontFamily:    'var(--font-body)',
-              fontSize:      '12px',
-              fontWeight:    700,
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              cursor:        'pointer',
-              transition:    'opacity 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-          >
-            Mark as Received
-          </button>
+          <div className="md:col-span-4 space-y-6">
+            <section className="space-y-2">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-600">Destination</p>
+              <p className="text-[11px] font-medium leading-relaxed text-zinc-400 uppercase tracking-wide">{order.delivery_address || 'Campus Collection'}</p>
+            </section>
+            <section className="space-y-2">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-600">Financials</p>
+              <div className="bg-[#C9A84C] text-black p-4">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-70 mb-1">Amount Paid</p>
+                <p className="text-2xl font-display leading-none">₦{order.total.toLocaleString()}</p>
+              </div>
+            </section>
+          </div>
         </div>
-      )}
-
-      {/* ── MarkReceivedDialog ── */}
-      {showReceived && (
-        <MarkReceivedDialog
-          orderId={order.id}
-          onSuccess={() => { setShowReceived(false); router.refresh() }}
-          onCancel={() => setShowReceived(false)}
-        />
-      )}
-    </div>
+      </div>
+    </main>
   )
 }
