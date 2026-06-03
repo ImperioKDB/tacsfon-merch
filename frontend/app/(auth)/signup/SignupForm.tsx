@@ -1,61 +1,375 @@
-'use client';
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@/lib/supabase/browser';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import { toast } from 'sonner';
+'use client'
+
+/**
+ * SignupForm
+ *
+ * Phase 9 — TACSFON Merch editorial streetwear auth.
+ * Collects: full name, email, phone number, password, confirm password.
+ * No Google OAuth. No email confirmation flow (Supabase auto-confirms
+ * if email confirmations are disabled in the project settings).
+ * On success → redirect to /.
+ */
+
+import { useState, useEffect } from 'react'
+import { useRouter }           from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function SignupForm() {
-  const router = useRouter();
-  const supabase = createBrowserClient();
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', phone: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return; }
-    setError('');
-    setLoading(true);
+  const [fullName, setFullName] = useState('')
+  const [email,    setEmail]    = useState('')
+  const [phone,    setPhone]    = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm,  setConfirm]  = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
 
-    try {
-      const { error: authError } = await supabase.auth.signUp({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        options: {
-          data: { full_name: form.fullName.trim(), phone: form.phone.trim() || null },
-        },
-      });
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
-      if (authError) {
-        setError(authError.message);
-        setLoading(false); // Enable button only on error
-      } else {
-        toast.success("Account created successfully! Redirecting...");
-        router.push('/login'); 
-        // Intentionally keep loading = true to prevent duplicate clicks while routing executes
-      }
-    } catch (err) {
-      setError('Connection issue. Please check your internet.');
-      setLoading(false);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
     }
-  };
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    setLoading(true)
+
+    const { error: authError } = await supabase.auth.signUp({
+      email:    email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          phone:     phone.trim(),
+        },
+      },
+    })
+
+    if (authError) {
+      setError(authError.message)
+      setLoading(false)
+      return
+    }
+
+    // Email confirmations are disabled — user is signed in immediately.
+    router.push('/')
+    router.refresh()
+  }
+
+  const inputStyle: React.CSSProperties = {
+    display:      'block',
+    width:        '100%',
+    boxSizing:    'border-box',
+    padding:      '14px 16px',
+    background:   'var(--bg-elevated)',
+    border:       '1px solid var(--border)',
+    color:        'var(--text-primary)',
+    fontFamily:   'var(--font-body)',
+    fontSize:     '14px',
+    outline:      'none',
+    borderRadius: 0,
+    transition:   'border-color 0.2s ease',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display:       'block',
+    fontFamily:    'var(--font-body)',
+    fontSize:      '11px',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase' as const,
+    color:         'var(--text-muted)',
+    marginBottom:  '6px',
+  }
 
   return (
-    <div className="flex flex-col">
-      <h2 className="text-4xl font-bold text-white mb-8 uppercase tracking-tighter italic">Create Account</h2>
-      {error && <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 mb-6 text-sm flex items-center gap-2"><span>⚠</span>{error}</div>}
-      <form onSubmit={handleSignup} className="space-y-4">
-        <Input label="Full Name" value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} required />
-        <Input label="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
-        <Input label="Phone Number" type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Optional" />
-        <Input label="Password" type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required minLength={8} />
-        <Input label="Confirm Password" type="password" value={form.confirmPassword} onChange={e => setForm({...form, confirmPassword: e.target.value})} required minLength={8} />
-        <Button type="submit" loading={loading} className="w-full mt-4 py-4 uppercase font-black text-[12px] tracking-[0.2em]">{loading ? 'Processing...' : 'Join the Mission'}</Button>
-      </form>
-      <p className="mt-8 text-zinc-500 text-center text-sm font-medium">Already a member? <Link href="/login" className="text-gold font-bold hover:underline">Sign in</Link></p>
+    <div style={{
+      display:       'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      minHeight:     '100dvh',
+      background:    'var(--bg-base)',
+    }}>
+
+      {/* ── Brand panel ── */}
+      <div style={{
+        flex:           isMobile ? 'none' : 1,
+        background:     'linear-gradient(160deg, #0A0A0A 0%, #111008 60%, #1a1505 100%)',
+        display:        'flex',
+        flexDirection:  'column',
+        justifyContent: isMobile ? 'center' : 'flex-end',
+        padding:        isMobile ? '40px 24px' : '64px 56px',
+        position:       'relative',
+        overflow:       'hidden',
+        minHeight:      isMobile ? '180px' : undefined,
+      }}>
+        {/* Decorative grid */}
+        <div style={{
+          position:      'absolute',
+          inset:         0,
+          background:    `
+            repeating-linear-gradient(0deg, transparent, transparent 79px,
+              rgba(201,168,76,0.04) 79px, rgba(201,168,76,0.04) 80px),
+            repeating-linear-gradient(90deg, transparent, transparent 79px,
+              rgba(201,168,76,0.04) 79px, rgba(201,168,76,0.04) 80px)
+          `,
+          pointerEvents: 'none',
+        }} />
+        {/* Corner accent */}
+        <div style={{
+          position:      'absolute',
+          top: 0, left: 0,
+          width:         '120px',
+          height:        '120px',
+          borderRight:   '1px solid rgba(201,168,76,0.2)',
+          borderBottom:  '1px solid rgba(201,168,76,0.2)',
+          pointerEvents: 'none',
+        }} />
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <p style={{
+            margin:        '0 0 24px',
+            fontFamily:    'var(--font-mono)',
+            fontSize:      '11px',
+            color:         'var(--accent)',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+          }}>
+            TACSFON MERCH
+          </p>
+          <h2 style={{
+            margin:        0,
+            fontFamily:    'var(--font-display)',
+            fontSize:      isMobile ? '40px' : 'clamp(48px, 5vw, 72px)',
+            lineHeight:    0.9,
+            letterSpacing: '0.03em',
+            color:         'var(--text-primary)',
+          }}>
+            JOIN<br />THE<br />
+            <span style={{ color: 'var(--accent)' }}>MOVEMENT.</span>
+          </h2>
+          {!isMobile && (
+            <p style={{
+              margin:     '24px 0 0',
+              fontFamily: 'var(--font-body)',
+              fontSize:   '13px',
+              color:      'var(--text-muted)',
+              lineHeight: 1.6,
+              maxWidth:   '280px',
+            }}>
+              Create your account and be the first to know when new drops arrive.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Form panel ── */}
+      <div style={{
+        flex:           isMobile ? 'none' : 1,
+        display:        'flex',
+        flexDirection:  'column',
+        justifyContent: 'center',
+        padding:        isMobile ? '40px 24px 64px' : '48px 56px',
+        background:     'var(--bg-base)',
+        overflowY:      'auto',
+      }}>
+        <div style={{ maxWidth: '380px', width: '100%', margin: isMobile ? '0 auto' : '0' }}>
+
+          <h1 style={{
+            margin:        '0 0 4px',
+            fontFamily:    'var(--font-display)',
+            fontSize:      '32px',
+            letterSpacing: '0.08em',
+            color:         'var(--text-primary)',
+          }}>
+            CREATE ACCOUNT
+          </h1>
+          <p style={{
+            margin:     '0 0 32px',
+            fontFamily: 'var(--font-body)',
+            fontSize:   '13px',
+            color:      'var(--text-muted)',
+          }}>
+            Fill in your details to get started.
+          </p>
+
+          {error && (
+            <div style={{
+              padding:      '12px 16px',
+              background:   'rgba(224,82,82,0.08)',
+              border:       '1px solid rgba(224,82,82,0.25)',
+              color:        'var(--danger)',
+              fontFamily:   'var(--font-body)',
+              fontSize:     '12px',
+              marginBottom: '20px',
+              lineHeight:   1.5,
+            }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {/* Full Name */}
+            <div>
+              <label style={labelStyle}>Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                required
+                placeholder="First Last"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                placeholder="your@email.com"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label style={labelStyle}>Phone Number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                required
+                placeholder="e.g. 08012345678"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label style={labelStyle}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                placeholder="Min. 8 characters"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label style={labelStyle}>Confirm Password</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                required
+                placeholder="Re-enter password"
+                style={{
+                  ...inputStyle,
+                  borderColor: confirm && confirm !== password
+                    ? 'var(--danger)'
+                    : 'var(--border)',
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor =
+                    confirm && confirm !== password ? 'var(--danger)' : 'var(--accent)'
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor =
+                    confirm && confirm !== password ? 'var(--danger)' : 'var(--border)'
+                }}
+              />
+              {confirm && confirm !== password && (
+                <p style={{
+                  margin:     '4px 0 0',
+                  fontFamily: 'var(--font-body)',
+                  fontSize:   '11px',
+                  color:      'var(--danger)',
+                }}>
+                  Passwords don&apos;t match
+                </p>
+              )}
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                marginTop:     '8px',
+                width:         '100%',
+                minHeight:     '52px',
+                background:    loading ? 'var(--bg-elevated)' : 'var(--accent)',
+                border:        'none',
+                color:         loading ? 'var(--text-muted)' : '#0A0A0A',
+                fontFamily:    'var(--font-body)',
+                fontSize:      '13px',
+                fontWeight:    700,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                cursor:        loading ? 'not-allowed' : 'pointer',
+                transition:    'background 0.2s ease',
+              }}
+              onMouseEnter={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent-hover)') }}
+              onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent)') }}
+            >
+              {loading ? 'Creating account…' : 'Create Account'}
+            </button>
+          </form>
+
+          <p style={{
+            marginTop:  '28px',
+            fontFamily: 'var(--font-body)',
+            fontSize:   '13px',
+            color:      'var(--text-muted)',
+            textAlign:  'center',
+          }}>
+            Already have an account?{' '}
+            <a
+              href="/login"
+              style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent)')}
+            >
+              Sign in
+            </a>
+          </p>
+
+        </div>
+      </div>
     </div>
-  );
+  )
 }
