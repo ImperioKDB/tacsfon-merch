@@ -1,79 +1,239 @@
-'use client';
-import { useState } from 'react';
-import { Copy, Check, BellRing, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { apiFetch } from '@/lib/api/fetch';
+'use client'
 
-export default function StepPayment({ cart, deliveryData, onOrderCreated, onBack }: any) {
-  const [copied, setCopied] = useState(false);
-  const [isAlerting, setIsAlerting] = useState(false);
+/**
+ * StepPayment — Phase 7
+ *
+ * Checkout step 2: shows bank transfer details + order total.
+ * - Bank details in a dark card with copy-to-clipboard (gold icon)
+ * - Order summary: items, subtotal, method fee, grand total
+ * - Inline CSS only — no Tailwind utility classes
+ */
 
-  // We map every possible variation of the key name to ensure it finds your Vercel variables
-  const bankDetails = {
-    bank: process.env.NEXT_PUBLIC_BANK_NAME || "Zenith Bank",
-    account: process.env.NEXT_PUBLIC_BANK_ACCOUNT || process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || "1012345678",
-    name: process.env.NEXT_PUBLIC_BANK_OWNER || process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || "TACSFON MERCH STORE"
-  };
+import { useState }  from 'react'
+import { Copy, Check, Landmark } from 'lucide-react'
+import { BANK_CONFIG }           from '@/lib/config/bank'
+import { formatPrice }           from '@/lib/utils/formatters'
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(bankDetails.account);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success("Account number copied");
-  };
+interface CartItem {
+  id:       string
+  quantity: number
+  product?: { name: string }
+  variant?: { price_override?: number | null; size?: string | null; color?: string | null }
+  unit_price: number
+}
 
-  const handlePaidSignal = async () => {
-    setIsAlerting(true);
-    try {
-      const data = await apiFetch<any>('/orders', {
-        method: 'POST',
-        body: JSON.stringify({
-          delivery_address: deliveryData.deliveryAddress,
-          phone: deliveryData.phone
-        })
-      });
+interface Props {
+  cartItems:  CartItem[]
+  subtotal:   number
+  method:     'pickup' | 'delivery'
+  onNext:     () => void
+  onBack:     () => void
+}
 
-      if (data && data.id) {
-        toast.success("Admin notified! Proceed to upload proof.");
-        onOrderCreated(data.id); 
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to signal admin. Check your internet.");
-    } finally {
-      setIsAlerting(false);
-    }
-  };
-
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const handle = async () => {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   return (
-    <div className="bg-zinc-900 border border-zinc-800 p-8 space-y-8 animate-fadeIn">
-      <div className="bg-black border border-zinc-800 p-6 space-y-4">
-        <div>
-          <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest mb-1">Bank Name</p>
-          <p className="text-white font-bold">{bankDetails.bank}</p>
-        </div>
-        <div className="flex justify-between items-center bg-zinc-900/40 p-4 border border-zinc-800">
-          <div>
-            <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest mb-1">Account Number</p>
-            <p className="text-gold font-mono text-2xl font-black">{bankDetails.account}</p>
-          </div>
-          <button onClick={copyToClipboard} className="bg-zinc-800 p-3 text-gold hover:bg-white transition-colors">
-            {copied ? <Check size={20}/> : <Copy size={20}/>}
-          </button>
-        </div>
-        <div>
-          <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest mb-1">Account Name</p>
-          <p className="text-white font-bold uppercase">{bankDetails.name}</p>
-        </div>
-      </div>
+    <button
+      onClick={handle}
+      title="Copy"
+      style={{
+        background: 'transparent',
+        border:     'none',
+        cursor:     'pointer',
+        color:      copied ? 'var(--success)' : 'var(--accent)',
+        display:    'flex',
+        alignItems: 'center',
+        padding:    '4px',
+        flexShrink: 0,
+        transition: 'color 150ms',
+      }}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
+  )
+}
 
-      <div className="space-y-4 pt-4">
-        <button onClick={handlePaidSignal} disabled={isAlerting} 
-                className="w-full bg-gold text-black font-black uppercase py-5 text-sm tracking-widest flex items-center justify-center gap-3 hover:bg-white transition-all disabled:opacity-50">
-          {isAlerting ? <Loader2 className="animate-spin" size={18}/> : <BellRing size={18}/>}
-          {isAlerting ? 'PROCESSING...' : 'I HAVE MADE PAYMENT'}
-        </button>
-        <button onClick={onBack} className="w-full text-zinc-500 font-black uppercase text-[10px] tracking-[0.3em] text-center">Go Back</button>
+function BankRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '11px', fontFamily: 'var(--font-body)', color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '14px', fontFamily: 'var(--font-body)', fontWeight: 600, color: 'var(--text-primary)' }}>
+          {value}
+        </span>
+        <CopyButton text={value} />
       </div>
     </div>
-  );
+  )
+}
+
+export default function StepPayment({ cartItems, subtotal, method, onNext, onBack }: Props) {
+  const deliveryFee = method === 'delivery' ? 500 : 0
+  const total       = subtotal + deliveryFee
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Bank details card */}
+      <div style={{
+        background: 'var(--bg-surface)',
+        border:     '1px solid var(--border)',
+        padding:    '20px',
+      }}>
+        <div style={{
+          display:       'flex',
+          alignItems:    'center',
+          gap:           '10px',
+          marginBottom:  '16px',
+        }}>
+          <span style={{ color: 'var(--accent)' }}><Landmark size={16} /></span>
+          <p style={{
+            fontFamily:    'var(--font-body)',
+            fontSize:      '11px',
+            fontWeight:    700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color:         'var(--text-primary)',
+            margin:        0,
+          }}>
+            Bank Transfer Details
+          </p>
+        </div>
+
+        <BankRow label="Bank"           value={BANK_CONFIG.bankName}    />
+        <BankRow label="Account Number" value={BANK_CONFIG.accountNumber} />
+        <BankRow label="Account Name"   value={BANK_CONFIG.accountName}  />
+        <BankRow label="Amount"         value={formatPrice(total)}       />
+
+        <p style={{
+          marginTop:  '16px',
+          fontSize:   '12px',
+          fontFamily: 'var(--font-body)',
+          color:      'var(--text-muted)',
+          lineHeight: 1.6,
+          margin:     '16px 0 0 0',
+        }}>
+          Transfer the exact amount shown above. You will upload your proof of payment in the next step.
+        </p>
+      </div>
+
+      {/* Order summary */}
+      <div style={{
+        background: 'var(--bg-surface)',
+        border:     '1px solid var(--border)',
+        padding:    '20px',
+      }}>
+        <p style={{
+          fontFamily:    'var(--font-body)',
+          fontSize:      '10px',
+          fontWeight:    700,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color:         'var(--text-muted)',
+          marginBottom:  '16px',
+          margin:        '0 0 16px 0',
+        }}>
+          Order Summary
+        </p>
+
+        {cartItems.map(item => {
+          const variantLabel = [item.variant?.size, item.variant?.color]
+            .filter(Boolean).join(' / ')
+          return (
+            <div key={item.id} style={{
+              display:       'flex',
+              justifyContent:'space-between',
+              alignItems:    'flex-start',
+              padding:       '8px 0',
+              borderBottom:  '1px solid var(--border)',
+            }}>
+              <div>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
+                  {item.product?.name ?? 'Product'} × {item.quantity}
+                </p>
+                {variantLabel && (
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                    {variantLabel}
+                  </p>
+                )}
+              </div>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flexShrink: 0, marginLeft: '16px' }}>
+                {formatPrice(item.unit_price * item.quantity)}
+              </span>
+            </div>
+          )
+        })}
+
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>Subtotal</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-primary)' }}>{formatPrice(subtotal)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>
+              {method === 'delivery' ? 'Delivery Fee' : 'Campus Pickup'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-primary)' }}>
+              {deliveryFee > 0 ? formatPrice(deliveryFee) : 'Free'}
+            </span>
+          </div>
+          <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Total</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '16px', fontWeight: 700, color: 'var(--accent)' }}>{formatPrice(total)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={onBack}
+          style={{
+            flex:           '0 0 auto',
+            minHeight:      '52px',
+            padding:        '0 24px',
+            background:     'var(--bg-surface)',
+            border:         '1px solid var(--border)',
+            color:          'var(--text-muted)',
+            fontFamily:     'var(--font-body)',
+            fontSize:       '12px',
+            fontWeight:     700,
+            letterSpacing:  '0.12em',
+            textTransform:  'uppercase',
+            cursor:         'pointer',
+          }}
+        >
+          ← Back
+        </button>
+        <button
+          onClick={onNext}
+          style={{
+            flex:           1,
+            minHeight:      '52px',
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+            background:     'var(--accent)',
+            border:         'none',
+            color:          '#0A0A0A',
+            fontFamily:     'var(--font-body)',
+            fontSize:       '13px',
+            fontWeight:     700,
+            letterSpacing:  '0.15em',
+            textTransform:  'uppercase',
+            cursor:         'pointer',
+          }}
+        >
+          I've Paid — Upload Proof →
+        </button>
+      </div>
+    </div>
+  )
 }
