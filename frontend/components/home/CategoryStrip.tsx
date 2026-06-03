@@ -9,10 +9,11 @@ interface CategoryStripProps {
 }
 
 export default function CategoryStrip({ categories }: CategoryStripProps) {
-  if (!categories.length) return null
-
+  // ── Hooks must always be called before any early return ──
   const searchParams   = useSearchParams()
   const activeCategory = searchParams.get('category') ?? 'all'
+
+  if (!categories.length) return null
 
   const all = [{ id: 'all', name: 'All' }, ...categories]
 
@@ -42,7 +43,6 @@ export default function CategoryStrip({ categories }: CategoryStripProps) {
             alignItems: 'center',
             overflowX: 'auto',
             scrollbarWidth: 'none',
-            WebkitOverflowScrolling: 'touch' as any,
             gap: '0',
           }}
         >
@@ -70,7 +70,6 @@ export default function CategoryStrip({ categories }: CategoryStripProps) {
                   borderRight: idx < all.length - 1 ? '1px solid var(--border)' : 'none',
                   borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
                   transition: 'color 150ms ease, border-color 150ms ease',
-                  position: 'relative',
                 }}
               >
                 {cat.name}

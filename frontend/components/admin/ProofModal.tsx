@@ -1,32 +1,146 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
-import { toast } from 'sonner'
-import { apiFetch, ApiError } from '@/lib/api/fetch'
-interface Props { orderId: string; onClose: () => void }
-export default function ProofModal({ orderId, onClose }: Props) {
-  const [url, setUrl]         = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+
+import { useEffect }    from 'react'
+import Image            from 'next/image'
+import { X, ZoomIn }   from 'lucide-react'
+
+interface ProofModalProps {
+  src:     string | null
+  orderId: string
+  onClose: () => void
+}
+
+export default function ProofModal({ src, orderId, onClose }: ProofModalProps) {
+  // Close on Escape
   useEffect(() => {
-    apiFetch<{ signed_url: string }>(`/admin/orders/${orderId}/proof`)
-      .then(d => setUrl(d.signed_url))
-      .catch(err => { toast.error(err instanceof ApiError ? err.message : 'Could not load proof.'); onClose() })
-      .finally(() => setLoading(false))
-  }, [orderId, onClose])
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  if (!src) return null
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)' }} onClick={onClose} />
-      <div style={{ position: 'relative', width: '520px', maxWidth: '95vw', background: 'var(--color-surface)', border: '1px solid var(--color-border)', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--font-inter)', color: 'var(--color-text-primary)' }}>Payment Proof</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', display: 'flex' }}><X size={18} strokeWidth={1.5} /></button>
-        </div>
-        <div style={{ padding: '16px', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {loading
-            ? <div className="animate-pulse" style={{ width: '100%', height: '300px', background: 'var(--color-surface-2)' }} />
-            : url ? <img src={url} alt="Payment proof" style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain', display: 'block', margin: '0 auto' }} /> : null}
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 50,
+        }}
+      />
+
+      {/* Modal */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Payment proof for order ${orderId}`}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 51,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            maxWidth: '600px',
+            width: '100%',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ZoomIn size={14} style={{ color: 'var(--accent)' }} />
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Payment Proof
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                #{orderId.slice(0, 8).toUpperCase()}
+              </span>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close proof modal"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '44px',
+                minHeight: '44px',
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Image — next/image with unoptimized for external Supabase URLs */}
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3' }}>
+            <Image
+              src={src}
+              alt={`Payment proof for order ${orderId}`}
+              fill
+              style={{ objectFit: 'contain' }}
+              unoptimized
+            />
+          </div>
+
+          {/* Open in new tab */}
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', textAlign: 'right' }}>
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+              }}
+            >
+              Open full image ↗
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -8,7 +8,6 @@ import FilterBottomSheet                 from '@/components/products/FilterBotto
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface Variant {
   id:             string
   size:           string
@@ -32,7 +31,6 @@ interface Category {
   name: string
 }
 
-// ── Inner component (needs useSearchParams) ───────────────────────────────────
 function ProductsContent() {
   const params   = useSearchParams()
   const [products,   setProducts]   = useState<Product[]>([])
@@ -40,6 +38,7 @@ function ProductsContent() {
   const [loading,    setLoading]    = useState(true)
   const [sheetOpen,  setSheetOpen]  = useState(false)
 
+  // Stable — defined outside effect so it can be listed as a dependency
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? ''
 
   useEffect(() => {
@@ -59,7 +58,7 @@ function ProductsContent() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [params])
+  }, [params, apiBase]) // ← apiBase added
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px' }}>
@@ -143,7 +142,6 @@ function ProductsContent() {
       {/* Layout: sidebar + grid */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '48px' }}>
         <FilterSidebar categories={categories} />
-
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading ? <ProductsSkeleton /> : <ProductsGrid products={products} totalCount={products.length} />}
         </div>
@@ -165,7 +163,6 @@ function ProductsContent() {
   )
 }
 
-// ── Page export ───────────────────────────────────────────────────────────────
 export default function ProductsPage() {
   return (
     <Suspense fallback={<div style={{ padding: '64px 24px', color: 'var(--text-muted)' }}>Loading…</div>}>
