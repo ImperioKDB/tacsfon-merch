@@ -1,136 +1,135 @@
-'use client';
-
-/**
- * VariantSelector
- *
- * Renders size chips and color swatches for selecting a product variant.
- * - Selected chip: gold border + checkmark
- * - Out-of-stock variant: muted + strikethrough text, not selectable
- * - Color swatches: circular buttons, gold ring when selected
- */
 'use client'
 
-import { Check } from 'lucide-react'
+/**
+ * VariantSelector — Phase 5
+ *
+ * Renders size chips and colour swatches for selecting a product variant.
+ * - Selected chip: gold border + gold text + subtle gold bg tint
+ * - Out-of-stock variant: muted + strikethrough, not selectable
+ * - Colour swatches: circular 36px buttons, gold ring when selected
+ * - Uses resolveColor from merch-colors.ts for accurate swatch hex
+ * - Inline CSS only — no Tailwind utility classes
+ */
+
+import { Check }               from 'lucide-react'
 import type { ProductVariant } from '@/types'
+import { resolveColor }        from '@/lib/utils/merch-colors'
 
 interface Props {
-  variants:        ProductVariant[]
-  selectedId:      string | null
-  onSelect:        (variant: ProductVariant) => void
+  variants:   ProductVariant[]
+  selectedId: string | null
+  onSelect:   (variant: ProductVariant) => void
 }
 
-// Derive unique sizes and colours from variant list
-function getUniqueSizes(variants: ProductVariant[]) {
+function uniqueBy<T>(items: T[], key: (item: T) => string | null | undefined): T[] {
   const seen = new Set<string>()
-  return variants.filter(v => {
-    if (!v.size || seen.has(v.size)) return false
-    seen.add(v.size)
+  return items.filter(item => {
+    const k = key(item)
+    if (!k || seen.has(k)) return false
+    seen.add(k)
     return true
   })
 }
 
-function getUniqueColors(variants: ProductVariant[]) {
-  const seen = new Set<string>()
-  return variants.filter(v => {
-    if (!v.color || seen.has(v.color)) return false
-    seen.add(v.color)
-    return true
-  })
-}
-
-// Map common colour names to CSS values for swatches
-const COLOR_MAP: Record<string, string> = {
-  white:   '#F7F5F0', black:  '#0A0A0F', red:    '#D94F4F',
-  yellow:  '#E8A830', blue:   '#3B82F6', green:  '#2D9E6B',
-  pink:    '#EC4899', purple: '#8B5CF6', grey:   '#6B7280',
-  gray:    '#6B7280', navy:   '#1E3A8A', orange: '#F97316',
-  brown:   '#92400E',
-}
-
-function getCssColor(colorName: string): string {
-  return COLOR_MAP[colorName.toLowerCase()] ?? '#6B7280'
+function isOutOfStock(variants: ProductVariant[], dim: 'size' | 'color', value: string): boolean {
+  return variants.filter(v => v[dim] === value).every(v => v.stock_qty === 0)
 }
 
 export default function VariantSelector({ variants, selectedId, onSelect }: Props) {
-  const sizes  = getUniqueSizes(variants)
-  const colors = getUniqueColors(variants)
+  const sizes  = uniqueBy(variants, v => v.size)
+  const colors = uniqueBy(variants, v => v.color)
 
-  const hasSizes  = sizes.length > 0
-  const hasColors = colors.length > 0
+  const hasSizes  = sizes.some(v => v.size)
+  const hasColors = colors.some(v => v.color && v.color !== 'Default')
 
-  // Find the variant that matches a given size or color selection,
-  // carrying over the other dimension from the currently selected variant
   const selectedVariant = variants.find(v => v.id === selectedId) ?? null
 
   function selectBySize(size: string) {
-    // Prefer a variant matching size + current color; fall back to size-only match
     const match =
-      variants.find(v => v.size === size && v.color === selectedVariant?.color) ??
+      variants.find(v => v.size === size && v.color === selectedVariant?.color && v.stock_qty > 0) ??
+      variants.find(v => v.size === size && v.stock_qty > 0) ??
       variants.find(v => v.size === size)
     if (match) onSelect(match)
   }
 
   function selectByColor(color: string) {
     const match =
-      variants.find(v => v.color === color && v.size === selectedVariant?.size) ??
+      variants.find(v => v.color === color && v.size === selectedVariant?.size && v.stock_qty > 0) ??
+      variants.find(v => v.color === color && v.stock_qty > 0) ??
       variants.find(v => v.color === color)
     if (match) onSelect(match)
   }
 
-  function isOutOfStock(dim: 'size' | 'color', value: string) {
-    return variants
-      .filter(v => v[dim] === value)
-      .every(v => v.stock_qty === 0)
+  const labelStyle: React.CSSProperties = {
+    marginBottom:  '10px',
+    fontSize:      '10px',
+    fontFamily:    'var(--font-body)',
+    fontWeight:    700,
+    letterSpacing: '0.18em',
+    textTransform: 'uppercase',
+    color:         'var(--text-muted)',
+    display:       'flex',
+    alignItems:    'center',
+    gap:           '8px',
+  }
+
+  const subLabelStyle: React.CSSProperties = {
+    fontWeight:    400,
+    letterSpacing: 'normal',
+    textTransform: 'none',
+    color:         'var(--text-primary)',
+    fontSize:      '12px',
   }
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-      {/* Sizes */}
       {hasSizes && (
         <div>
-          <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-disabled)' }}>
+          <p style={labelStyle}>
             Size
             {selectedVariant?.size && (
-              <span className="ml-2 normal-case tracking-normal" style={{ color: 'var(--color-text-secondary)' }}>
-                — {selectedVariant.size}
-              </span>
+              <span style={subLabelStyle}>— {selectedVariant.size}</span>
             )}
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {sizes.map(v => {
-              const oos      = isOutOfStock('size', v.size!)
+              if (!v.size) return null
+              const oos      = isOutOfStock(variants, 'size', v.size)
               const selected = selectedVariant?.size === v.size
               return (
                 <button
                   key={v.id}
                   disabled={oos}
                   onClick={() => selectBySize(v.size!)}
-                  className="relative rounded-xl px-4 py-2 text-sm font-medium transition-all"
+                  aria-label={`Size ${v.size}${oos ? ' — out of stock' : ''}`}
                   style={{
-                    background: selected ? 'var(--color-gold-muted)' : 'var(--color-surface-2)',
-                    color:      oos
-                      ? 'var(--color-text-disabled)'
-                      : selected ? 'var(--color-gold)' : 'var(--color-text-primary)',
-                    border: selected
-                      ? '1px solid var(--color-gold)'
-                      : '1px solid var(--color-border)',
-                    minHeight: '44px',
-                    minWidth:  '44px',
-                    opacity:   oos ? 0.5 : 1,
+                    position:       'relative',
+                    minWidth:       '48px',
+                    minHeight:      '48px',
+                    padding:        '0 16px',
+                    border:         selected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    background:     selected ? 'rgba(201,168,76,0.10)' : 'var(--bg-surface)',
+                    color:          oos ? 'var(--text-muted)' : selected ? 'var(--accent)' : 'var(--text-primary)',
+                    fontFamily:     'var(--font-body)',
+                    fontSize:       '13px',
+                    fontWeight:     selected ? 700 : 500,
+                    letterSpacing:  '0.06em',
                     textDecoration: oos ? 'line-through' : 'none',
-                    cursor:    oos ? 'not-allowed' : 'pointer',
+                    cursor:         oos ? 'not-allowed' : 'pointer',
+                    opacity:        oos ? 0.45 : 1,
+                    transition:     'border-color 150ms, background 150ms, color 150ms',
+                    display:        'flex',
+                    alignItems:     'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {selected && (
-                    <Check
-                      size={10}
-                      strokeWidth={2.5}
-                      className="absolute right-1.5 top-1.5"
-                      style={{ color: 'var(--color-gold)' }}
-                    />
-                  )}
                   {v.size}
+                  {selected && (
+                    <span style={{ position: 'absolute', top: '4px', right: '4px', display: 'flex', color: 'var(--accent)' }}>
+                      <Check size={8} strokeWidth={3} />
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -138,50 +137,60 @@ export default function VariantSelector({ variants, selectedId, onSelect }: Prop
         </div>
       )}
 
-      {/* Colors */}
       {hasColors && (
         <div>
-          <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-disabled)' }}>
+          <p style={labelStyle}>
             Color
-            {selectedVariant?.color && (
-              <span className="ml-2 normal-case tracking-normal" style={{ color: 'var(--color-text-secondary)' }}>
-                — {selectedVariant.color}
-              </span>
+            {selectedVariant?.color && selectedVariant.color !== 'Default' && (
+              <span style={subLabelStyle}>— {selectedVariant.color}</span>
             )}
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
             {colors.map(v => {
-              const oos      = isOutOfStock('color', v.color!)
+              if (!v.color || v.color === 'Default') return null
+              const oos      = isOutOfStock(variants, 'color', v.color)
               const selected = selectedVariant?.color === v.color
-              const css      = getCssColor(v.color!)
+              const hex      = resolveColor(v.color)
+              const isLight  = ['white', 'cream', 'beige', 'yellow'].includes(v.color.toLowerCase())
               return (
                 <button
                   key={v.id}
                   disabled={oos}
                   onClick={() => selectByColor(v.color!)}
-                  title={v.color!}
-                  aria-label={`Color: ${v.color}`}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full transition-all"
+                  title={v.color}
+                  aria-label={`Color: ${v.color}${oos ? ' — out of stock' : ''}`}
                   style={{
-                    background: css,
-                    boxShadow:  selected ? `0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-gold)` : 'none',
-                    opacity:    oos ? 0.35 : 1,
-                    cursor:     oos ? 'not-allowed' : 'pointer',
-                    border:     `1px solid rgba(255,255,255,0.15)`,
+                    position:       'relative',
+                    width:          '36px',
+                    height:         '36px',
+                    borderRadius:   '50%',
+                    background:     hex,
+                    border:         '1px solid rgba(255,255,255,0.12)',
+                    boxShadow:      selected ? '0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent)' : 'none',
+                    opacity:        oos ? 0.3 : 1,
+                    cursor:         oos ? 'not-allowed' : 'pointer',
+                    display:        'flex',
+                    alignItems:     'center',
+                    justifyContent: 'center',
+                    transition:     'box-shadow 150ms, opacity 150ms',
+                    flexShrink:     0,
                   }}
                 >
-                  {selected && (
-                    <Check
-                      size={14}
-                      strokeWidth={2.5}
-                      style={{ color: css === '#F7F5F0' ? '#0A0A0F' : '#ffffff' }}
-                    />
-                  )}
+                  {selected && <Check size={14} strokeWidth={2.5} style={{ color: isLight ? '#0A0A0A' : '#ffffff' }} />}
                   {oos && (
                     <div
-                      className="absolute inset-0 rounded-full"
-                      style={{ background: 'rgba(10,10,15,0.5)' }}
-                    />
+                      style={{
+                        position:       'absolute',
+                        inset:          0,
+                        borderRadius:   '50%',
+                        background:     'rgba(10,10,10,0.55)',
+                        display:        'flex',
+                        alignItems:     'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <div style={{ width: '1px', height: '28px', background: 'rgba(255,255,255,0.5)', transform: 'rotate(45deg)' }} />
+                    </div>
                   )}
                 </button>
               )
