@@ -3,31 +3,37 @@
 /**
  * OrderDetailClient
  *
- * Renders a single order's full detail view for a student.
- * - Shows order status timeline
- * - Allows proof upload (step 3 of checkout flow) when status = pending_payment
- * - Allows "mark as received" when status = dispatched
+ * Accepts orderId (string) from page.tsx, fetches the order client-side,
+ * then renders the full detail view for a student.
+ *
+ * Fixes applied:
+ *  - Props: { orderId: string } to match page.tsx usage
+ *  - StatusTimeline  → default import (not named)
+ *  - MarkReceivedDialog → default import + correct props (orderId, onSuccess, onCancel)
+ *  - StepUploadProof → correct props (orderId, onDone, onBack)
+ *  - Order total field: order.total (not order.total_amount)
+ *  - Order items: OrderItem type with variant.product for name/price
  */
 
-import { useState }              from 'react'
-import { useRouter }             from 'next/navigation'
-import { apiFetch }              from '@/lib/api/apiFetch'
-import { StatusTimeline }        from '@/components/orders/StatusTimeline'
-import { MarkReceivedDialog }    from '@/components/orders/MarkReceivedDialog'
-import StepUploadProof           from '@/components/checkout/StepUploadProof'
+import { useState, useEffect }   from 'react'
+import { useRouter }              from 'next/navigation'
+import { apiFetch }               from '@/lib/api/fetch'
+import StatusTimeline             from '@/components/orders/StatusTimeline'
+import MarkReceivedDialog         from '@/components/orders/MarkReceivedDialog'
+import StepUploadProof            from '@/components/checkout/StepUploadProof'
 import type { Order, OrderStatus } from '@/types'
 
 interface Props {
-  order: Order
+  orderId: string
 }
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending_payment:    'Awaiting Payment',
-  payment_submitted:  'Payment Submitted',
-  confirmed:          'Confirmed',
-  dispatched:         'Dispatched',
-  received:           'Received',
-  cancelled:          'Cancelled',
+  pending_payment:   'Awaiting Payment',
+  payment_submitted: 'Payment Submitted',
+  confirmed:         'Confirmed',
+  dispatched:        'Dispatched',
+  received:          'Received',
+  cancelled:         'Cancelled',
 }
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
@@ -39,20 +45,71 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   cancelled:         'var(--danger)',
 }
 
-export default function OrderDetailClient({ order }: Props) {
+export default function OrderDetailClient({ orderId }: Props) {
   const router = useRouter()
-  const [showReceived, setShowReceived] = useState(false)
-  const [marking,      setMarking]      = useState(false)
 
-  const handleMarkReceived = async () => {
-    setMarking(true)
-    try {
-      await apiFetch(`/api/orders/${order.id}/received`, { method: 'POST' })
-      router.refresh()
-    } finally {
-      setMarking(false)
-      setShowReceived(false)
-    }
+  const [order,   setOrder]   = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState<string | null>(null)
+  const [showReceived, setShowReceived] = useState(false)
+
+  useEffect(() => {
+    apiFetch<{ data: Order }>(`/orders/${orderId}`)
+      .then(res => setOrder(res.data))
+      .catch(err => setError(err.message || 'Failed to load order.'))
+      .finally(() => setLoading(false))
+  }, [orderId])
+
+  // ── Loading ──
+  if (loading) {
+    return (
+      <div style={{
+        display:        'flex',
+        alignItems:     'center',
+        justifyContent: 'center',
+        minHeight:      '40vh',
+        color:          'var(--text-muted)',
+        fontFamily:     'var(--font-body)',
+        fontSize:       '14px',
+      }}>
+        Loading order…
+      </div>
+    )
+  }
+
+  // ── Error ──
+  if (error || !order) {
+    return (
+      <div style={{
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: 'center',
+        minHeight:      '40vh',
+        gap:            '16px',
+        fontFamily:     'var(--font-body)',
+      }}>
+        <p style={{ color: 'var(--danger)', fontSize: '14px' }}>
+          {error ?? 'Order not found.'}
+        </p>
+        <button
+          onClick={() => router.push('/orders')}
+          style={{
+            background:    'none',
+            border:        '1px solid var(--border)',
+            color:         'var(--text-muted)',
+            padding:       '8px 20px',
+            fontSize:      '12px',
+            cursor:        'pointer',
+            fontFamily:    'var(--font-body)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Back to Orders
+        </button>
+      </div>
+    )
   }
 
   const statusColor = STATUS_COLOR[order.status] ?? 'var(--text-muted)'
@@ -66,7 +123,7 @@ export default function OrderDetailClient({ order }: Props) {
       fontFamily: 'var(--font-body)',
     }}>
 
-      {/* ── Header ── */}
+      {/* ── Back + Header ── */}
       <div style={{ marginBottom: '32px' }}>
         <button
           onClick={() => router.back()}
@@ -86,7 +143,13 @@ export default function OrderDetailClient({ order }: Props) {
           ← Back to orders
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{
+          display:        'flex',
+          alignItems:     'flex-start',
+          justifyContent: 'space-between',
+          flexWrap:       'wrap',
+          gap:            '12px',
+        }}>
           <div>
             <h1 style={{
               fontFamily:    'var(--font-display)',
@@ -131,60 +194,67 @@ export default function OrderDetailClient({ order }: Props) {
       </div>
 
       {/* ── Items ── */}
-      <div style={{
-        background:   'var(--bg-surface)',
-        border:       '1px solid var(--border)',
-        padding:      '24px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{
-          fontFamily:    'var(--font-display)',
-          fontSize:      '18px',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color:         'var(--text-primary)',
-          margin:        '0 0 20px 0',
-        }}>
-          Items
-        </h2>
-
-        {order.items?.map((item, i) => (
-          <div key={i} style={{
-            display:       'flex',
-            justifyContent:'space-between',
-            alignItems:    'center',
-            padding:       '12px 0',
-            borderBottom:  i < (order.items?.length ?? 0) - 1 ? '1px solid var(--border)' : 'none',
-          }}>
-            <div>
-              <p style={{ margin: '0 0 2px 0', color: 'var(--text-primary)', fontWeight: 600, fontSize: '14px' }}>
-                {item.product_name ?? 'Product'}
-              </p>
-              {item.variant_label && (
-                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '12px' }}>
-                  {item.variant_label} · Qty: {item.quantity}
-                </p>
-              )}
-            </div>
-            <p style={{ margin: 0, color: 'var(--accent)', fontWeight: 700, fontSize: '14px' }}>
-              ₦{((item.unit_price ?? 0) * item.quantity).toLocaleString()}
-            </p>
-          </div>
-        ))}
-
+      {order.items && order.items.length > 0 && (
         <div style={{
-          display:        'flex',
-          justifyContent: 'space-between',
-          paddingTop:     '16px',
-          marginTop:      '8px',
-          borderTop:      '1px solid var(--border)',
+          background:   'var(--bg-surface)',
+          border:       '1px solid var(--border)',
+          padding:      '24px',
+          marginBottom: '24px',
         }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Total</span>
-          <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '18px' }}>
-            ₦{(order.total_amount ?? 0).toLocaleString()}
-          </span>
+          <h2 style={{
+            fontFamily:    'var(--font-display)',
+            fontSize:      '18px',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color:         'var(--text-primary)',
+            margin:        '0 0 20px 0',
+          }}>
+            Items
+          </h2>
+
+          {order.items.map((item: any, i: number) => {
+            const name  = item.variant?.product?.name ?? item.product_name ?? 'Product'
+            const price = (item.unit_price ?? 0) * (item.quantity ?? 1)
+            const label = [item.variant?.size, item.variant?.color].filter(Boolean).join(' / ')
+            return (
+              <div key={item.id ?? i} style={{
+                display:        'flex',
+                justifyContent: 'space-between',
+                alignItems:     'center',
+                padding:        '12px 0',
+                borderBottom:   i < order.items!.length - 1 ? '1px solid var(--border)' : 'none',
+              }}>
+                <div>
+                  <p style={{ margin: '0 0 2px 0', color: 'var(--text-primary)', fontWeight: 600, fontSize: '14px' }}>
+                    {name}
+                  </p>
+                  {label && (
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '12px' }}>
+                      {label} · Qty: {item.quantity}
+                    </p>
+                  )}
+                </div>
+                <p style={{ margin: 0, color: 'var(--accent)', fontWeight: 700, fontSize: '14px' }}>
+                  ₦{price.toLocaleString()}
+                </p>
+              </div>
+            )
+          })}
+
+          <div style={{
+            display:        'flex',
+            justifyContent: 'space-between',
+            paddingTop:     '16px',
+            marginTop:      '8px',
+            borderTop:      '1px solid var(--border)',
+          }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Total</span>
+            <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '18px' }}>
+              ₦{(order.total ?? 0).toLocaleString()}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Delivery info ── */}
       {order.delivery_address && (
@@ -260,11 +330,12 @@ export default function OrderDetailClient({ order }: Props) {
         </div>
       )}
 
+      {/* MarkReceivedDialog: props are orderId + onSuccess + onCancel */}
       {showReceived && (
         <MarkReceivedDialog
-          onConfirm={handleMarkReceived}
+          orderId={order.id}
+          onSuccess={() => { setShowReceived(false); router.refresh() }}
           onCancel={() => setShowReceived(false)}
-          loading={marking}
         />
       )}
     </div>
