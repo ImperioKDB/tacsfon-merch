@@ -1,73 +1,38 @@
 'use client'
 
-import Link from 'next/link'
-import { ShoppingBag } from 'lucide-react'
+/**
+ * CartSummary — Phase 6
+ * Inline CSS only — no Tailwind utility classes.
+ */
 
-interface Props {
+import Link from 'next/link'
+import { formatPrice } from '@/lib/utils/formatters'
+
+interface CartSummaryProps {
+  subtotal:    number
   itemCount:   number
-  total:       number
   onClearCart: () => void
+  isClearing?: boolean
 }
 
-export default function CartSummary({ itemCount, total, onClearCart }: Props) {
-  const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`
-
+export default function CartSummary({ subtotal, itemCount, onClearCart, isClearing = false }: CartSummaryProps) {
   return (
-    <div className="sticky top-24 p-6 rounded-2xl border"
-      style={{
-        background: 'var(--glass-bg)',
-        borderColor: 'var(--glass-border)',
-        backdropFilter: 'var(--glass-blur)',
-      }}>
-      <h2 className="text-lg font-bold mb-6"
-        style={{ color: 'var(--color-text-primary)', fontFamily: 'Urbanist, sans-serif' }}>
-        Order Summary
-      </h2>
-
-      <div className="space-y-3 mb-6">
-        {[
-          { label: `Items (${itemCount})`, value: fmt(total) },
-          { label: 'Delivery',             value: 'Free',
-            vStyle: { color: 'var(--color-success)', fontWeight: 600 } },
-        ].map(({ label, value, vStyle }) => (
-          <div key={label} className="flex justify-between text-sm">
-            <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-            <span style={{ color: 'var(--color-text-primary)', ...vStyle }}>{value}</span>
-          </div>
-        ))}
-        <div className="h-px" style={{ background: 'var(--color-border)' }} />
-        <div className="flex items-center justify-between pt-1">
-          <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Total</span>
-          <span className="text-2xl font-extrabold tabular-nums"
-            style={{ color: 'var(--color-gold)', fontFamily: 'Urbanist, sans-serif' }}>
-            {fmt(total)}
-          </span>
-        </div>
+    <div style={{ position: 'sticky', bottom: 0, left: 0, right: 0, background: 'var(--bg-base)', borderTop: '1px solid var(--border)', padding: '20px 24px', backdropFilter: 'blur(12px)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+          Subtotal · {itemCount} item{itemCount !== 1 ? 's' : ''}
+        </span>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: '22px', fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.01em' }}>
+          {formatPrice(subtotal)}
+        </span>
       </div>
 
-      <Link href="/checkout"
-        className="flex items-center justify-center gap-2 w-full h-14 rounded-xl font-bold text-sm"
-        style={{ background: 'var(--color-gold)', color: '#000', transition: 'all var(--duration-fast)' }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLAnchorElement
-          el.style.background = 'var(--color-gold-light)'
-          el.style.transform  = 'translateY(-1px)'
-          el.style.boxShadow  = 'var(--shadow-gold)'
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLAnchorElement
-          el.style.background = 'var(--color-gold)'
-          el.style.transform  = 'translateY(0)'
-          el.style.boxShadow  = 'none'
-        }}>
-        <ShoppingBag size={18} />
-        Proceed to Checkout
+      <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', minHeight: '56px', background: 'var(--accent)', color: '#0A0A0A', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none' }}>
+        Proceed to Checkout →
       </Link>
 
-      <button onClick={onClearCart}
-        className="mt-4 w-full py-2 text-sm font-medium transition-opacity hover:opacity-70"
-        style={{ color: 'var(--color-error)' }}>
-        Clear Cart
+      <button onClick={onClearCart} disabled={isClearing} style={{ background: 'transparent', border: 'none', cursor: isClearing ? 'not-allowed' : 'pointer', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center', padding: '4px', opacity: isClearing ? 0.5 : 1 }}>
+        {isClearing ? 'Clearing…' : 'Clear Cart'}
       </button>
     </div>
   )
