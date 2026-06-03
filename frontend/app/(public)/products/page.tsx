@@ -1,97 +1,175 @@
-/**
- * /products — Product Catalogue Page (Server Component)
- *
- * - Fetches categories server-side for the sidebar
- * - Passes searchParams (category, size, stock_type, sort) to client grid
- * - URL state drives all filter logic
- */
-import type { Metadata }    from 'next'
-import { Suspense }         from 'react'
-import ProductsGrid         from '@/components/products/ProductsGrid'
-import FilterSidebar        from '@/components/products/FilterSidebar'
-import ProductsSkeleton     from '@/components/products/ProductsSkeleton'
+'use client'
 
-export const metadata: Metadata = {
-  title:       'Products — TACSFON Merch',
-  description: 'Browse the full TACSFON merch collection. Filter by category, size, and availability.',
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams }               from 'next/navigation'
+import { SlidersHorizontal }             from 'lucide-react'
+import FilterSidebar                     from '@/components/products/FilterSidebar'
+import FilterBottomSheet                 from '@/components/products/FilterBottomSheet'
+import ProductsGrid                      from '@/components/products/ProductsGrid'
+import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface Variant {
+  id:             string
+  size:           string
+  color:          string
+  stock_qty:      number
+  price_override: number | null
 }
 
-interface ProductsPageProps {
-  searchParams: {
-    category?:   string
-    size?:       string
-    stock_type?: string
-    sort?:       string
-  }
+interface Product {
+  id:               string
+  name:             string
+  base_price:       number
+  image_url:        string | null
+  stock_type:       'stock' | 'preorder' | 'both'
+  is_available:     boolean
+  product_variants?: Variant[]
 }
 
-async function getCategories() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/categories`,
-      { next: { revalidate: 300 } }
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    return json.data?.categories ?? []
-  } catch {
-    return []
-  }
+interface Category {
+  id:   string
+  name: string
 }
 
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const categories = await getCategories()
+// ── Inner component (needs useSearchParams) ───────────────────────────────────
+function ProductsContent() {
+  const params   = useSearchParams()
+  const [products,   setProducts]   = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [sheetOpen,  setSheetOpen]  = useState(false)
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+  useEffect(() => {
+    const query = new URLSearchParams()
+    if (params.get('category')) query.set('category_id', params.get('category')!)
+    if (params.get('sort'))     query.set('sort',        params.get('sort')!)
+    if (params.get('stock'))    query.set('stock_type',  params.get('stock')!)
+
+    setLoading(true)
+    Promise.all([
+      fetch(`${apiBase}/api/products?${query.toString()}`).then(r => r.json()),
+      fetch(`${apiBase}/api/categories`).then(r => r.json()),
+    ])
+      .then(([pRes, cRes]) => {
+        setProducts(pRes.data   ?? pRes ?? [])
+        setCategories(cRes.data ?? cRes ?? [])
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [params])
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: 'var(--color-bg)' }}
-    >
-      {/* ── Page Header ── */}
-      <div
-        className="border-b px-4 py-8 md:px-8"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        <div className="mx-auto max-w-7xl">
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px' }}>
+
+      {/* Page header */}
+      <div style={{ marginBottom: '48px' }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+            marginBottom: '8px',
+          }}
+        >
+          TACSFON Merch
+        </p>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
           <h1
-            className="text-4xl font-bold"
             style={{
-              color:      'var(--color-text-primary)',
-              fontFamily: 'var(--font-urbanist)',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(40px, 6vw, 72px)',
+              lineHeight: 1,
+              letterSpacing: '0.04em',
+              color: 'var(--text-primary)',
+              margin: 0,
             }}
           >
-            The Collection
+            ALL PRODUCTS
           </h1>
-          <p
-            className="mt-2 text-base"
-            style={{ color: 'var(--color-text-secondary)' }}
+
+          {/* Mobile filter button */}
+          <button
+            onClick={() => setSheetOpen(true)}
+            className="filter-trigger"
+            aria-label="Open filters"
+            style={{
+              display: 'none',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--text-primary)',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              padding: '10px 18px',
+              cursor: 'pointer',
+              minHeight: '44px',
+            }}
           >
-            Premium TACSFON merch — wear the mission.
-          </p>
+            <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
+            Filter
+          </button>
+        </div>
+
+        {/* Gold rule */}
+        <div
+          aria-hidden="true"
+          style={{
+            height: '1px',
+            background: 'linear-gradient(90deg, var(--accent), transparent)',
+            marginTop: '20px',
+            maxWidth: '240px',
+          }}
+        />
+      </div>
+
+      {/* Layout: sidebar + grid */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '48px' }}>
+        <FilterSidebar categories={categories} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading ? <ProductsSkeleton /> : <ProductsGrid products={products} totalCount={products.length} />}
         </div>
       </div>
 
-      {/* ── Body: Sidebar + Grid ── */}
-      <div className="mx-auto flex max-w-7xl gap-8 px-4 py-8 md:px-8">
+      {/* Mobile bottom sheet */}
+      <FilterBottomSheet
+        categories={categories}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+      />
 
-        {/* Desktop Filter Sidebar */}
-        <aside className="hidden w-64 flex-shrink-0 lg:block">
-          <FilterSidebar
-            categories={categories}
-            activeCategory={searchParams.category    ?? ''}
-            activeSize={searchParams.size            ?? ''}
-            activeStockType={searchParams.stock_type ?? ''}
-            activeSort={searchParams.sort            ?? 'newest'}
-          />
-        </aside>
-
-        {/* Product Grid */}
-        <main className="min-w-0 flex-1">
-          <Suspense fallback={<ProductsSkeleton />}>
-            <ProductsGrid searchParams={searchParams} categories={categories} />
-          </Suspense>
-        </main>
-      </div>
+      <style>{`
+        @media (max-width: 1023px) {
+          .filter-trigger { display: inline-flex !important; }
+        }
+      `}</style>
     </div>
+  )
+}
+
+// ── Page export ───────────────────────────────────────────────────────────────
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '64px 24px', color: 'var(--text-muted)' }}>Loading…</div>}>
+      <ProductsContent />
+    </Suspense>
   )
 }

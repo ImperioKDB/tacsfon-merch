@@ -1,170 +1,221 @@
-'use client';
-
-/**
- * FilterSidebar (Desktop)
- *
- * Sticky left panel — category, size, stock type, sort.
- * Every change updates URL params via next/navigation.
- */
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback }                              from 'react'
-import { SlidersHorizontal, X }                    from 'lucide-react'
+import { SlidersHorizontal }                       from 'lucide-react'
 
-const SIZES     = ['S', 'M', 'L', 'XL', 'One Size']
-const SORT_OPTS = [
-  { value: 'newest',     label: 'Newest First' },
-  { value: 'price_asc',  label: 'Price: Low → High' },
-  { value: 'price_desc', label: 'Price: High → Low' },
-]
-const STOCK_OPTS = [
-  { value: '',         label: 'All' },
-  { value: 'stock',    label: 'In Stock' },
-  { value: 'preorder', label: 'Pre-order' },
-]
-
-interface Category { id: string; name: string }
-
-interface Props {
-  categories:      Category[]
-  activeCategory:  string
-  activeSize:      string
-  activeStockType: string
-  activeSort:      string
+interface Category {
+  id:   string
+  name: string
 }
 
-export default function FilterSidebar({
-  categories, activeCategory, activeSize, activeStockType, activeSort,
-}: Props) {
-  const router       = useRouter()
-  const pathname     = usePathname()
-  const searchParams = useSearchParams()
+interface FilterSidebarProps {
+  categories: Category[]
+}
 
-  const updateParam = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (value) { params.set(key, value) } else { params.delete(key) }
-      router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    },
-    [router, pathname, searchParams]
-  )
+const SORT_OPTIONS = [
+  { value: 'newest',     label: 'Newest First'   },
+  { value: 'price_asc',  label: 'Price: Low–High' },
+  { value: 'price_desc', label: 'Price: High–Low' },
+  { value: 'name_asc',   label: 'Name A–Z'        },
+]
 
-  const hasFilters =
-    activeCategory || activeSize || activeStockType || (activeSort && activeSort !== 'newest')
+const STOCK_OPTIONS = [
+  { value: 'all',      label: 'All'         },
+  { value: 'in_stock', label: 'In Stock'    },
+  { value: 'preorder', label: 'Pre-order'   },
+]
+
+export default function FilterSidebar({ categories }: FilterSidebarProps) {
+  const router     = useRouter()
+  const pathname   = usePathname()
+  const params     = useSearchParams()
+
+  const activeCategory = params.get('category') ?? 'all'
+  const activeSort     = params.get('sort')     ?? 'newest'
+  const activeStock    = params.get('stock')    ?? 'all'
+
+  const update = useCallback((key: string, value: string) => {
+    const next = new URLSearchParams(params.toString())
+    if (value === 'all' || value === 'newest') {
+      next.delete(key)
+    } else {
+      next.set(key, value)
+    }
+    router.push(`${pathname}?${next.toString()}`)
+  }, [params, pathname, router])
+
+  const clearAll = () => router.push(pathname)
+
+  const hasFilters = params.has('category') || params.has('sort') || params.has('stock')
 
   return (
-    <div className="sticky top-24 space-y-7">
-
+    <aside
+      style={{
+        width: '220px',
+        flexShrink: 0,
+        position: 'sticky',
+        top: '96px',
+        alignSelf: 'flex-start',
+        display: 'none',
+      }}
+      className="filter-sidebar"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal size={18} strokeWidth={1.5} style={{ color: 'var(--color-gold)' }} />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '24px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
           <span
-            className="text-sm font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--color-text-primary)' }}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--text-primary)',
+            }}
           >
-            Filters
+            Filter
           </span>
         </div>
+
         {hasFilters && (
           <button
-            onClick={() => router.push(pathname, { scroll: false })}
-            className="flex items-center gap-1 text-xs"
-            style={{ color: 'var(--color-gold)' }}
+            onClick={clearAll}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              color: 'var(--accent)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              letterSpacing: '0.08em',
+              textDecoration: 'underline',
+              padding: 0,
+            }}
           >
-            <X size={12} strokeWidth={1.5} /> Clear
+            Clear
           </button>
         )}
       </div>
 
-      {/* Sort */}
-      <Section title="Sort By">
-        {SORT_OPTS.map(opt => (
-          <RowBtn
-            key={opt.value}
-            label={opt.label}
-            active={activeSort === opt.value || (!activeSort && opt.value === 'newest')}
-            onClick={() => updateParam('sort', opt.value)}
+      {/* ── Category ── */}
+      <FilterSection label="Category">
+        {[{ id: 'all', name: 'All' }, ...categories].map((cat) => (
+          <FilterRow
+            key={cat.id}
+            label={cat.name}
+            active={cat.id === activeCategory}
+            onClick={() => update('category', cat.id)}
           />
         ))}
-      </Section>
+      </FilterSection>
 
-      {/* Categories */}
-      {categories.length > 0 && (
-        <Section title="Category">
-          <RowBtn label="All Categories" active={!activeCategory} onClick={() => updateParam('category', '')} />
-          {categories.map(cat => (
-            <RowBtn
-              key={cat.id}
-              label={cat.name}
-              active={activeCategory === cat.id}
-              onClick={() => updateParam('category', cat.id)}
-            />
-          ))}
-        </Section>
-      )}
-
-      {/* Sizes */}
-      <Section title="Size">
-        <div className="flex flex-wrap gap-2">
-          {SIZES.map(size => (
-            <button
-              key={size}
-              onClick={() => updateParam('size', activeSize === size ? '' : size)}
-              className="rounded-lg px-3 py-1.5 text-sm font-medium"
-              style={{
-                background: activeSize === size ? 'var(--color-gold)' : 'var(--color-surface-2)',
-                color:      activeSize === size ? '#0A0A0F' : 'var(--color-text-secondary)',
-                border:     `1px solid ${activeSize === size ? 'var(--color-gold)' : 'var(--color-border)'}`,
-                minHeight:  '36px',
-                minWidth:   '44px',
-              }}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </Section>
-
-      {/* Availability */}
-      <Section title="Availability">
-        {STOCK_OPTS.map(opt => (
-          <RowBtn
+      {/* ── Sort ── */}
+      <FilterSection label="Sort By">
+        {SORT_OPTIONS.map((opt) => (
+          <FilterRow
             key={opt.value}
             label={opt.label}
-            active={activeStockType === opt.value}
-            onClick={() => updateParam('stock_type', opt.value)}
+            active={opt.value === activeSort}
+            onClick={() => update('sort', opt.value)}
           />
         ))}
-      </Section>
-    </div>
+      </FilterSection>
+
+      {/* ── Availability ── */}
+      <FilterSection label="Availability">
+        {STOCK_OPTIONS.map((opt) => (
+          <FilterRow
+            key={opt.value}
+            label={opt.label}
+            active={opt.value === activeStock}
+            onClick={() => update('stock', opt.value)}
+          />
+        ))}
+      </FilterSection>
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .filter-sidebar { display: block !important; }
+        }
+      `}</style>
+    </aside>
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/* ── Sub-components ── */
+
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-disabled)' }}>
-        {title}
+    <div style={{ marginBottom: '32px' }}>
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '10px',
+          fontWeight: 600,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+          marginBottom: '12px',
+        }}
+      >
+        {label}
       </p>
-      <div className="space-y-1">{children}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {children}
+      </div>
     </div>
   )
 }
 
-function RowBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterRow({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="block w-full rounded-lg px-3 py-2 text-left text-sm"
       style={{
-        background: active ? 'var(--color-gold-muted)' : 'transparent',
-        color:      active ? 'var(--color-gold)' : 'var(--color-text-secondary)',
-        border:     active ? '1px solid rgba(201,168,76,0.25)' : '1px solid transparent',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        width: '100%',
+        padding: '8px 0',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        textAlign: 'left',
       }}
     >
-      {label}
+      {/* Radio dot */}
+      <span
+        style={{
+          width: '14px',
+          height: '14px',
+          borderRadius: '50%',
+          border: active ? '4px solid var(--accent)' : '1px solid var(--border)',
+          flexShrink: 0,
+          transition: 'border 150ms ease',
+        }}
+      />
+      <span
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+          fontWeight: active ? 600 : 400,
+          transition: 'color 150ms ease',
+        }}
+      >
+        {label}
+      </span>
     </button>
   )
 }

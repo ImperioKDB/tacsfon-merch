@@ -1,11 +1,5 @@
 'use client'
 
-/**
- * ProductCard — used in the /products grid page.
- * Matches the home ProductCard aesthetic but is self-contained
- * (no quick-add, just a clean click-through to the detail page).
- */
-
 import Image from 'next/image'
 import Link  from 'next/link'
 import { ShoppingBag } from 'lucide-react'
@@ -31,9 +25,9 @@ interface Product {
 function getStockBadge(product: Product) {
   const variants = product.product_variants ?? []
   const totalQty = variants.reduce((sum, v) => sum + (v.stock_qty ?? 0), 0)
-  if (product.stock_type === 'preorder')    return { label: 'Pre-order', color: 'var(--accent)',    bg: 'rgba(201,168,76,0.12)' }
-  if (totalQty <= 3 && totalQty > 0)        return { label: 'Low Stock', color: 'var(--danger)',    bg: 'rgba(224,82,82,0.12)' }
-  if (totalQty === 0)                       return { label: 'Sold Out',  color: 'var(--text-muted)',bg: 'rgba(255,255,255,0.06)' }
+  if (product.stock_type === 'preorder') return { label: 'Pre-order', color: 'var(--accent)',     bg: 'rgba(201,168,76,0.12)' }
+  if (totalQty <= 3 && totalQty > 0)    return { label: 'Low Stock', color: 'var(--danger)',     bg: 'rgba(224,82,82,0.12)' }
+  if (totalQty === 0)                   return { label: 'Sold Out',  color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
   return null
 }
 
@@ -57,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
       style={{ display: 'block', textDecoration: 'none' }}
       aria-label={`${product.name} — ${displayPrice}`}
     >
-      {/* Image */}
+      {/* Image container */}
       <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
         {product.image_url ? (
           <Image
@@ -87,11 +81,8 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Hover overlay */}
         <div className="product-card__overlay" aria-hidden="true" />
 
-        {/* Hover label */}
-        <div
-          className="product-card__info"
-          style={{ pointerEvents: 'none' }}
-        >
+        {/* Hover reveal panel */}
+        <div className="product-card__info" style={{ pointerEvents: 'none' }}>
           <p
             style={{
               fontFamily: 'var(--font-display)',
@@ -140,7 +131,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </div>
 
-      {/* Below-image info */}
+      {/* Below-image info row */}
       <div
         style={{
           padding: '12px 14px',
