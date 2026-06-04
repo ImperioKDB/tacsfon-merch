@@ -40,18 +40,16 @@ export default function HomeProductCard({ product, priority = false }: Props) {
     : totalQty === 0                    ? { label: 'Sold Out',  color: '#555',    bg: 'rgba(255,255,255,0.05)' }
     : null
 
-  // ── IntersectionObserver: pin overlay when card scrolls into view ──────────
+  // ── IntersectionObserver: show overlay whenever card enters viewport ────────
+  // No touch-device gate — the observer runs on all devices.
+  // Desktop users see the overlay via :hover (CSS); this adds scroll-reveal.
+  // threshold 0.3 = fires as soon as 30% of the card is visible.
   useEffect(() => {
     const el = cardRef.current
-    if (!el || typeof window === 'undefined') return
-
-    // Only auto-pin on touch devices (mobile / tablet)
-    const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches
-    if (!isTouch) return
-
+    if (!el) return
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0.55 }   // card must be 55 % visible to trigger
+      { threshold: 0.3 }
     )
     observer.observe(el)
     return () => observer.disconnect()
