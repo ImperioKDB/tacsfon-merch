@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { ShoppingBag, Loader2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCartStore }    from '@/store/cart'
-import { apiFetech }       from '@/lib/api/fetch'
+import { apiFetch }       from '@/lib/api/fetch'
 import StickyATC           from '@/components/product/StickyATC'
 import VariantSelector     from './VariantSelector'
 import QuantitySelector    from './QuantitySelector'
@@ -45,7 +45,7 @@ export default function ProductInfo({ product }: Props) {
     if (!selectedVariant) return toast.error('Please select a variant')
     setAdding(true)
     try {
-      await apiFetech('/cart/items', {
+      await apiFetch('/cart/items', {
         method: 'POST',
         body: JSON.stringify({ variant_id: selectedVariant.id, quantity: qty }),
       })
