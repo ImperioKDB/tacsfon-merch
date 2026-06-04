@@ -94,7 +94,7 @@ export default function PendingOrdersPage() {
         </span>
       )
     }
-    return <span>{String((row as unknown as Record<string, unknown
+    return <span>{String((row as unknown as Record<string, unknown>)[key] ?? '—')}</span>
   }
 
   return (
