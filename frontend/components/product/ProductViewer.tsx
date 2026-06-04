@@ -5,11 +5,11 @@ import { resolveImageUrl } from '@/lib/utils/formatters'
 export default function ProductViewer({ imageUrl, productName }: { imageUrl: string | null, productName: string }) {
   const img = resolveImageUrl(imageUrl)
   return (
-    <div className="relative aspect-[3/4] bg-[#0D0D0D] border border-white/5 overflow-hidden group">
+    <div className="relative aspect-[3/4] bg-[#0D0D0D] border border-white/5 overflow-hidden">
       {img ? (
-        <Image src={img} alt={productName} fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
+        <Image src={img} alt={productName} fill className="object-cover" unoptimized />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-[9px] font-black text-zinc-800 uppercase tracking-widest">Media_Pending</div>
+        <div className="h-full flex items-center justify-center text-[10px] uppercase text-zinc-800">No_Media</div>
       )}
     </div>
   )
