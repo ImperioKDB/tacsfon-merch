@@ -28,14 +28,14 @@ function OrderStepper({ status }: { status: string }) {
             <div
               className="w-2 h-2 rounded-full transition-all duration-500"
               style={{
-                background: i <= idx ? '#C9A84C' : '#2A2A38',
-                boxShadow : i === idx ? '0 0 8px 2px rgba(201,168,76,0.5)' : 'none',
+                background: i <= idx ? '#3DBA6F' : '#2A2A38',
+                boxShadow : i === idx ? '0 0 8px 2px rgba(61,186,111,0.5)' : 'none',
                 transform : i === idx ? 'scale(1.4)' : 'scale(1)',
               }}
             />
             <p
               className="text-[8px] font-black uppercase tracking-wider whitespace-nowrap"
-              style={{ color: i <= idx ? '#C9A84C' : '#3A3A48' }}
+              style={{ color: i <= idx ? '#3DBA6F' : '#3A3A48' }}
             >
               {label}
             </p>
@@ -43,7 +43,7 @@ function OrderStepper({ status }: { status: string }) {
           {i < STEP_LABELS.length - 1 && (
             <div
               className="flex-1 h-px mx-1 mb-4 transition-all duration-500"
-              style={{ background: i < idx ? '#C9A84C' : '#2A2A38' }}
+              style={{ background: i < idx ? '#3DBA6F' : '#2A2A38' }}
             />
           )}
         </div>
@@ -89,8 +89,8 @@ function Tile({
       onMouseEnter={e => {
         if (!href && !onClick) return
         const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = '#C9A84C40'
-        el.style.boxShadow   = '0 0 24px rgba(201,168,76,0.06)'
+        el.style.borderColor = '#3DBA6F40'
+        el.style.boxShadow   = '0 0 24px rgba(61,186,111,0.06)'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLDivElement
@@ -194,7 +194,7 @@ export default function ProfilePage() {
   if (authLoading || pageLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#050508', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <RefreshCw className="animate-spin" style={{ color: '#C9A84C' }} size={28} />
+        <RefreshCw className="animate-spin" style={{ color: '#3DBA6F' }} size={28} />
       </div>
     )
   }
@@ -215,7 +215,7 @@ export default function ProfilePage() {
             position    : 'absolute',
             top         : '50%', left: '-10%',
             width       : '60%', height: '120%',
-            background  : 'radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%)',
+            background  : 'radial-gradient(ellipse, rgba(61,186,111,0.07) 0%, transparent 70%)',
             transform   : 'translateY(-50%)',
             pointerEvents: 'none',
           }} />
@@ -230,7 +230,7 @@ export default function ProfilePage() {
             color        : '#F7F5F0',
             position     : 'relative',
           }}>
-            {firstName}<span style={{ color: '#C9A84C' }}>.</span>
+            {firstName}<span style={{ color: '#3DBA6F' }}>.</span>
           </h1>
         </div>
 
@@ -246,13 +246,13 @@ export default function ProfilePage() {
         </p>
 
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <ShieldCheck size={12} style={{ color: isAdmin ? '#C9A84C' : '#3E3E52' }} />
+          <ShieldCheck size={12} style={{ color: isAdmin ? '#3DBA6F' : '#3E3E52' }} />
           <span style={{
             fontSize     : '9px',
             fontWeight   : 900,
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color        : isAdmin ? '#C9A84C' : '#3E3E52',
+            color        : isAdmin ? '#3DBA6F' : '#3E3E52',
             fontFamily   : 'monospace',
           }}>
             {isAdmin ? 'Administrator' : 'Standard Access'}
@@ -277,7 +277,7 @@ export default function ProfilePage() {
               <Label>Order Updates</Label>
               {unread > 0 && (
                 <div style={{
-                  background   : '#C9A84C',
+                  background   : '#3DBA6F',
                   color        : '#050508',
                   fontSize     : '9px',
                   fontWeight   : 900,
@@ -299,21 +299,21 @@ export default function ProfilePage() {
               <div style={{
                 width          : '40px', height: '40px',
                 borderRadius   : '50%',
-                background     : unread > 0 ? 'rgba(201,168,76,0.1)' : '#13131A',
-                border         : `1px solid ${unread > 0 ? 'rgba(201,168,76,0.3)' : '#1E1E2A'}`,
+                background     : unread > 0 ? 'rgba(61,186,111,0.1)' : '#13131A',
+                border         : `1px solid ${unread > 0 ? 'rgba(61,186,111,0.3)' : '#1E1E2A'}`,
                 display        : 'flex',
                 alignItems     : 'center',
                 justifyContent : 'center',
                 flexShrink     : 0,
                 position       : 'relative',
               }}>
-                <Bell size={16} style={{ color: unread > 0 ? '#C9A84C' : '#3E3E52' }} />
+                <Bell size={16} style={{ color: unread > 0 ? '#3DBA6F' : '#3E3E52' }} />
                 {unread > 0 && (
                   <span style={{
                     position  : 'absolute', top: '-4px', right: '-4px',
                     width     : '8px', height: '8px',
-                    background: '#C9A84C', borderRadius: '50%',
-                    boxShadow : '0 0 6px #C9A84C',
+                    background: '#3DBA6F', borderRadius: '50%',
+                    boxShadow : '0 0 6px #3DBA6F',
                     animation : 'pulse 2s infinite',
                   }} />
                 )}
@@ -371,10 +371,10 @@ export default function ProfilePage() {
                     fontWeight   : 900,
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase',
-                    color        : '#C9A84C',
+                    color        : '#3DBA6F',
                     fontFamily   : 'monospace',
-                    background   : 'rgba(201,168,76,0.08)',
-                    border       : '1px solid rgba(201,168,76,0.2)',
+                    background   : 'rgba(61,186,111,0.08)',
+                    border       : '1px solid rgba(61,186,111,0.2)',
                     padding      : '4px 10px',
                   }}>
                     {activeOrder.status.replace(/_/g, ' ')}
@@ -409,7 +409,7 @@ export default function ProfilePage() {
         <Tile href="/orders">
           <Label>Inventory</Label>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-            <Package2 size={22} style={{ color: '#C9A84C', marginBottom: '16px' }} />
+            <Package2 size={22} style={{ color: '#3DBA6F', marginBottom: '16px' }} />
             <div>
               <p style={{
                 fontSize     : 'clamp(13px, 3vw, 16px)',
@@ -437,7 +437,7 @@ export default function ProfilePage() {
         <Tile href="/cart">
           <Label>Cart</Label>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-            <ShoppingBag size={22} style={{ color: '#C9A84C', marginBottom: '16px' }} />
+            <ShoppingBag size={22} style={{ color: '#3DBA6F', marginBottom: '16px' }} />
             <div>
               <p style={{
                 fontSize     : 'clamp(13px, 3vw, 16px)',
@@ -504,7 +504,7 @@ export default function ProfilePage() {
                     disabled={isSaving}
                     style={{
                       display     : 'flex', alignItems: 'center', gap: '5px',
-                      background  : '#C9A84C', border: 'none',
+                      background  : '#3DBA6F', border: 'none',
                       cursor      : 'pointer', color: '#050508',
                       fontSize    : '9px', fontWeight: 900,
                       letterSpacing: '0.15em', textTransform: 'uppercase',
@@ -525,13 +525,13 @@ export default function ProfilePage() {
                   style={{
                     display     : 'flex', alignItems: 'center', gap: '5px',
                     background  : 'none', border: '1px solid #2A2A38',
-                    cursor      : 'pointer', color: '#C9A84C',
+                    cursor      : 'pointer', color: '#3DBA6F',
                     fontSize    : '9px', fontWeight: 900,
                     letterSpacing: '0.15em', textTransform: 'uppercase',
                     fontFamily  : 'monospace', padding: '5px 10px',
                     transition  : 'border-color 150ms ease',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#C9A84C')}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#3DBA6F')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#2A2A38')}
                 >
                   <Pencil size={10} /> Edit
@@ -573,7 +573,7 @@ export default function ProfilePage() {
                       fontSize     : '13px', padding: '12px 14px',
                       outline      : 'none',
                     }}
-                    onFocus={e  => (e.target.style.borderColor = '#C9A84C')}
+                    onFocus={e  => (e.target.style.borderColor = '#3DBA6F')}
                     onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
                   />
                 </div>
@@ -598,7 +598,7 @@ export default function ProfilePage() {
                       fontSize    : '13px', padding: '12px 14px',
                       outline     : 'none', resize: 'vertical',
                     }}
-                    onFocus={e  => (e.target.style.borderColor = '#C9A84C')}
+                    onFocus={e  => (e.target.style.borderColor = '#3DBA6F')}
                     onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
                   />
                 </div>
