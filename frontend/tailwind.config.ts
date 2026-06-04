@@ -46,8 +46,8 @@ const config: Config = {
         '400': '400ms',
       },
       backgroundImage: {
-        'gradient-gold': 'linear-gradient(90deg, #3DBA6F, transparent)',
-        'gradient-card': 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)',
+        'gradient-accent': 'linear-gradient(90deg, #3DBA6F, transparent)',
+        'gradient-card':   'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)',
       },
       aspectRatio: {
         'product': '3 / 4',

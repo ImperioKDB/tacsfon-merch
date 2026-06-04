@@ -1,9 +1,9 @@
 /**
- * Maps product variant colour names to display hex values.
- * Add new colours here as TACSFON introduces them — no other code changes needed.
+ * Maps product variant colour names to display hex values for swatches.
+ * Add new colours here as TACSFON introduces them.
  *
- * NOTE: These are PRODUCT colours for swatches and display only.
- * They are NOT brand colours. The brand accent is #3DBA6F (green).
+ * NOTE: These are PRODUCT colours, not brand colours.
+ * The brand accent green is #3DBA6F and lives in globals.css / tailwind.config.ts.
  */
 export const MERCH_COLORS: Record<string, string> = {
   maroon:    '#7B1A2E',
@@ -13,7 +13,7 @@ export const MERCH_COLORS: Record<string, string> = {
   navy:      '#1B2A4A',
   red:       '#C0392B',
   green:     '#1A4A2A',
-  gold:      '#C9A84C',  // actual gold colour for product variants named "gold"
+  gold:      '#C9A84C',
   grey:      '#555555',
   gray:      '#555555',
   brown:     '#5C3317',
