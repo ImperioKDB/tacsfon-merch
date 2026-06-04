@@ -1,146 +1,195 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap');
 
-/* ── Design tokens — DARK (default) ──────────────────────────────────────── */
-:root {
-  --bg-base:      #0A0A0A;
-  --bg-surface:   #141414;
-  --bg-elevated:  #1E1E1E;
-  --text-primary: #F5F0E8;
+/* ─────────────────────────────────────────────────────────
+   TACSFON MERCH — Design tokens
+   Accent: Boutique Green #3DBA6F
+   All colour references MUST use these CSS variables.
+   Never hardcode #3DBA6F or #C9A84C in component files.
+───────────────────────────────────────────────────────── */
+
+:root,
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-base:     #0A0A0A;
+  --bg-surface:  #111111;
+  --bg-elevated: #1A1A1A;
+
+  /* Text */
+  --text-primary: #F5F5F0;
   --text-muted:   #888880;
-  --accent:       #3DBA6F;
-  --accent-hover: #52D485;
-  --danger:       #E05252;
-  --success:      #4CAF7D;
-  --border:       rgba(255, 255, 255, 0.08);
 
+  /* ── Accent: Boutique Green ── */
+  --accent:       #3DBA6F;
+  --accent-hover: #34a863;
+  --accent-dim:   rgba(61, 186, 111, 0.12);
+
+  /* Semantic */
+  --success: #4CAF7D;
+  --danger:  #E05252;
+  --warning: #C9A84C;   /* gold is kept ONLY for warning states */
+  --info:    #60A5FA;
+
+  /* Structure */
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-focus: var(--accent);
+
+  /* Admin accent (blue — visually distinct from storefront) */
+  --admin-accent:     #5B8CFF;
+  --admin-accent-dim: rgba(91, 140, 255, 0.12);
+
+  /* Typography */
   --font-display: 'Bebas Neue', sans-serif;
   --font-body:    'DM Sans', sans-serif;
   --font-mono:    'Space Mono', monospace;
 
-  color-scheme: dark;
+  /* Sizing */
+  --radius: 0px;   /* sharp corners throughout */
+  --nav-h:  64px;
+  --bottom-nav-h: 60px;
 }
 
-/* ── Design tokens — LIGHT ────────────────────────────────────────────────── */
-/* Warm parchment/cream — not pure white. Keeps the editorial premium feel.   */
 [data-theme="light"] {
-  --bg-base:      #FAFAF7;
-  --bg-surface:   #F0EDE6;
-  --bg-elevated:  #E8E4DB;
+  --bg-base:      #FAFAF8;
+  --bg-surface:   #F2F2EE;
+  --bg-elevated:  #E8E8E4;
   --text-primary: #0A0A0A;
-  --text-muted:   #6B6860;
-  --accent:       #3DBA6F;   /* gold unchanged */
-  --accent-hover: #2EA05A;   /* slightly darker on light bg for contrast */
-  --danger:       #C0392B;
-  --success:      #27AE60;
-  --border:       rgba(0, 0, 0, 0.10);
-
-  color-scheme: light;
+  --text-muted:   #666660;
+  --border:       rgba(0, 0, 0, 0.1);
+  /* accent, semantic, font tokens remain the same */
 }
 
-/* ── Reset ────────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   background:  var(--bg-base);
   color:       var(--text-primary);
   font-family: var(--font-body);
   font-size:   16px;
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing:  antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 200ms ease, color 200ms ease;
 }
 
-/* ── Typography helpers ───────────────────────────────────────────────────── */
-.section-title {
-  font-family:     var(--font-display);
-  font-size:       clamp(32px, 5vw, 56px);
-  letter-spacing:  0.04em;
-  color:           var(--text-primary);
-  line-height:     1;
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
+/* ── Typography helpers ── */
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ── Accent utility classes (used by Tailwind arbitrary values) ── */
+.text-accent   { color: var(--accent) !important; }
+.bg-accent     { background: var(--accent) !important; }
+.border-accent { border-color: var(--accent) !important; }
+
+/* ── Divider ── */
+.divider-accent {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
+}
+
+/* divider-gold kept as alias for legacy JSX still using className="divider-gold" */
 .divider-gold {
-  height:     1px;
-  background: linear-gradient(90deg, #3DBA6F, transparent);
-  max-width:  200px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
 }
 
-/* ── Product card ─────────────────────────────────────────────────────────── */
+/* ── Section title ── */
+.section-title {
+  font-family:    var(--font-display);
+  font-size:      clamp(28px, 4vw, 48px);
+  letter-spacing: 0.04em;
+  color:          var(--text-primary);
+  text-transform: uppercase;
+}
+
+/* ── Product card ── */
 .product-card {
   position:   relative;
+  overflow:   hidden;
   background: var(--bg-surface);
   border:     1px solid var(--border);
-  overflow:   hidden;
-  cursor:     pointer;
-  transition: border-color 200ms ease;
+  transition: border-color 200ms ease, transform 150ms ease;
 }
-.product-card:hover { border-color: rgba(61, 186, 111, 0.35); }
-
+.product-card:hover {
+  border-color: var(--accent);
+  transform:    translateY(-2px);
+}
 .product-card__image {
-  transition: transform 400ms ease;
+  object-fit:  cover;
+  transition:  transform 400ms ease;
 }
-.product-card:hover .product-card__image { transform: scale(1.04); }
-
+.product-card:hover .product-card__image {
+  transform: scale(1.04);
+}
 .product-card__overlay {
   position:   absolute;
   inset:      0;
-  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 50%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.82) 0%,
+    rgba(10, 10, 10, 0.2)  45%,
+    transparent            100%
+  );
   opacity:    0;
   transition: opacity 300ms ease;
-  pointer-events: none;
 }
-/* desktop: show on hover */
-.product-card:hover .product-card__overlay { opacity: 1; }
-/* mobile: show when IntersectionObserver fires (.is-visible added by JS) */
-.product-card.is-visible .product-card__overlay { opacity: 1; }
-
+.product-card:hover .product-card__overlay {
+  opacity: 1;
+}
 .product-card__info {
-  position:   absolute;
-  bottom:     0;
-  left:       0;
-  right:      0;
-  padding:    20px 16px;
-  opacity:    0;
-  transform:  translateY(8px);
-  transition: opacity 300ms ease, transform 300ms ease;
+  position:  absolute;
+  bottom:    0;
+  left:      0;
+  right:     0;
+  padding:   12px 14px;
+  transform: translateY(6px);
+  opacity:   0;
+  transition: transform 300ms ease, opacity 300ms ease;
 }
 .product-card:hover .product-card__info {
-  opacity:   1;
   transform: translateY(0);
-}
-/* mobile: pin info panel when card is in view */
-.product-card.is-visible .product-card__info {
   opacity:   1;
-  transform: translateY(0);
 }
 
-/* ── Animations ───────────────────────────────────────────────────────────── */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(12px); }
+/* ── Pulse animation (loading skeletons) ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Fade-in ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in           { animation: fade-in 600ms ease both; }
-.stagger-1                 { animation-delay:  80ms; }
-.stagger-2                 { animation-delay: 160ms; }
-.stagger-3                 { animation-delay: 240ms; }
-.stagger-4                 { animation-delay: 320ms; }
-.stagger-5                 { animation-delay: 480ms; }
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
 
-/* ── Scrollbar ────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3DBA6F; }
-
-/* ── Focus ring ───────────────────────────────────────────────────────────── */
-:focus-visible { outline: 2px solid #3DBA6F; outline-offset: 3px; }
-
-/* ── Utility ──────────────────────────────────────────────────────────────── */
-.sr-only {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+/* ── Bottom nav safe area ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  nav[aria-label="Mobile navigation"] {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
