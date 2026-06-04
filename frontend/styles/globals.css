@@ -3,8 +3,8 @@
 /* ─────────────────────────────────────────────────────────
    TACSFON MERCH — Design tokens
    Accent: Boutique Green #3DBA6F
-   All colour references MUST use these CSS variables.
-   Never hardcode #3DBA6F or #C9A84C in component files.
+   Rule: NEVER hardcode #3DBA6F in component files.
+         Always use var(--accent) / var(--accent-hover).
 ───────────────────────────────────────────────────────── */
 
 :root,
@@ -26,14 +26,14 @@
   /* Semantic */
   --success: #4CAF7D;
   --danger:  #E05252;
-  --warning: #C9A84C;   /* gold is kept ONLY for warning states */
+  --warning: #C9A84C;
   --info:    #60A5FA;
 
   /* Structure */
   --border:       rgba(255, 255, 255, 0.08);
   --border-focus: var(--accent);
 
-  /* Admin accent (blue — visually distinct from storefront) */
+  /* Admin accent */
   --admin-accent:     #5B8CFF;
   --admin-accent-dim: rgba(91, 140, 255, 0.12);
 
@@ -43,7 +43,7 @@
   --font-mono:    'Space Mono', monospace;
 
   /* Sizing */
-  --radius: 0px;   /* sharp corners throughout */
+  --radius: 0px;
   --nav-h:  64px;
   --bottom-nav-h: 60px;
 }
@@ -55,7 +55,6 @@
   --text-primary: #0A0A0A;
   --text-muted:   #666660;
   --border:       rgba(0, 0, 0, 0.1);
-  /* accent, semantic, font tokens remain the same */
 }
 
 /* ── Reset ── */
@@ -97,23 +96,6 @@ body {
 .font-body    { font-family: var(--font-body); }
 .font-mono    { font-family: var(--font-mono); }
 
-/* ── Accent utility classes (used by Tailwind arbitrary values) ── */
-.text-accent   { color: var(--accent) !important; }
-.bg-accent     { background: var(--accent) !important; }
-.border-accent { border-color: var(--accent) !important; }
-
-/* ── Divider ── */
-.divider-accent {
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent), transparent 60%);
-}
-
-/* divider-gold kept as alias for legacy JSX still using className="divider-gold" */
-.divider-gold {
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent), transparent 60%);
-}
-
 /* ── Section title ── */
 .section-title {
   font-family:    var(--font-display);
@@ -121,6 +103,17 @@ body {
   letter-spacing: 0.04em;
   color:          var(--text-primary);
   text-transform: uppercase;
+}
+
+/* ── Divider ── */
+.divider-accent {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
+}
+/* alias — FeaturedProducts.tsx uses className="divider-gold" */
+.divider-gold {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
 }
 
 /* ── Product card ── */
@@ -158,13 +151,13 @@ body {
   opacity: 1;
 }
 .product-card__info {
-  position:  absolute;
-  bottom:    0;
-  left:      0;
-  right:     0;
-  padding:   12px 14px;
-  transform: translateY(6px);
-  opacity:   0;
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  right:      0;
+  padding:    12px 14px;
+  transform:  translateY(6px);
+  opacity:    0;
   transition: transform 300ms ease, opacity 300ms ease;
 }
 .product-card:hover .product-card__info {
@@ -172,20 +165,26 @@ body {
   opacity:   1;
 }
 
-/* ── Pulse animation (loading skeletons) ── */
+/* ── Animations ── */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
 
-/* ── Fade-in ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
 .animate-fade-in {
-  animation: fadeIn 0.4s ease forwards;
+  animation: fadeIn 0.6s ease forwards;
+  opacity: 0;
 }
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.35s; }
+.stagger-4 { animation-delay: 0.5s; }
+.stagger-5 { animation-delay: 0.65s; }
 
 /* ── Bottom nav safe area ── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
