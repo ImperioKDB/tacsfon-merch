@@ -35,7 +35,7 @@ export default function HomeProductCard({ product, priority = false }: Props) {
   const priceStr = min === max ? `\u20a6${min.toLocaleString()}` : `from \u20a6${min.toLocaleString()}`
 
   const badge =
-    product.stock_type === 'preorder'   ? { label: 'Pre-order', color: '#C9A84C', bg: 'rgba(201,168,76,0.10)' }
+    product.stock_type === 'preorder'   ? { label: 'Pre-order', color: '#3DBA6F', bg: 'rgba(61,186,111,0.10)' }
     : totalQty <= 3 && totalQty > 0     ? { label: 'Low Stock', color: '#E05252', bg: 'rgba(224,82,82,0.10)' }
     : totalQty === 0                    ? { label: 'Sold Out',  color: '#555',    bg: 'rgba(255,255,255,0.05)' }
     : null
@@ -215,7 +215,7 @@ export default function HomeProductCard({ product, priority = false }: Props) {
           aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
           style={{
             flex: 1, height: '100%',
-            background: soldOut ? 'transparent' : adding ? '#b8922a' : 'var(--accent)',
+            background: soldOut ? 'transparent' : adding ? '#2EA05A' : 'var(--accent)',
             border: 'none',
             color: soldOut ? 'var(--text-muted)' : '#0A0A0A',
             fontFamily: 'var(--font-body)', fontSize: '9px',
