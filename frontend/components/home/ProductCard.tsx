@@ -1,22 +1,26 @@
 'use client'
 
-import { useState }   from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link           from 'next/link'
 import Image          from 'next/image'
-import { ShoppingBag, Loader2 } from 'lucide-react'
+import { ShoppingBag, Loader2, Plus, Minus } from 'lucide-react'
 import { toast }      from 'sonner'
-import { formatPrice, resolveImageUrl } from '@/lib/utils/formatters'
-import { useCartStore } from '@/store/cart'
-import { apiFetch }   from '@/lib/api/fetch'
-import type { Product } from '@/types'
+import { resolveImageUrl } from '@/lib/utils/formatters'
+import { useCartStore }    from '@/store/cart'
+import { apiFetch }        from '@/lib/api/fetch'
+import type { Product }    from '@/types'
 
-interface HomeProductCardProps {
+interface Props {
   product:   Product
   priority?: boolean
 }
 
-export default function HomeProductCard({ product, priority = false }: HomeProductCardProps) {
-  const [adding, setAdding] = useState(false)
+export default function HomeProductCard({ product, priority = false }: Props) {
+  const [qty,     setQty]     = useState(1)
+  const [adding,  setAdding]  = useState(false)
+  // visible = overlay pinned (IntersectionObserver fired on mobile)
+  const [visible, setVisible] = useState(false)
+  const cardRef  = useRef<HTMLDivElement>(null)
   const increment = useCartStore(s => s.increment)
 
   const variants     = product.variants || (product as any).product_variants || []
@@ -31,15 +35,29 @@ export default function HomeProductCard({ product, priority = false }: HomeProdu
   const priceStr = min === max ? `\u20a6${min.toLocaleString()}` : `from \u20a6${min.toLocaleString()}`
 
   const badge =
-    product.stock_type === 'preorder'
-      ? { label: 'Pre-order', color: '#C9A84C', bg: 'rgba(201,168,76,0.10)' }
-      : totalQty <= 3 && totalQty > 0
-      ? { label: 'Low Stock', color: '#E05252', bg: 'rgba(224,82,82,0.10)' }
-      : totalQty === 0
-      ? { label: 'Sold Out',  color: '#666',    bg: 'rgba(255,255,255,0.05)' }
-      : null
+    product.stock_type === 'preorder'   ? { label: 'Pre-order', color: '#C9A84C', bg: 'rgba(201,168,76,0.10)' }
+    : totalQty <= 3 && totalQty > 0     ? { label: 'Low Stock', color: '#E05252', bg: 'rgba(224,82,82,0.10)' }
+    : totalQty === 0                    ? { label: 'Sold Out',  color: '#555',    bg: 'rgba(255,255,255,0.05)' }
+    : null
 
-  const handleQuickAdd = async (e: React.MouseEvent) => {
+  // ── IntersectionObserver: pin overlay when card scrolls into view ──────────
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el || typeof window === 'undefined') return
+
+    // Only auto-pin on touch devices (mobile / tablet)
+    const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches
+    if (!isTouch) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0.55 }   // card must be 55 % visible to trigger
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (!firstVariant) return toast.error('Select a variant on the product page')
@@ -47,10 +65,10 @@ export default function HomeProductCard({ product, priority = false }: HomeProdu
     try {
       await apiFetch('/cart/items', {
         method: 'POST',
-        body: JSON.stringify({ variant_id: firstVariant.id, quantity: 1 }),
+        body: JSON.stringify({ variant_id: firstVariant.id, quantity: qty }),
       })
-      increment(1)
-      toast.success(`${product.name} added to cart`)
+      increment(qty)
+      toast.success(`${product.name} \u00d7${qty} added to cart`)
     } catch (err: any) {
       toast.error(err.message || 'Sign in to add to cart')
     } finally {
@@ -58,9 +76,18 @@ export default function HomeProductCard({ product, priority = false }: HomeProdu
     }
   }
 
+  const changeQty = (delta: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setQty(q => Math.max(1, Math.min(10, q + delta)))
+  }
+
   return (
-    <div className="product-card">
-      {/* ── Image ── */}
+    <div
+      ref={cardRef}
+      className={`product-card${visible ? ' is-visible' : ''}`}
+    >
+      {/* ── Image + overlay ─────────────────────────────────────────────── */}
       <Link
         href={`/products/${product.id}`}
         style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}
@@ -87,25 +114,26 @@ export default function HomeProductCard({ product, priority = false }: HomeProdu
           </div>
         )}
 
+        {/* Gradient overlay — CSS controls visibility via :hover + .is-visible */}
         <div className="product-card__overlay" aria-hidden />
 
-        {/* Hover name/price panel */}
+        {/* Name + price panel */}
         <div className="product-card__info" style={{ pointerEvents: 'none' }}>
           <p style={{
             fontFamily:    'var(--font-display)',
-            fontSize:      '14px',
+            fontSize:      '13px',
             letterSpacing: '0.06em',
-            color:         '#fff',
-            lineHeight:    1.1,
-            marginBottom:  '3px',
             textTransform: 'uppercase',
-            textShadow:    '0 1px 4px rgba(0,0,0,0.6)',
+            color:         '#fff',
+            lineHeight:    1.15,
+            marginBottom:  '3px',
+            textShadow:    '0 1px 6px rgba(0,0,0,0.7)',
           }}>
             {product.name}
           </p>
           <p style={{
             fontFamily: 'var(--font-body)',
-            fontSize:   '12px',
+            fontSize:   '11px',
             fontWeight: 700,
             color:      'var(--accent)',
           }}>
@@ -127,64 +155,84 @@ export default function HomeProductCard({ product, priority = false }: HomeProdu
         )}
       </Link>
 
-      {/* ── Below-image: name / price / cart button ── */}
+      {/* ── Permanent bottom bar: qty stepper + Add to Cart ─────────────── */}
       <div style={{
-        padding:    '10px 12px 11px',
-        borderTop:  '1px solid var(--border)',
-        display:    'flex',
-        alignItems: 'center',
-        gap:        '8px',
+        borderTop:   '1px solid var(--border)',
+        display:     'flex',
+        alignItems:  'center',
+        height:      '42px',
       }}>
-        <Link href={`/products/${product.id}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}>
-          <p style={{
-            fontFamily:    'var(--font-body)',
-            fontSize:      '11px',
-            fontWeight:    500,
-            letterSpacing: '0.02em',
-            color:         'var(--text-primary)',
-            overflow:      'hidden',
-            textOverflow:  'ellipsis',
-            whiteSpace:    'nowrap',
-            margin:        '0 0 2px 0',
-          }}>
-            {product.name}
-          </p>
-          <p style={{
-            fontFamily:    'var(--font-body)',
-            fontSize:      '11px',
-            fontWeight:    700,
-            letterSpacing: '0.03em',
-            color:         'var(--accent)',
-            margin:        0,
-          }}>
-            {priceStr}
-          </p>
-        </Link>
-
+        {/* − */}
         <button
-          onClick={handleQuickAdd}
+          onClick={e => changeQty(-1, e)}
+          disabled={qty <= 1 || soldOut}
+          aria-label="Decrease quantity"
+          style={{
+            width: '34px', height: '100%',
+            background: 'none', border: 'none',
+            borderRight: '1px solid var(--border)',
+            color: qty <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+            cursor: qty <= 1 || soldOut ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, opacity: soldOut ? 0.35 : 1,
+            transition: 'color 120ms',
+          }}
+        >
+          <Minus size={11} strokeWidth={2} />
+        </button>
+
+        {/* count */}
+        <span style={{
+          width: '28px', textAlign: 'center',
+          fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 700,
+          color: soldOut ? 'var(--text-muted)' : 'var(--text-primary)',
+          flexShrink: 0, opacity: soldOut ? 0.35 : 1,
+        }}>
+          {qty}
+        </span>
+
+        {/* + */}
+        <button
+          onClick={e => changeQty(1, e)}
+          disabled={qty >= 10 || soldOut}
+          aria-label="Increase quantity"
+          style={{
+            width: '34px', height: '100%',
+            background: 'none', border: 'none',
+            borderRight: '1px solid var(--border)',
+            color: qty >= 10 ? 'var(--text-muted)' : 'var(--text-primary)',
+            cursor: qty >= 10 || soldOut ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, opacity: soldOut ? 0.35 : 1,
+            transition: 'color 120ms',
+          }}
+        >
+          <Plus size={11} strokeWidth={2} />
+        </button>
+
+        {/* Add to Cart */}
+        <button
+          onClick={handleAdd}
           disabled={adding || soldOut}
           aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
-          title={soldOut ? 'Sold Out' : 'Add to Cart'}
           style={{
-            flexShrink:     0,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            width:          '34px',
-            height:         '34px',
-            background:     soldOut ? 'var(--bg-elevated)' : adding ? 'var(--accent-hover, #b8922a)' : 'var(--accent)',
-            border:         'none',
-            color:          soldOut ? 'var(--text-muted)' : '#0A0A0A',
-            cursor:         soldOut || adding ? 'not-allowed' : 'pointer',
-            opacity:        soldOut ? 0.45 : 1,
-            transition:     'background 150ms, opacity 150ms',
+            flex: 1, height: '100%',
+            background: soldOut ? 'transparent' : adding ? '#b8922a' : 'var(--accent)',
+            border: 'none',
+            color: soldOut ? 'var(--text-muted)' : '#0A0A0A',
+            fontFamily: 'var(--font-body)', fontSize: '9px',
+            fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+            cursor: soldOut || adding ? 'not-allowed' : 'pointer',
+            opacity: soldOut ? 0.4 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            transition: 'background 150ms, opacity 150ms',
           }}
         >
           {adding
-            ? <Loader2 size={13} className="animate-spin" />
-            : <ShoppingBag size={13} strokeWidth={2} />
+            ? <Loader2 size={11} className="animate-spin" />
+            : <ShoppingBag size={11} strokeWidth={2} />
           }
+          {soldOut ? 'Sold Out' : adding ? 'Adding\u2026' : 'Add to Cart'}
         </button>
       </div>
     </div>
