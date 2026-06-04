@@ -92,7 +92,10 @@ body {
   transition: opacity 300ms ease;
   pointer-events: none;
 }
+/* desktop: show on hover */
 .product-card:hover .product-card__overlay { opacity: 1; }
+/* mobile: show when IntersectionObserver fires (.is-visible added by JS) */
+.product-card.is-visible .product-card__overlay { opacity: 1; }
 
 .product-card__info {
   position:   absolute;
@@ -105,6 +108,11 @@ body {
   transition: opacity 300ms ease, transform 300ms ease;
 }
 .product-card:hover .product-card__info {
+  opacity:   1;
+  transform: translateY(0);
+}
+/* mobile: pin info panel when card is in view */
+.product-card.is-visible .product-card__info {
   opacity:   1;
   transform: translateY(0);
 }
