@@ -89,16 +89,16 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-2xl mx-auto px-4 py-10 sm:px-6">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <Bell size={22} strokeWidth={1.5} style={{ color: 'var(--color-gold)' }} />
+            <Bell size={22} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
             <h1
               className="text-2xl font-bold"
-              style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-urbanist)' }}
+              style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
             >
               Notifications
             </h1>
@@ -106,12 +106,12 @@ export default function NotificationsPage() {
               <span
                 className="notif-dot"
                 style={{
-                  background: 'var(--color-error)',
+                  background: 'var(--danger)',
                   color: '#fff',
                   fontSize: '0.6875rem',
                   fontWeight: 700,
                   padding: '2px 7px',
-                  fontFamily: 'var(--font-inter)',
+                  fontFamily: 'var(--font-body)',
                   borderRadius: '9999px',
                 }}
               >
@@ -126,17 +126,17 @@ export default function NotificationsPage() {
               disabled={markingAll}
               style={{
                 fontSize: '0.75rem',
-                color: 'var(--color-gold)',
+                color: 'var(--accent)',
                 background: 'none',
-                border: '1px solid var(--color-gold)',
+                border: '1px solid var(--accent)',
                 cursor: markingAll ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--font-inter)',
+                fontFamily: 'var(--font-body)',
                 padding: '7px 14px',
                 opacity: markingAll ? 0.5 : 1,
-                transition: 'background var(--duration-fast) var(--ease-smooth)',
+                transition: 'background 150ms ease',
               }}
               onMouseEnter={(e) => {
-                if (!markingAll) (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-gold-muted)';
+                if (!markingAll) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(61,186,111,0.10)';
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
@@ -149,14 +149,14 @@ export default function NotificationsPage() {
 
         {/* Skeleton */}
         {loading && (
-          <div style={{ border: '1px solid var(--color-border)' }}>
+          <div style={{ border: '1px solid var(--border)' }}>
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
                 className="skeleton"
                 style={{
                   height: '72px',
-                  borderBottom: '1px solid var(--color-border)',
+                  borderBottom: '1px solid var(--border)',
                 }}
               />
             ))}
@@ -168,15 +168,15 @@ export default function NotificationsPage() {
           <div
             className="flex flex-col items-center justify-center gap-4 py-20"
             style={{
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-surface)',
             }}
           >
-            <Bell size={36} strokeWidth={1} style={{ color: 'var(--color-text-disabled)' }} />
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9375rem' }}>
+            <Bell size={36} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
               No notifications yet
             </p>
-            <p style={{ color: 'var(--color-text-disabled)', fontSize: '0.8125rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
               You'll be notified when your order status changes.
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function NotificationsPage() {
 
         {/* Notification list */}
         {!loading && notifications.length > 0 && (
-          <div style={{ border: '1px solid var(--color-border)' }}>
+          <div style={{ border: '1px solid var(--border)' }}>
             {notifications.map((notif, idx) => (
               <button
                 key={notif.id}
@@ -196,19 +196,19 @@ export default function NotificationsPage() {
                   width: '100%',
                   padding: '16px 20px',
                   textAlign: 'left',
-                  background: notif.is_read ? 'transparent' : 'var(--color-surface)',
+                  background: notif.is_read ? 'transparent' : 'var(--bg-surface)',
                   border: 'none',
                   borderBottom:
-                    idx < notifications.length - 1 ? '1px solid var(--color-border)' : 'none',
+                    idx < notifications.length - 1 ? '1px solid var(--border)' : 'none',
                   cursor: 'pointer',
-                  transition: 'background var(--duration-fast) var(--ease-smooth)',
+                  transition: 'background 150ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-surface-2)';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-elevated)';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.background =
-                    notif.is_read ? 'transparent' : 'var(--color-surface)';
+                    notif.is_read ? 'transparent' : 'var(--bg-surface)';
                 }}
               >
                 {/* Unread indicator */}
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
                     flexShrink: 0,
                     width: '8px',
                     height: '8px',
-                    background: notif.is_read ? 'transparent' : 'var(--color-gold)',
+                    background: notif.is_read ? 'transparent' : 'var(--accent)',
                     borderRadius: '9999px',
                     marginTop: '6px',
                   }}
@@ -228,9 +228,9 @@ export default function NotificationsPage() {
                     style={{
                       fontSize: '0.9375rem',
                       color: notif.is_read
-                        ? 'var(--color-text-secondary)'
-                        : 'var(--color-text-primary)',
-                      fontFamily: 'var(--font-inter)',
+                        ? 'var(--text-muted)'
+                        : 'var(--text-primary)',
+                      fontFamily: 'var(--font-body)',
                       lineHeight: '1.5',
                       marginBottom: '4px',
                     }}
@@ -240,8 +240,8 @@ export default function NotificationsPage() {
                   <p
                     style={{
                       fontSize: '0.75rem',
-                      color: 'var(--color-text-disabled)',
-                      fontFamily: 'var(--font-inter)',
+                      color: 'var(--text-muted)',
+                      fontFamily: 'var(--font-body)',
                     }}
                   >
                     {formatRelativeTime(notif.created_at)}

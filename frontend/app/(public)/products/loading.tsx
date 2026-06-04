@@ -8,21 +8,21 @@ export default function ProductsLoading() {
   return (
     <div
       className="min-h-screen"
-      style={{ background: 'var(--color-bg)' }}
+      style={{ background: 'var(--bg-base)' }}
     >
       {/* Header skeleton */}
       <div
         className="border-b px-4 py-8 md:px-8"
-        style={{ borderColor: 'var(--color-border)' }}
+        style={{ borderColor: 'var(--border)' }}
       >
         <div className="mx-auto max-w-7xl space-y-3">
           <div
             className="h-9 w-48 animate-pulse rounded-lg"
-            style={{ background: 'var(--color-surface-2)' }}
+            style={{ background: 'var(--bg-elevated)' }}
           />
           <div
             className="h-5 w-72 animate-pulse rounded-md"
-            style={{ background: 'var(--color-surface-2)' }}
+            style={{ background: 'var(--bg-elevated)' }}
           />
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function ProductsLoading() {
             <div
               key={i}
               className="h-8 animate-pulse rounded-md"
-              style={{ background: 'var(--color-surface-2)', width: `${w}%` }}
+              style={{ background: 'var(--bg-elevated)', width: `${w}%` }}
             />
           ))}
         </aside>

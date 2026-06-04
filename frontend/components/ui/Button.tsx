@@ -14,7 +14,7 @@ const variantClasses: Record<string, string> = {
   primary: [
     'bg-gold text-bg border border-gold',
     'hover:bg-gold-light hover:border-gold-light',
-    'hover:shadow-[var(--shadow-gold)]',
+    'hover:shadow-[0 0 20px rgba(61,186,111,0.3)]',
   ].join(' '),
   ghost: [
     'bg-transparent text-gold border border-gold',

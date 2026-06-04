@@ -15,7 +15,7 @@ const config: Config = {
         'text-primary': '#F5F0E8',
         'text-muted':   '#888880',
         accent:         '#3DBA6F',
-        'accent-hover': '#E2C46A',
+        'accent-hover': '#52D485',
         danger:         '#E05252',
         success:        '#4CAF7D',
       },

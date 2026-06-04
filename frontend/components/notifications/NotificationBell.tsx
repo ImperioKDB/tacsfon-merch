@@ -152,17 +152,17 @@ export default function NotificationBell() {
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: isOpen ? 'var(--color-gold)' : 'var(--color-text-secondary)',
+            color: isOpen ? 'var(--accent)' : 'var(--text-muted)',
             display: 'flex',
             alignItems: 'center',
             padding: '4px',
-            transition: 'color var(--duration-fast) var(--ease-smooth)',
+            transition: 'color 150ms ease',
           }}
           onMouseEnter={(e) => {
-            if (!isOpen) (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-primary)';
+            if (!isOpen) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
           }}
           onMouseLeave={(e) => {
-            if (!isOpen) (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-secondary)';
+            if (!isOpen) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
           }}
         >
           <Bell
@@ -179,10 +179,10 @@ export default function NotificationBell() {
                 position: 'absolute',
                 top: '-4px',
                 right: '-6px',
-                background: 'var(--color-error)',
+                background: 'var(--danger)',
                 color: '#fff',
                 fontSize: '0.5625rem',
-                fontFamily: 'var(--font-inter)',
+                fontFamily: 'var(--font-body)',
                 fontWeight: 700,
                 minWidth: '16px',
                 height: '16px',
@@ -208,9 +208,9 @@ export default function NotificationBell() {
               top: 'calc(100% + 12px)',
               right: '-8px',
               width: '340px',
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-lg)',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
               zIndex: 60,
             }}
           >
@@ -221,7 +221,7 @@ export default function NotificationBell() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '14px 16px',
-                borderBottom: '1px solid var(--color-border)',
+                borderBottom: '1px solid var(--border)',
               }}
             >
               <span
@@ -230,8 +230,8 @@ export default function NotificationBell() {
                   fontWeight: 600,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  color: 'var(--color-text-primary)',
-                  fontFamily: 'var(--font-inter)',
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)',
                 }}
               >
                 Notifications
@@ -241,16 +241,16 @@ export default function NotificationBell() {
                   onClick={handleMarkAllRead}
                   style={{
                     fontSize: '0.6875rem',
-                    color: 'var(--color-gold)',
+                    color: 'var(--accent)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    fontFamily: 'var(--font-inter)',
+                    fontFamily: 'var(--font-body)',
                     letterSpacing: '0.06em',
                     padding: 0,
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-gold-light)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-gold)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent)')}
                 >
                   Mark all as read
                 </button>
@@ -267,7 +267,7 @@ export default function NotificationBell() {
                       style={{
                         height: '56px',
                         marginBottom: '1px',
-                        background: 'var(--color-surface-2)',
+                        background: 'var(--bg-elevated)',
                       }}
                       className="skeleton"
                     />
@@ -280,9 +280,9 @@ export default function NotificationBell() {
                   style={{
                     padding: '40px 16px',
                     textAlign: 'center',
-                    color: 'var(--color-text-disabled)',
+                    color: 'var(--text-muted)',
                     fontSize: '0.875rem',
-                    fontFamily: 'var(--font-inter)',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
                   No notifications yet
@@ -298,18 +298,18 @@ export default function NotificationBell() {
                     width: '100%',
                     padding: '12px 16px',
                     textAlign: 'left',
-                    background: notif.is_read ? 'transparent' : 'var(--color-surface-2)',
+                    background: notif.is_read ? 'transparent' : 'var(--bg-elevated)',
                     border: 'none',
-                    borderBottom: '1px solid var(--color-border)',
+                    borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
-                    transition: 'background var(--duration-fast) var(--ease-smooth)',
+                    transition: 'background 150ms ease',
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-surface-2)';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-elevated)';
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLButtonElement).style.background =
-                      notif.is_read ? 'transparent' : 'var(--color-surface-2)';
+                      notif.is_read ? 'transparent' : 'var(--bg-elevated)';
                   }}
                 >
                   {/* Unread dot + message */}
@@ -320,7 +320,7 @@ export default function NotificationBell() {
                         flexShrink: 0,
                         width: '7px',
                         height: '7px',
-                        background: notif.is_read ? 'transparent' : 'var(--color-gold)',
+                        background: notif.is_read ? 'transparent' : 'var(--accent)',
                         borderRadius: '9999px',
                         marginTop: '5px',
                       }}
@@ -330,9 +330,9 @@ export default function NotificationBell() {
                         style={{
                           fontSize: '0.8125rem',
                           color: notif.is_read
-                            ? 'var(--color-text-secondary)'
-                            : 'var(--color-text-primary)',
-                          fontFamily: 'var(--font-inter)',
+                            ? 'var(--text-muted)'
+                            : 'var(--text-primary)',
+                          fontFamily: 'var(--font-body)',
                           lineHeight: '1.4',
                           marginBottom: '4px',
                         }}
@@ -342,8 +342,8 @@ export default function NotificationBell() {
                       <p
                         style={{
                           fontSize: '0.6875rem',
-                          color: 'var(--color-text-disabled)',
-                          fontFamily: 'var(--font-inter)',
+                          color: 'var(--text-muted)',
+                          fontFamily: 'var(--font-body)',
                         }}
                       >
                         {formatRelativeTime(notif.created_at)}
@@ -358,7 +358,7 @@ export default function NotificationBell() {
             <div
               style={{
                 padding: '10px 16px',
-                borderTop: '1px solid var(--color-border)',
+                borderTop: '1px solid var(--border)',
                 textAlign: 'center',
               }}
             >
@@ -366,15 +366,15 @@ export default function NotificationBell() {
                 onClick={() => { setIsOpen(false); router.push('/notifications'); }}
                 style={{
                   fontSize: '0.6875rem',
-                  color: 'var(--color-text-secondary)',
+                  color: 'var(--text-muted)',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  fontFamily: 'var(--font-inter)',
+                  fontFamily: 'var(--font-body)',
                   letterSpacing: '0.06em',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
               >
                 View all notifications
               </button>

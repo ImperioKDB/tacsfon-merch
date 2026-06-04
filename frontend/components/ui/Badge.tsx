@@ -5,13 +5,13 @@ interface BadgeProps {
 
 const STYLES: Record<string, React.CSSProperties> = {
   default: {
-    background: 'var(--color-surface-2)',
-    color: 'var(--color-text-secondary)',
-    border: '1px solid var(--color-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-muted)',
+    border: '1px solid var(--border)',
   },
   success: {
     background: 'rgba(45,158,107,0.12)',
-    color: 'var(--color-success)',
+    color: 'var(--success)',
     border: '1px solid rgba(45,158,107,0.25)',
   },
   warning: {
@@ -21,12 +21,12 @@ const STYLES: Record<string, React.CSSProperties> = {
   },
   error: {
     background: 'rgba(217,79,79,0.12)',
-    color: 'var(--color-error)',
+    color: 'var(--danger)',
     border: '1px solid rgba(217,79,79,0.25)',
   },
   gold: {
-    background: 'var(--color-gold-muted)',
-    color: 'var(--color-gold)',
+    background: 'rgba(61,186,111,0.10)',
+    color: 'var(--accent)',
     border: '1px solid rgba(200,134,10,0.3)',
   },
 }
@@ -39,7 +39,7 @@ export default function Badge({ children, variant = 'default' }: BadgeProps) {
         display: 'inline-block',
         padding: '2px 8px',
         fontSize: '0.5625rem',
-        fontFamily: 'var(--font-inter)',
+        fontFamily: 'var(--font-body)',
         fontWeight: 500,
         letterSpacing: '0.1em',
         textTransform: 'uppercase',

@@ -51,7 +51,7 @@ export default function ReceiptPreview({ receipt }: ReceiptPreviewProps) {
           <div>
             <h2
               className="text-xl font-bold tracking-tight"
-              style={{ color: '#3DBA6F', fontFamily: 'var(--font-urbanist)' }}
+              style={{ color: '#3DBA6F', fontFamily: 'var(--font-body)' }}
             >
               TACSFON Merch Store
             </h2>

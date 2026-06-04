@@ -88,16 +88,16 @@ export default function ReceiptPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
 
         {/* Back link */}
         <button
           onClick={() => router.push(`/orders/${id}`)}
           className="flex items-center gap-2 mb-8 text-sm transition-colors duration-150"
-          style={{ color: 'var(--color-text-secondary)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-gold)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           aria-label="Back to order"
         >
           <ArrowLeft size={16} strokeWidth={1.5} />
@@ -106,7 +106,7 @@ export default function ReceiptPage() {
 
         <h1
           className="text-2xl font-bold mb-6"
-          style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-urbanist)' }}
+          style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
         >
           Order Receipt
         </h1>
@@ -119,14 +119,14 @@ export default function ReceiptPage() {
           <div
             className="flex flex-col items-center justify-center gap-4 py-16 rounded-2xl"
             style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
             }}
           >
             <Clock size={40} strokeWidth={1.5} style={{ color: 'var(--color-warning)' }} />
             <p
               className="text-base font-medium text-center max-w-xs"
-              style={{ color: 'var(--color-text-secondary)' }}
+              style={{ color: 'var(--text-muted)' }}
             >
               Receipt will be available after your payment is confirmed by the admin.
             </p>
@@ -157,18 +157,18 @@ export default function ReceiptPage() {
                 disabled={downloading || !receipt.receipt_url}
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
                 style={{
-                  background: 'var(--color-gold)',
+                  background: 'var(--accent)',
                   color: '#0A0A0F',
                 }}
                 onMouseEnter={e => {
                   if (!downloading) {
                     (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-gold-light)';
                     (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-gold)';
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 20px rgba(61,186,111,0.3)';
                   }
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-gold)';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent)';
                   (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
                   (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
                 }}
@@ -195,12 +195,12 @@ export default function ReceiptPage() {
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
                 style={{
                   background: 'transparent',
-                  color: copied ? 'var(--color-success)' : 'var(--color-gold)',
-                  border: `1px solid ${copied ? 'var(--color-success)' : 'var(--color-gold)'}`,
+                  color: copied ? 'var(--success)' : 'var(--accent)',
+                  border: `1px solid ${copied ? 'var(--success)' : 'var(--accent)'}`,
                 }}
                 onMouseEnter={e => {
                   if (!copied) {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-gold-muted)';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(61,186,111,0.10)';
                   }
                 }}
                 onMouseLeave={e => {

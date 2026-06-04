@@ -22,7 +22,7 @@ export default function GlobalError({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'var(--color-bg)',
+        background: 'var(--bg-base)',
         gap: '20px',
         padding: '24px',
         textAlign: 'center',
@@ -30,30 +30,30 @@ export default function GlobalError({
     >
       <span
         style={{
-          fontFamily: 'var(--font-inter)',
+          fontFamily: 'var(--font-body)',
           fontSize: '0.6875rem',
           letterSpacing: '0.24em',
           textTransform: 'uppercase',
-          color: 'var(--color-error)',
+          color: 'var(--danger)',
         }}
       >
         Error
       </span>
       <h1
         style={{
-          fontFamily: 'var(--font-cormorant)',
+          fontFamily: 'var(--font-display)',
           fontSize: 'clamp(2rem, 6vw, 3.5rem)',
           fontWeight: 600,
-          color: 'var(--color-text-primary)',
+          color: 'var(--text-primary)',
         }}
       >
         Something Went Wrong
       </h1>
       <p
         style={{
-          fontFamily: 'var(--font-inter)',
+          fontFamily: 'var(--font-body)',
           fontSize: '0.9375rem',
-          color: 'var(--color-text-secondary)',
+          color: 'var(--text-muted)',
           maxWidth: '380px',
           lineHeight: 1.7,
         }}
@@ -64,13 +64,13 @@ export default function GlobalError({
         onClick={reset}
         style={{
           marginTop: '12px',
-          fontFamily: 'var(--font-inter)',
+          fontFamily: 'var(--font-body)',
           fontSize: '0.75rem',
           fontWeight: 500,
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: '#0A0A0F',
-          background: 'var(--color-gold)',
+          background: 'var(--accent)',
           border: 'none',
           padding: '12px 28px',
           cursor: 'pointer',

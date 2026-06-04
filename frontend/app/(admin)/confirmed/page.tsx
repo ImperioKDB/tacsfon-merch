@@ -32,15 +32,15 @@ export default function ConfirmedOrdersPage() {
     { key: 'date', label: 'Date',     render: r => formatDate(r.created_at) },
     { key: 'act', label: 'Actions', render: r => (
       <button onClick={() => setConfirm(r.id)} disabled={acting === r.id}
-        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', background: 'transparent', border: '1px solid var(--color-gold)', cursor: 'pointer', color: 'var(--color-gold)', fontSize: '0.75rem', fontFamily: 'var(--font-inter)', fontWeight: 500 }}>
+        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', background: 'transparent', border: '1px solid var(--accent)', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.75rem', fontFamily: 'var(--font-body)', fontWeight: 500 }}>
         <Truck size={13} strokeWidth={1.5} />Mark Dispatched
       </button>
     )},
   ]
   return (
     <div>
-      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-urbanist)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>Confirmed Orders</h1>
-      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', marginBottom: '24px' }}>Payment confirmed — ready to dispatch</p>
+      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: 'var(--text-primary)', marginBottom: '4px' }}>Confirmed Orders</h1>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginBottom: '24px' }}>Payment confirmed — ready to dispatch</p>
       <AdminTable columns={columns} rows={orders} loading={loading} emptyMessage="No confirmed orders." />
       {confirm && <ConfirmDialog title="Mark as Dispatched?" message="Student will be notified their order is on the way." confirmLabel="Mark Dispatched" variant="default" onConfirm={() => doDispatch(confirm)} onCancel={() => setConfirm(null)} />}
     </div>

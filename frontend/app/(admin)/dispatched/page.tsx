@@ -24,8 +24,8 @@ export default function DispatchedOrdersPage() {
   ]
   return (
     <div>
-      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-urbanist)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>Dispatched Orders</h1>
-      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-inter)', marginBottom: '24px' }}>Orders currently in transit</p>
+      <h1 style={{ fontSize: '1.375rem', fontWeight: 700, fontFamily: 'var(--font-body)', color: 'var(--text-primary)', marginBottom: '4px' }}>Dispatched Orders</h1>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', marginBottom: '24px' }}>Orders currently in transit</p>
       <AdminTable columns={columns} rows={orders} loading={loading} emptyMessage="No dispatched orders." />
     </div>
   )

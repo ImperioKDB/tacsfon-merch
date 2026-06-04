@@ -19,11 +19,11 @@ export default function ReceiptsPage() {
     {key:'cust', label:'Customer', render:r=>r.user?.full_name??r.customer_name??'—'},
     {key:'date', label:'Date',     render:r=>formatDate(r.created_at)},
     {key:'tot',  label:'Amount',   render:r=>formatPrice(r.total)},
-    {key:'act',  label:'Actions',  render:r=><button onClick={()=>view(r.id)} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'transparent',border:'1px solid var(--color-border)',cursor:'pointer',color:'var(--color-text-secondary)',fontSize:'0.75rem',fontFamily:'var(--font-inter)'}}><ExternalLink size={13} strokeWidth={1.5}/>View Receipt</button>},
+    {key:'act',  label:'Actions',  render:r=><button onClick={()=>view(r.id)} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'transparent',border:'1px solid var(--border)',cursor:'pointer',color:'var(--text-muted)',fontSize:'0.75rem',fontFamily:'var(--font-body)'}}><ExternalLink size={13} strokeWidth={1.5}/>View Receipt</button>},
   ]
   return (
     <div>
-      <h1 style={{fontSize:'1.375rem',fontWeight:700,fontFamily:'var(--font-urbanist)',color:'var(--color-text-primary)',marginBottom:'24px'}}>Receipts</h1>
+      <h1 style={{fontSize:'1.375rem',fontWeight:700,fontFamily:'var(--font-body)',color:'var(--text-primary)',marginBottom:'24px'}}>Receipts</h1>
       <AdminTable columns={columns} rows={orders} loading={loading} emptyMessage="No paid orders with receipts yet." />
     </div>
   )

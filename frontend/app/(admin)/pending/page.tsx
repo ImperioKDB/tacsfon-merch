@@ -58,7 +58,7 @@ export default function PendingOrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const res = await fetch('/api/admin/orders?status=pending', { credentials: 'include' })
+        const res = await fetch('/api/admin/orders?status=pending_payment', { credentials: 'include' })
         if (!res.ok) throw new Error(`Failed to load orders (${res.status})`)
         const json = await res.json()
         setOrders(json.data ?? json)
