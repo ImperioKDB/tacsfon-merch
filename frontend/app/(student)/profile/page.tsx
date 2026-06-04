@@ -220,7 +220,7 @@ export default function ProfilePage() {
             pointerEvents: 'none',
           }} />
           <h1 style={{
-            fontSize     : 'clamp(56px, 15vw, 96px)',
+            fontSize     : 'clamp(32px, 9vw, 52px)',
             fontWeight   : 900,
             letterSpacing: '-0.04em',
             textTransform: 'uppercase',
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                 {latestNotif ? (
                   <>
                     <p style={{
-                      fontSize        : '13px',
+                      fontSize        : '11px',
                       fontWeight      : latestNotif.is_read ? 400 : 700,
                       color           : latestNotif.is_read ? '#6B7280' : '#F7F5F0',
                       lineHeight      : 1.4,
@@ -363,7 +363,7 @@ export default function ProfilePage() {
             {activeOrder ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ fontFamily: 'monospace', fontSize: '18px', fontWeight: 900, color: '#F7F5F0', letterSpacing: '0.05em' }}>
+                  <p style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 900, color: '#F7F5F0', letterSpacing: '0.05em' }}>
                     #{activeOrder.id.slice(0, 8).toUpperCase()}
                   </p>
                   <p style={{
@@ -395,7 +395,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Package2 size={20} style={{ color: '#3E3E52' }} />
                 <div>
-                  <p style={{ fontSize: '13px', color: '#3E3E52', fontWeight: 600 }}>No active orders</p>
+                  <p style={{ fontSize: '11px', color: '#3E3E52', fontWeight: 600 }}>No active orders</p>
                   <p style={{ fontSize: '10px', color: '#2A2A38', marginTop: '2px', fontFamily: 'monospace' }}>
                     VIEW ORDER HISTORY →
                   </p>
@@ -412,7 +412,7 @@ export default function ProfilePage() {
             <Package2 size={22} style={{ color: '#C9A84C', marginBottom: '16px' }} />
             <div>
               <p style={{
-                fontSize     : 'clamp(18px, 4vw, 22px)',
+                fontSize     : 'clamp(13px, 3vw, 16px)',
                 fontWeight   : 900,
                 fontStyle    : 'italic',
                 textTransform: 'uppercase',
@@ -440,7 +440,7 @@ export default function ProfilePage() {
             <ShoppingBag size={22} style={{ color: '#C9A84C', marginBottom: '16px' }} />
             <div>
               <p style={{
-                fontSize     : 'clamp(18px, 4vw, 22px)',
+                fontSize     : 'clamp(13px, 3vw, 16px)',
                 fontWeight   : 900,
                 fontStyle    : 'italic',
                 textTransform: 'uppercase',
@@ -544,7 +544,7 @@ export default function ProfilePage() {
               <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
                 EMAIL
               </p>
-              <p style={{ fontSize: '12px', color: '#6B7280', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              <p style={{ fontSize: '10px', color: '#6B7280', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                 {user?.email ?? '—'}
               </p>
             </div>
