@@ -63,7 +63,7 @@ export default function ProductInfo({ product }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* Category label */}
-        {product.category_name && (
+        {product.category?.name && (
           <p style={{
             fontFamily:    'var(--font-body)',
             fontSize:      '11px',
@@ -72,7 +72,7 @@ export default function ProductInfo({ product }: Props) {
             textTransform: 'uppercase',
             color:         'var(--text-muted)',
           }}>
-            {product.category_name}
+            {product.category?.name}
           </p>
         )}
 
