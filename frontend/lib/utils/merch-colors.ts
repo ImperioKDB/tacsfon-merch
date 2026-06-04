@@ -1,34 +1,45 @@
 /**
- * Maps product variant colour names to display hex values for swatches.
- * Add new colours here as TACSFON introduces them.
+ * merch-colors.ts
  *
- * NOTE: These are PRODUCT colours, not brand colours.
- * The brand accent green is #3DBA6F and lives in globals.css / tailwind.config.ts.
+ * Single source of truth for TACSFON Merch brand colours
+ * in TypeScript / JS context (charts, canvas, dynamic styles).
+ *
+ * For CSS: always use var(--accent), var(--accent-hover), etc.
+ * For TS/JS: import from this file — never hardcode hex values.
+ *
+ * Accent: Boutique Green
  */
-export const MERCH_COLORS: Record<string, string> = {
-  maroon:    '#7B1A2E',
-  burgundy:  '#7B1A2E',
-  black:     '#1C1C1C',
-  white:     '#F0EDE8',
-  navy:      '#1B2A4A',
-  red:       '#C0392B',
-  green:     '#1A4A2A',
-  gold:      '#C9A84C',
-  grey:      '#555555',
-  gray:      '#555555',
-  brown:     '#5C3317',
-  purple:    '#4A1A7B',
-  blue:      '#1A3A7B',
-  orange:    '#C0601A',
-  pink:      '#C0507A',
-}
 
-/**
- * Resolve a colour name or raw hex into a hex string.
- * Falls back to black if unrecognised.
- */
-export function resolveColor(name: string | null | undefined): string {
-  if (!name) return '#1C1C1C'
-  const lower = name.toLowerCase().trim()
-  return MERCH_COLORS[lower] ?? (lower.startsWith('#') ? lower : '#1C1C1C')
-}
+export const ACCENT       = '#3DBA6F'
+export const ACCENT_HOVER = '#34a863'
+export const ACCENT_DIM   = 'rgba(61,186,111,0.12)'
+
+export const BG_BASE     = '#0A0A0A'
+export const BG_SURFACE  = '#111111'
+export const BG_ELEVATED = '#1A1A1A'
+
+export const TEXT_PRIMARY = '#F5F5F0'
+export const TEXT_MUTED   = '#888880'
+
+export const SUCCESS = '#4CAF7D'
+export const DANGER  = '#E05252'
+export const WARNING = '#C9A84C'   // gold — warning states only
+export const INFO    = '#60A5FA'
+
+export const BORDER = 'rgba(255,255,255,0.08)'
+
+/* Admin accent — blue, visually distinct from storefront */
+export const ADMIN_ACCENT     = '#5B8CFF'
+export const ADMIN_ACCENT_DIM = 'rgba(91,140,255,0.12)'
+
+/* Order status colours */
+export const STATUS_COLORS = {
+  pending_payment:   '#C9A84C',   // gold — awaiting action
+  payment_submitted: '#60A5FA',   // blue  — under review
+  confirmed:         '#2DD4BF',   // teal  — verified
+  dispatched:        '#C084FC',   // purple
+  received:          '#4CAF7D',   // green
+  cancelled:         '#E05252',   // red
+} as const
+
+export type OrderStatus = keyof typeof STATUS_COLORS
