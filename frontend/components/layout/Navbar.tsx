@@ -1,211 +1,308 @@
 'use client'
 
-/**
- * Navbar — Phase 2 (bug-fix: removed duplicate floating hamburger)
- *
- * Layout:
- *   [Nav links — left]   [TACSFON MERCH — center]   [Icons — right]
- *
- * The mobile hamburger lives ONLY in the right icon cluster.
- * There is NO separate fixed/floating hamburger button anywhere.
- *
- * Mobile overlay: full-screen, z-index 200, opened by the single hamburger.
- * Inline CSS only — no Tailwind utility classes.
- */
-
-import Link                       from 'next/link'
-import { usePathname }            from 'next/navigation'
-import { useState, useEffect }    from 'react'
-import { ShoppingBag, User, X, Menu } from 'lucide-react'
-import { useCartStore }           from '@/store/cart'
-import ThemeToggle                from './ThemeToggle'
+import { useState, useEffect } from 'react'
+import Link                    from 'next/link'
+import { usePathname }         from 'next/navigation'
+import { ShoppingCart, User, Search, Menu, X } from 'lucide-react'
+import { useCartStore }        from '@/store/cart'
+import { useAuth }             from '@/hooks/useAuth'
+import NotificationBell        from '@/components/notifications/NotificationBell'
 
 const NAV_LINKS = [
-  { href: '/products',  label: 'Products'  },
-  { href: '/about',     label: 'About'     },
-  { href: '/contact',   label: 'Contact'   },
+  { href: '/',         label: 'Home'     },
+  { href: '/products', label: 'Products' },
+  { href: '/about',    label: 'About'    },
+  { href: '/contact',  label: 'Contact'  },
 ]
 
 export default function Navbar() {
-  const pathname     = usePathname()
-  const cartCount    = useCartStore(s => s.count)
-  const [open, setOpen] = useState(false)
+  const pathname   = usePathname()
+  const cartCount  = useCartStore(s => s.count)
+  const { user }   = useAuth()
+  const [open,      setOpen]      = useState(false)
+  const [scrolled,  setScrolled]  = useState(false)
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Close on route change
   useEffect(() => { setOpen(false) }, [pathname])
 
+  // Lock body scroll when menu is open
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
     <>
-      <nav
+      <header
         style={{
-          position:       'fixed',
-          top:            0,
-          left:           0,
-          right:          0,
-          zIndex:         100,
-          height:         '64px',
-          display:        'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems:     'center',
-          paddingLeft:    '24px',
-          paddingRight:   '24px',
-          background:     'color-mix(in srgb, var(--bg-base) 85%, transparent)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom:   '1px solid var(--border)',
+          position:    'fixed',
+          top:         0,
+          left:        0,
+          right:       0,
+          zIndex:      100,
+          height:      '64px',
+          display:     'flex',
+          alignItems:  'center',
+          padding:     '0 24px',
+          background:  scrolled ? 'rgba(10,10,10,0.92)' : 'rgba(10,10,10,0.6)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          transition:  'background 300ms',
+          /* gradient bottom border */
+          borderBottom: 'none',
         }}
       >
-        {/* Left: desktop nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          {NAV_LINKS.map(link => (
+        {/* Gradient bottom border line */}
+        <span style={{
+          position:   'absolute',
+          bottom:     0,
+          left:       0,
+          right:      0,
+          height:     '1px',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(61,186,111,0.35) 30%, rgba(61,186,111,0.35) 70%, transparent 100%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* ── Left: nav links (desktop) ── */}
+        <nav
+          aria-label="Primary navigation"
+          style={{
+            display:    'flex',
+            gap:        '28px',
+            flex:       1,
+          }}
+          className="hidden md:flex"
+        >
+          {NAV_LINKS.map(({ href, label }) => (
             <Link
-              key={link.href}
-              href={link.href}
-              className="nav-desktop-link"
+              key={href}
+              href={href}
               style={{
-                display:       'none',
                 fontFamily:    'var(--font-body)',
                 fontSize:      '12px',
                 fontWeight:    600,
                 letterSpacing: '0.1em',
-                textTransform: 'uppercase' as const,
-                color:         isActive(link.href) ? 'var(--accent)' : 'var(--text-muted)',
+                textTransform: 'uppercase',
+                color:         isActive(href) ? 'var(--accent)' : 'var(--text-muted)',
                 textDecoration:'none',
                 transition:    'color 150ms',
+                paddingBottom: '2px',
+                borderBottom:  isActive(href) ? '1px solid var(--accent)' : '1px solid transparent',
               }}
             >
-              {link.label}
+              {label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        {/* Center: logo */}
+        {/* ── Centre: Logo ── */}
         <Link
           href="/"
+          aria-label="TACSFON Merch home"
           style={{
+            position:      'absolute',
+            left:          '50%',
+            transform:     'translateX(-50%)',
             fontFamily:    'var(--font-display)',
-            fontSize:      '20px',
-            letterSpacing: '0.12em',
+            fontSize:      '22px',
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
             color:         'var(--text-primary)',
             textDecoration:'none',
             whiteSpace:    'nowrap',
-            textAlign:     'center',
+            lineHeight:    1,
           }}
         >
-          TACSFON{' '}
-          <span style={{ color: 'var(--accent)' }}>MERCH</span>
+          TACSFON
+          <span style={{ color: 'var(--accent)', marginLeft: '2px' }}>•</span>
         </Link>
 
-        {/* Right: icons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
-          <ThemeToggle />
+        {/* ── Right: icons ── */}
+        <div
+          style={{
+            display:    'flex',
+            alignItems: 'center',
+            gap:        '4px',
+            flex:       1,
+            justifyContent: 'flex-end',
+          }}
+        >
+          {/* Search — desktop only for now */}
+          <button
+            aria-label="Search"
+            className="hidden md:flex"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', padding: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'color 150ms',
+            }}
+          >
+            <Search size={18} strokeWidth={1.5} />
+          </button>
 
+          {/* Notifications bell */}
+          {user && <NotificationBell />}
+
+          {/* Cart */}
           <Link
             href="/cart"
-            aria-label="Cart"
-            style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', textDecoration: 'none' }}
+            aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`}
+            style={{
+              position:       'relative',
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              padding:        '8px',
+              color:          'var(--text-muted)',
+              textDecoration: 'none',
+              transition:     'color 150ms',
+            }}
           >
-            <ShoppingBag size={20} strokeWidth={1.5} />
+            <ShoppingCart size={20} strokeWidth={1.5} />
             {cartCount > 0 && (
-              <span style={{ position: 'absolute', top: '4px', right: '4px', minWidth: '16px', height: '16px', borderRadius: '8px', background: 'var(--accent)', color: '#0A0A0A', fontSize: '9px', fontFamily: 'var(--font-body)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+              <span style={{
+                position:       'absolute',
+                top:            '4px',
+                right:          '4px',
+                minWidth:       '16px',
+                height:         '16px',
+                padding:        '0 3px',
+                background:     'var(--accent)',
+                color:          '#0A0A0A',
+                borderRadius:   '8px',
+                fontSize:       '9px',
+                fontFamily:     'var(--font-body)',
+                fontWeight:     700,
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                lineHeight:     1,
+              }}>
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
           </Link>
 
+          {/* Profile */}
           <Link
-            href="/profile"
+            href={user ? '/profile' : '/login'}
             aria-label="Profile"
-            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', textDecoration: 'none' }}
+            style={{
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              padding:        '8px',
+              color:          'var(--text-muted)',
+              textDecoration: 'none',
+              transition:     'color 150ms',
+            }}
           >
             <User size={20} strokeWidth={1.5} />
           </Link>
 
-          {/* Single hamburger — mobile only */}
+          {/* Hamburger — mobile only */}
           <button
             onClick={() => setOpen(o => !o)}
             aria-label={open ? 'Close menu' : 'Open menu'}
-            className="nav-hamburger"
-            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
+            aria-expanded={open}
+            className="md:hidden"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-primary)', padding: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            {open ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
+            {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
-      </nav>
+      </header>
 
-      {/* Mobile overlay */}
+      {/* ── Mobile full-screen overlay menu ── */}
       <div
         aria-hidden={!open}
         style={{
-          position:       'fixed',
-          inset:          0,
-          zIndex:         200,
-          background:     'var(--bg-base)',
-          display:        'flex',
-          flexDirection:  'column',
-          alignItems:     'center',
-          justifyContent: 'center',
-          gap:            '40px',
-          opacity:        open ? 1 : 0,
-          pointerEvents:  open ? 'auto' : 'none',
-          transition:     'opacity 250ms ease',
+          position:   'fixed',
+          inset:      0,
+          zIndex:     99,
+          background: '#0A0A0A',
+          display:    'flex',
+          flexDirection: 'column',
+          justifyContent:'center',
+          padding:    '0 40px',
+          transform:  open ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 320ms cubic-bezier(0.32,0.72,0,1)',
+          pointerEvents: open ? 'auto' : 'none',
         }}
+        className="md:hidden"
       >
-        <button
-          onClick={() => setOpen(false)}
-          aria-label="Close menu"
-          style={{ position: 'absolute', top: '16px', right: '20px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
-        >
-          <X size={22} strokeWidth={1.5} />
-        </button>
+        <nav aria-label="Mobile navigation overlay" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {NAV_LINKS.map(({ href, label }, i) => (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                fontFamily:    'var(--font-display)',
+                fontSize:      'clamp(36px, 8vw, 56px)',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color:         isActive(href) ? 'var(--accent)' : 'var(--text-primary)',
+                textDecoration:'none',
+                lineHeight:    1.1,
+                opacity:       open ? 1 : 0,
+                transform:     open ? 'translateX(0)' : 'translateX(40px)',
+                transition:    `opacity 320ms ${80 + i * 60}ms, transform 320ms ${80 + i * 60}ms, color 150ms`,
+              }}
+            >
+              {label}
+            </Link>
+          ))}
 
-        {NAV_LINKS.map((link, i) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setOpen(false)}
-            style={{
-              fontFamily:    'var(--font-display)',
-              fontSize:      'clamp(36px, 10vw, 56px)',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase' as const,
-              color:         isActive(link.href) ? 'var(--accent)' : 'var(--text-primary)',
-              textDecoration:'none',
-              opacity:       open ? 1 : 0,
-              transform:     open ? 'translateY(0)' : 'translateY(16px)',
-              transition:    `opacity 300ms ease ${i * 60 + 80}ms, transform 300ms ease ${i * 60 + 80}ms`,
-            }}
-          >
-            {link.label}
-          </Link>
-        ))}
+          {/* Divider */}
+          <div style={{
+            height: '1px',
+            background: 'var(--border)',
+            margin: '20px 0',
+            opacity: open ? 1 : 0,
+            transition: `opacity 320ms 380ms`,
+          }} />
 
-        <div style={{ display: 'flex', gap: '24px', marginTop: '16px' }}>
-          <Link href="/cart" onClick={() => setOpen(false)} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase' as const, textDecoration: 'none' }}>
-            <ShoppingBag size={18} strokeWidth={1.5} /> Cart {cartCount > 0 && `(${cartCount})`}
-          </Link>
-          <Link href="/profile" onClick={() => setOpen(false)} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase' as const, textDecoration: 'none' }}>
-            <User size={18} strokeWidth={1.5} /> Profile
-          </Link>
-        </div>
+          {/* Secondary links */}
+          {[
+            { href: user ? '/profile' : '/login', label: user ? 'My Profile' : 'Sign In' },
+            { href: '/orders',                    label: 'My Orders' },
+            { href: '/cart',                      label: 'Cart' },
+          ].map(({ href, label }, i) => (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                fontFamily:    'var(--font-body)',
+                fontSize:      '14px',
+                fontWeight:    600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color:         'var(--text-muted)',
+                textDecoration:'none',
+                opacity:       open ? 1 : 0,
+                transform:     open ? 'translateX(0)' : 'translateX(40px)',
+                transition:    `opacity 320ms ${420 + i * 50}ms, transform 320ms ${420 + i * 50}ms`,
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
-
-      <style>{`
-        @media (min-width: 768px) {
-          .nav-desktop-link { display: block !important; }
-          .nav-hamburger    { display: none  !important; }
-        }
-        @media (max-width: 767px) {
-          .nav-desktop-link { display: none  !important; }
-          .nav-hamburger    { display: flex  !important; }
-        }
-      `}</style>
     </>
   )
 }
