@@ -64,7 +64,7 @@ body {
 
 .divider-gold {
   height:     1px;
-  background: linear-gradient(90deg, var(--accent), transparent);
+  background: linear-gradient(90deg, #3DBA6F, transparent);
   max-width:  200px;
 }
 
@@ -133,10 +133,10 @@ body {
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar-thumb:hover { background: #3DBA6F; }
 
 /* ── Focus ring ───────────────────────────────────────────────────────────── */
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+:focus-visible { outline: 2px solid #3DBA6F; outline-offset: 3px; }
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 .sr-only {

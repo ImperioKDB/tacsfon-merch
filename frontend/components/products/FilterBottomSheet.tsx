@@ -131,7 +131,7 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
+            <SlidersHorizontal size={14} style={{ color: '#3DBA6F' }} />
             <span
               style={{
                 fontFamily: 'var(--font-body)',
@@ -153,7 +153,7 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '12px',
-                  color: 'var(--accent)',
+                  color: '#3DBA6F',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
@@ -243,7 +243,7 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
             onClick={onClose}
             style={{
               width: '100%',
-              background: 'var(--accent)',
+              background: '#3DBA6F',
               color: '#000',
               border: 'none',
               fontFamily: 'var(--font-body)',
@@ -298,8 +298,8 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
         fontWeight: active ? 600 : 400,
         letterSpacing: '0.06em',
         color: active ? '#000' : 'var(--text-muted)',
-        background: active ? 'var(--accent)' : 'var(--bg-elevated)',
-        border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
+        background: active ? '#3DBA6F' : 'var(--bg-elevated)',
+        border: active ? '1px solid #3DBA6F' : '1px solid var(--border)',
         padding: '8px 16px',
         cursor: 'pointer',
         minHeight: '44px',

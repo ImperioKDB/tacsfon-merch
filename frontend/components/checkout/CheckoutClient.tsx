@@ -116,8 +116,8 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
                     width:        '10px',
                     height:       '10px',
                     borderRadius: '50%',
-                    background:   isCompleted || isActive ? 'var(--accent)' : 'var(--bg-elevated)',
-                    border:       isActive ? '2px solid var(--accent)' : isCompleted ? 'none' : '2px solid var(--border)',
+                    background:   isCompleted || isActive ? '#3DBA6F' : 'var(--bg-elevated)',
+                    border:       isActive ? '2px solid #3DBA6F' : isCompleted ? 'none' : '2px solid var(--border)',
                     boxShadow:    isActive ? '0 0 0 3px rgba(201,168,76,0.25)' : 'none',
                     transition:   'all 200ms ease',
                     flexShrink:   0,
@@ -128,7 +128,7 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
                     fontWeight:    700,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color:         isActive ? 'var(--accent)' : isCompleted ? 'var(--text-muted)' : 'var(--border)',
+                    color:         isActive ? '#3DBA6F' : isCompleted ? 'var(--text-muted)' : 'var(--border)',
                     whiteSpace:    'nowrap',
                     transition:    'color 200ms',
                   }}>
@@ -139,7 +139,7 @@ export default function CheckoutClient({ cartItems, subtotal }: Props) {
                   <div style={{
                     flex:         1,
                     height:       '1px',
-                    background:   isCompleted ? 'var(--accent)' : 'var(--border)',
+                    background:   isCompleted ? '#3DBA6F' : 'var(--border)',
                     marginBottom: '16px',
                     marginLeft:   '8px',
                     marginRight:  '8px',

@@ -61,7 +61,7 @@ export default function StickyATC({ show, onAdd, soldOut, adding, price, name }:
           fontFamily: 'var(--font-body)',
           fontSize:   '13px',
           fontWeight: 700,
-          color:      'var(--accent)',
+          color:      '#3DBA6F',
         }}>
           {price}
         </p>
@@ -75,7 +75,7 @@ export default function StickyATC({ show, onAdd, soldOut, adding, price, name }:
         style={{
           height:        '44px',
           padding:       '0 24px',
-          background:    soldOut ? 'transparent' : adding ? '#2EA05A' : 'var(--accent)',
+          background:    soldOut ? 'transparent' : adding ? '#2EA05A' : '#3DBA6F',
           border:        soldOut ? '1px solid var(--border)' : 'none',
           color:         soldOut ? 'var(--text-muted)' : '#0A0A0A',
           fontFamily:    'var(--font-body)',

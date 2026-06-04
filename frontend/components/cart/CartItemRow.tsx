@@ -58,7 +58,7 @@ export default function CartItemRow({
           </p>
         )}
 
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 600, color: 'var(--accent)', margin: '4px 0 0 0' }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 600, color: '#3DBA6F', margin: '4px 0 0 0' }}>
           {formatPrice(unitPrice * quantity)}
           {quantity > 1 && (
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400, marginLeft: '6px' }}>

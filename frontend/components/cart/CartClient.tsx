@@ -149,7 +149,7 @@ export default function CartClient() {
           {itemCount} item{itemCount !== 1 ? 's' : ''}
         </p>
 
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, var(--accent) 0%, transparent 100%)', marginBottom: '8px' }} />
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, #3DBA6F 0%, transparent 100%)', marginBottom: '8px' }} />
 
         {items.map(item => (
           <CartItemRow

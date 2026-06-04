@@ -44,7 +44,7 @@ function formatDate(iso: string) {
 }
 
 const PAYMENT_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  unpaid:     { bg: 'rgba(201,168,76,0.12)',  color: '#C9A84C', label: 'Unpaid'     },
+  unpaid:     { bg: 'rgba(201,168,76,0.12)',  color: '#3DBA6F', label: 'Unpaid'     },
   paid:       { bg: 'rgba(76,175,125,0.12)',  color: '#4CAF7D', label: 'Paid'       },
   incomplete: { bg: 'rgba(224,82,82,0.12)',   color: '#E05252', label: 'Incomplete' },
 }
@@ -79,7 +79,7 @@ export default function PendingOrdersPage() {
         </span>
       )
     }
-    if (key === 'total')        return <span style={{ color: '#C9A84C', fontWeight: 600 }}>{formatNaira(row.total)}</span>
+    if (key === 'total')        return <span style={{ color: '#3DBA6F', fontWeight: 600 }}>{formatNaira(row.total)}</span>
     if (key === 'created_at')   return <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{formatDate(row.created_at)}</span>
     if (key === 'item_count')   return <span style={{ color: 'var(--text-muted)' }}>{row.item_count}</span>
     if (key === 'payment_status') {

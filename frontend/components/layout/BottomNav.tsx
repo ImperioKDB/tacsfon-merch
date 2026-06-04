@@ -62,7 +62,7 @@ export default function BottomNav() {
               justifyContent: 'center',
               gap:            '3px',
               position:       'relative',
-              color:          isActive ? 'var(--accent)' : 'var(--text-muted)',
+              color:          isActive ? '#3DBA6F' : 'var(--text-muted)',
               textDecoration: 'none',
               transition:     'color 150ms',
               WebkitTapHighlightColor: 'transparent',
@@ -76,7 +76,7 @@ export default function BottomNav() {
                 left:       '20%',
                 right:      '20%',
                 height:     '2px',
-                background: 'var(--accent)',
+                background: '#3DBA6F',
                 borderRadius: '0 0 2px 2px',
               }} />
             )}
@@ -91,7 +91,7 @@ export default function BottomNav() {
                   minWidth:       '16px',
                   height:         '16px',
                   padding:        '0 4px',
-                  background:     'var(--accent)',
+                  background:     '#3DBA6F',
                   color:          '#0A0A0A',
                   borderRadius:   '8px',
                   fontSize:       '9px',

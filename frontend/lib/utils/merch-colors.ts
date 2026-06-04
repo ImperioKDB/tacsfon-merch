@@ -10,7 +10,7 @@ export const MERCH_COLORS: Record<string, string> = {
   navy:      '#1B2A4A',
   red:       '#C0392B',
   green:     '#1A4A2A',
-  gold:      '#C9A84C',
+  gold:      '#3DBA6F',
   grey:      '#555555',
   gray:      '#555555',
   brown:     '#5C3317',

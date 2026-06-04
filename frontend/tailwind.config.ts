@@ -14,7 +14,7 @@ const config: Config = {
         'bg-elevated':  '#1E1E1E',
         'text-primary': '#F5F0E8',
         'text-muted':   '#888880',
-        accent:         '#C9A84C',
+        accent:         '#3DBA6F',
         'accent-hover': '#E2C46A',
         danger:         '#E05252',
         success:        '#4CAF7D',
@@ -46,7 +46,7 @@ const config: Config = {
         '400': '400ms',
       },
       backgroundImage: {
-        'gradient-gold': 'linear-gradient(90deg, #C9A84C, transparent)',
+        'gradient-gold': 'linear-gradient(90deg, #3DBA6F, transparent)',
         'gradient-card': 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)',
       },
       aspectRatio: {

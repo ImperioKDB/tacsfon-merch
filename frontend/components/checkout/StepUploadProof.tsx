@@ -122,7 +122,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
           style={{
             minHeight:     '52px',
             padding:       '0 40px',
-            background:    'var(--accent)',
+            background:    '#3DBA6F',
             border:        'none',
             color:         '#0A0A0A',
             fontFamily:    'var(--font-body)',
@@ -149,7 +149,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         onDrop={onDrop}
         onClick={() => !file && inputRef.current?.click()}
         style={{
-          border:         `2px dashed ${dragging ? 'var(--accent)' : 'var(--border)'}`,
+          border:         `2px dashed ${dragging ? '#3DBA6F' : 'var(--border)'}`,
           background:     dragging ? 'rgba(201,168,76,0.06)' : 'var(--bg-surface)',
           padding:        '40px 24px',
           display:        'flex',
@@ -207,7 +207,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
           </>
         ) : (
           <>
-            <div style={{ color: dragging ? 'var(--accent)' : 'var(--text-muted)', transition: 'color 150ms' }}>
+            <div style={{ color: dragging ? '#3DBA6F' : 'var(--text-muted)', transition: 'color 150ms' }}>
               {dragging
                 ? <UploadCloud size={40} strokeWidth={1.2} />
                 : <FileImage  size={40} strokeWidth={1.2} />
@@ -217,7 +217,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
               <p style={{
                 fontFamily: 'var(--font-body)',
                 fontSize:   '14px',
-                color:      dragging ? 'var(--accent)' : 'var(--text-primary)',
+                color:      dragging ? '#3DBA6F' : 'var(--text-primary)',
                 fontWeight: 600,
                 margin:     '0 0 4px 0',
                 transition: 'color 150ms',
@@ -264,7 +264,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             alignItems:     'center',
             justifyContent: 'center',
             gap:            '10px',
-            background:     file && !uploading ? 'var(--accent)' : 'var(--bg-elevated)',
+            background:     file && !uploading ? '#3DBA6F' : 'var(--bg-elevated)',
             border:         'none',
             color:          file && !uploading ? '#0A0A0A' : 'var(--text-muted)',
             fontFamily:     'var(--font-body)',

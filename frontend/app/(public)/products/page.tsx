@@ -72,7 +72,7 @@ function ProductsContent() {
             fontWeight: 600,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: 'var(--accent)',
+            color: '#3DBA6F',
             marginBottom: '8px',
           }}
         >
@@ -122,7 +122,7 @@ function ProductsContent() {
               minHeight: '44px',
             }}
           >
-            <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
+            <SlidersHorizontal size={14} style={{ color: '#3DBA6F' }} />
             Filter
           </button>
         </div>
@@ -132,7 +132,7 @@ function ProductsContent() {
           aria-hidden="true"
           style={{
             height: '1px',
-            background: 'linear-gradient(90deg, var(--accent), transparent)',
+            background: 'linear-gradient(90deg, #3DBA6F, transparent)',
             marginTop: '20px',
             maxWidth: '240px',
           }}

@@ -65,10 +65,10 @@ export default function CategoryStrip({ categories }: CategoryStripProps) {
                   fontWeight: isActive ? 600 : 500,
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                  color: isActive ? '#3DBA6F' : 'var(--text-muted)',
                   textDecoration: 'none',
                   borderRight: idx < all.length - 1 ? '1px solid var(--border)' : 'none',
-                  borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+                  borderBottom: isActive ? '2px solid #3DBA6F' : '2px solid transparent',
                   transition: 'color 150ms ease, border-color 150ms ease',
                 }}
               >

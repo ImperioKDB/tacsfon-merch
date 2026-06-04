@@ -65,7 +65,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
               fontWeight: 600,
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
-              color: 'var(--accent)',
+              color: '#3DBA6F',
               marginBottom: '8px',
             }}
           >
@@ -90,9 +90,9 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: 'var(--accent)',
+            color: '#3DBA6F',
             textDecoration: 'none',
-            borderBottom: '1px solid var(--accent)',
+            borderBottom: '1px solid #3DBA6F',
             paddingBottom: '2px',
             transition: 'color 150ms ease',
             whiteSpace: 'nowrap',

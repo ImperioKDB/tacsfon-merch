@@ -52,7 +52,7 @@ export default function ThemeToggle() {
         : <Moon size={16} strokeWidth={1.75} />
       }
       <style>{`
-        .theme-toggle:hover { color: var(--accent) !important; }
+        .theme-toggle:hover { color: #3DBA6F !important; }
       `}</style>
     </button>
   )

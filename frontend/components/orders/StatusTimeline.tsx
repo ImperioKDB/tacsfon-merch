@@ -80,10 +80,10 @@ export default function StatusTimeline({ status }: Props) {
           const isCurrent = i === currentIdx
           const isLast    = i === STEPS.length - 1
 
-          const dotColor  = isDone || isCurrent ? 'var(--accent)' : 'transparent'
-          const lineColor = isDone ? 'var(--accent)' : 'var(--border)'
+          const dotColor  = isDone || isCurrent ? '#3DBA6F' : 'transparent'
+          const lineColor = isDone ? '#3DBA6F' : 'var(--border)'
           const labelColor =
-            isCurrent ? 'var(--accent)'       :
+            isCurrent ? '#3DBA6F'       :
             isDone    ? 'var(--text-primary)'  :
                         'var(--text-muted)'
 

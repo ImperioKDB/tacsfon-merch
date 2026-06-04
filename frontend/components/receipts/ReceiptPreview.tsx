@@ -45,13 +45,13 @@ export default function ReceiptPreview({ receipt }: ReceiptPreviewProps) {
       {/* Receipt Header */}
       <div
         className="px-8 py-7"
-        style={{ background: '#0A0A0F', borderBottom: '3px solid #C9A84C' }}
+        style={{ background: '#0A0A0F', borderBottom: '3px solid #3DBA6F' }}
       >
         <div className="flex items-center justify-between">
           <div>
             <h2
               className="text-xl font-bold tracking-tight"
-              style={{ color: '#C9A84C', fontFamily: 'var(--font-urbanist)' }}
+              style={{ color: '#3DBA6F', fontFamily: 'var(--font-urbanist)' }}
             >
               TACSFON Merch Store
             </h2>
@@ -62,7 +62,7 @@ export default function ReceiptPreview({ receipt }: ReceiptPreviewProps) {
           {/* Gold dot logo mark */}
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm"
-            style={{ background: '#C9A84C' }}
+            style={{ background: '#3DBA6F' }}
           >
             TM
           </div>
@@ -180,13 +180,13 @@ export default function ReceiptPreview({ receipt }: ReceiptPreviewProps) {
             className="flex justify-between text-base font-bold pt-2"
             style={{
               color: '#111827',
-              borderTop: '2px solid #C9A84C',
+              borderTop: '2px solid #3DBA6F',
               marginTop: '8px',
               paddingTop: '10px',
             }}
           >
             <span>Total</span>
-            <span style={{ color: '#C9A84C' }}>{formatCurrency(receipt.total)}</span>
+            <span style={{ color: '#3DBA6F' }}>{formatCurrency(receipt.total)}</span>
           </div>
         </div>
       </div>

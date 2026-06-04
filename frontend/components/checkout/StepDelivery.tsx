@@ -54,7 +54,7 @@ function Field({
         letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)',
         display: 'flex', alignItems: 'center', gap: '6px',
       }}>
-        <span style={{ color: 'var(--accent)' }}>{icon}</span>
+        <span style={{ color: '#3DBA6F' }}>{icon}</span>
         {label}
       </label>
       <input
@@ -66,7 +66,7 @@ function Field({
         onBlur={() => setFocused(false)}
         style={{
           ...inputBase,
-          borderColor: focused ? 'var(--accent)' : 'var(--border)',
+          borderColor: focused ? '#3DBA6F' : 'var(--border)',
         }}
       />
     </div>
@@ -95,9 +95,9 @@ export default function StepDelivery({ data, onChange, onNext }: Props) {
     letterSpacing:  '0.12em',
     textTransform:  'uppercase' as const,
     cursor:         'pointer',
-    border:         data.method === value ? '1px solid var(--accent)' : '1px solid var(--border)',
+    border:         data.method === value ? '1px solid #3DBA6F' : '1px solid var(--border)',
     background:     data.method === value ? 'rgba(201,168,76,0.10)' : 'var(--bg-surface)',
-    color:          data.method === value ? 'var(--accent)' : 'var(--text-muted)',
+    color:          data.method === value ? '#3DBA6F' : 'var(--text-muted)',
     transition:     'border-color 150ms, background 150ms, color 150ms',
   })
 
@@ -128,7 +128,7 @@ export default function StepDelivery({ data, onChange, onNext }: Props) {
           letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)',
           display: 'flex', alignItems: 'center', gap: '6px', margin: 0,
         }}>
-          <span style={{ color: 'var(--accent)' }}><MapPin size={11} /></span>
+          <span style={{ color: '#3DBA6F' }}><MapPin size={11} /></span>
           Delivery Method
         </p>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -160,7 +160,7 @@ export default function StepDelivery({ data, onChange, onNext }: Props) {
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'center',
-          background:     isValid ? 'var(--accent)' : 'var(--bg-elevated)',
+          background:     isValid ? '#3DBA6F' : 'var(--bg-elevated)',
           border:         'none',
           color:          isValid ? '#0A0A0A' : 'var(--text-muted)',
           fontFamily:     'var(--font-body)',

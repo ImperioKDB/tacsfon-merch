@@ -22,12 +22,12 @@ export default function CartSummary({ subtotal, itemCount, onClearCart, isCleari
         <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
           Subtotal · {itemCount} item{itemCount !== 1 ? 's' : ''}
         </span>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: '22px', fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.01em' }}>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: '22px', fontWeight: 700, color: '#3DBA6F', letterSpacing: '-0.01em' }}>
           {formatPrice(subtotal)}
         </span>
       </div>
 
-      <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', minHeight: '56px', background: 'var(--accent)', color: '#0A0A0A', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none' }}>
+      <Link href="/checkout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', minHeight: '56px', background: '#3DBA6F', color: '#0A0A0A', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none' }}>
         Proceed to Checkout →
       </Link>
 

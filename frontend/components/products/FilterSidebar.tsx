@@ -73,7 +73,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
+          <SlidersHorizontal size={14} style={{ color: '#3DBA6F' }} />
           <span
             style={{
               fontFamily: 'var(--font-body)',
@@ -94,7 +94,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '11px',
-              color: 'var(--accent)',
+              color: '#3DBA6F',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -200,7 +200,7 @@ function FilterRow({ label, active, onClick }: { label: string; active: boolean;
           width: '14px',
           height: '14px',
           borderRadius: '50%',
-          border: active ? '4px solid var(--accent)' : '1px solid var(--border)',
+          border: active ? '4px solid #3DBA6F' : '1px solid var(--border)',
           flexShrink: 0,
           transition: 'border 150ms ease',
         }}

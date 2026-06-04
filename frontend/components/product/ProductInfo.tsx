@@ -93,7 +93,7 @@ export default function ProductInfo({ product }: Props) {
           fontFamily: 'var(--font-body)',
           fontSize:   '22px',
           fontWeight: 700,
-          color:      'var(--accent)',
+          color:      '#3DBA6F',
         }}>
           {priceStr}
         </p>
@@ -137,7 +137,7 @@ export default function ProductInfo({ product }: Props) {
             style={{
               flex:          1,
               height:        '52px',
-              background:    soldOut ? 'transparent' : adding ? '#2EA05A' : 'var(--accent)',
+              background:    soldOut ? 'transparent' : adding ? '#2EA05A' : '#3DBA6F',
               border:        soldOut ? '1px solid var(--border)' : 'none',
               color:         soldOut ? 'var(--text-muted)' : '#0A0A0A',
               fontFamily:    'var(--font-body)',

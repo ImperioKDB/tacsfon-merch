@@ -92,11 +92,11 @@ export default function Navbar() {
                 fontWeight:    600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color:         isActive(href) ? 'var(--accent)' : 'var(--text-muted)',
+                color:         isActive(href) ? '#3DBA6F' : 'var(--text-muted)',
                 textDecoration:'none',
                 transition:    'color 150ms',
                 paddingBottom: '2px',
-                borderBottom:  isActive(href) ? '1px solid var(--accent)' : '1px solid transparent',
+                borderBottom:  isActive(href) ? '1px solid #3DBA6F' : '1px solid transparent',
               }}
             >
               {label}
@@ -123,7 +123,7 @@ export default function Navbar() {
           }}
         >
           TACSFON
-          <span style={{ color: 'var(--accent)', marginLeft: '2px' }}>•</span>
+          <span style={{ color: '#3DBA6F', marginLeft: '2px' }}>•</span>
         </Link>
 
         {/* ── Right: icons ── */}
@@ -177,7 +177,7 @@ export default function Navbar() {
                 minWidth:       '16px',
                 height:         '16px',
                 padding:        '0 3px',
-                background:     'var(--accent)',
+                background:     '#3DBA6F',
                 color:          '#0A0A0A',
                 borderRadius:   '8px',
                 fontSize:       '9px',
@@ -255,7 +255,7 @@ export default function Navbar() {
                 fontSize:      'clamp(36px, 8vw, 56px)',
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color:         isActive(href) ? 'var(--accent)' : 'var(--text-primary)',
+                color:         isActive(href) ? '#3DBA6F' : 'var(--text-primary)',
                 textDecoration:'none',
                 lineHeight:    1.1,
                 opacity:       open ? 1 : 0,

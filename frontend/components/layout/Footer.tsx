@@ -35,7 +35,7 @@ export default function Footer() {
         aria-hidden="true"
         style={{
           height: '1px',
-          background: 'linear-gradient(90deg, var(--accent), transparent 60%)',
+          background: 'linear-gradient(90deg, #3DBA6F, transparent 60%)',
         }}
       />
 
@@ -72,7 +72,7 @@ export default function Footer() {
                 style={{
                   width: '5px',
                   height: '5px',
-                  background: 'var(--accent)',
+                  background: '#3DBA6F',
                   display: 'inline-block',
                   flexShrink: 0,
                 }}
@@ -94,7 +94,7 @@ export default function Footer() {
                   fontSize: '9px',
                   fontWeight: 500,
                   letterSpacing: '0.2em',
-                  color: 'var(--accent)',
+                  color: '#3DBA6F',
                   textTransform: 'uppercase',
                 }}
               >
@@ -126,7 +126,7 @@ export default function Footer() {
                   fontWeight: 600,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  color: 'var(--accent)',
+                  color: '#3DBA6F',
                   textDecoration: 'none',
                   display: 'inline-flex',
                   alignItems: 'center',

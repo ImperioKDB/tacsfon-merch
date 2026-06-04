@@ -45,7 +45,7 @@ function CopyButton({ text }: { text: string }) {
         background: 'transparent',
         border:     'none',
         cursor:     'pointer',
-        color:      copied ? 'var(--success)' : 'var(--accent)',
+        color:      copied ? 'var(--success)' : '#3DBA6F',
         display:    'flex',
         alignItems: 'center',
         padding:    '4px',
@@ -93,7 +93,7 @@ export default function StepPayment({ cartItems, subtotal, method, onNext, onBac
           gap:           '10px',
           marginBottom:  '16px',
         }}>
-          <span style={{ color: 'var(--accent)' }}><Landmark size={16} /></span>
+          <span style={{ color: '#3DBA6F' }}><Landmark size={16} /></span>
           <p style={{
             fontFamily:    'var(--font-body)',
             fontSize:      '11px',
@@ -187,7 +187,7 @@ export default function StepPayment({ cartItems, subtotal, method, onNext, onBac
           <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Total</span>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '16px', fontWeight: 700, color: 'var(--accent)' }}>{formatPrice(total)}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '16px', fontWeight: 700, color: '#3DBA6F' }}>{formatPrice(total)}</span>
           </div>
         </div>
       </div>
@@ -220,7 +220,7 @@ export default function StepPayment({ cartItems, subtotal, method, onNext, onBac
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
-            background:     'var(--accent)',
+            background:     '#3DBA6F',
             border:         'none',
             color:          '#0A0A0A',
             fontFamily:     'var(--font-body)',

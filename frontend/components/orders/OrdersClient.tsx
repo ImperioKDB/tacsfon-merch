@@ -108,7 +108,7 @@ export default function OrdersClient() {
           style={{
             display:       'inline-block',
             padding:       '13px 32px',
-            background:    'var(--accent)',
+            background:    '#3DBA6F',
             color:         '#0A0A0A',
             fontFamily:    'var(--font-body)',
             fontSize:      '12px',

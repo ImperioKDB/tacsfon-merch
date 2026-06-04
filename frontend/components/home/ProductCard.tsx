@@ -133,7 +133,7 @@ export default function HomeProductCard({ product, priority = false }: Props) {
             fontFamily: 'var(--font-body)',
             fontSize:   '11px',
             fontWeight: 700,
-            color:      'var(--accent)',
+            color:      '#3DBA6F',
           }}>
             {priceStr}
           </p>
@@ -215,7 +215,7 @@ export default function HomeProductCard({ product, priority = false }: Props) {
           aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
           style={{
             flex: 1, height: '100%',
-            background: soldOut ? 'transparent' : adding ? '#2EA05A' : 'var(--accent)',
+            background: soldOut ? 'transparent' : adding ? '#2EA05A' : '#3DBA6F',
             border: 'none',
             color: soldOut ? 'var(--text-muted)' : '#0A0A0A',
             fontFamily: 'var(--font-body)', fontSize: '9px',

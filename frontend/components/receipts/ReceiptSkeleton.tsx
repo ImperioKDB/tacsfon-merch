@@ -5,7 +5,7 @@ export default function ReceiptSkeleton() {
       style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
     >
       {/* Header skeleton */}
-      <div className="px-8 py-7" style={{ background: '#0A0A0F', borderBottom: '3px solid #C9A84C' }}>
+      <div className="px-8 py-7" style={{ background: '#0A0A0F', borderBottom: '3px solid #3DBA6F' }}>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="h-5 w-40 rounded animate-pulse" style={{ background: '#1C1C26' }} />
@@ -56,7 +56,7 @@ export default function ReceiptSkeleton() {
               <div className="h-3 w-20 rounded animate-pulse bg-gray-200" />
             </div>
           ))}
-          <div className="flex justify-between pt-2" style={{ borderTop: '2px solid #C9A84C' }}>
+          <div className="flex justify-between pt-2" style={{ borderTop: '2px solid #3DBA6F' }}>
             <div className="h-4 w-10 rounded animate-pulse bg-gray-300" />
             <div className="h-4 w-24 rounded animate-pulse" style={{ background: '#E8C96A' }} />
           </div>

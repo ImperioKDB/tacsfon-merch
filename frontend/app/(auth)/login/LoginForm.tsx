@@ -130,7 +130,7 @@ export default function LoginForm() {
             margin:        '0 0 24px',
             fontFamily:    'var(--font-mono)',
             fontSize:      '11px',
-            color:         'var(--accent)',
+            color:         '#3DBA6F',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
           }}>
@@ -145,7 +145,7 @@ export default function LoginForm() {
             color:         'var(--text-primary)',
           }}>
             WEAR<br />THE<br />
-            <span style={{ color: 'var(--accent)' }}>CULTURE.</span>
+            <span style={{ color: '#3DBA6F' }}>CULTURE.</span>
           </h2>
           {!isMobile && (
             <p style={{
@@ -217,7 +217,7 @@ export default function LoginForm() {
                 required
                 placeholder="your@email.com"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -231,7 +231,7 @@ export default function LoginForm() {
                 required
                 placeholder="••••••••"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -243,7 +243,7 @@ export default function LoginForm() {
                 marginTop:     '8px',
                 width:         '100%',
                 minHeight:     '52px',
-                background:    loading ? 'var(--bg-elevated)' : 'var(--accent)',
+                background:    loading ? 'var(--bg-elevated)' : '#3DBA6F',
                 border:        'none',
                 color:         loading ? 'var(--text-muted)' : '#0A0A0A',
                 fontFamily:    'var(--font-body)',
@@ -255,7 +255,7 @@ export default function LoginForm() {
                 transition:    'background 0.2s ease',
               }}
               onMouseEnter={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent-hover)') }}
-              onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent)') }}
+              onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = '#3DBA6F') }}
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
@@ -271,9 +271,9 @@ export default function LoginForm() {
             Don&apos;t have an account?{' '}
             <a
               href="/signup"
-              style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
+              style={{ color: '#3DBA6F', textDecoration: 'none', fontWeight: 600 }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent)')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#3DBA6F')}
             >
               Sign up
             </a>

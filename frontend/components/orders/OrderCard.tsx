@@ -11,7 +11,7 @@ export default function OrderCard({ order }: { order: Order }) {
   const img = resolveImageUrl(firstItem?.variant?.product?.image_url)
 
   return (
-    <Link href={`/orders/${order.id}`} className="group block bg-[#080808] border border-white/5 hover:border-[#C9A84C]/20 transition-all duration-700">
+    <Link href={`/orders/${order.id}`} className="group block bg-[#080808] border border-white/5 hover:border-[#3DBA6F]/20 transition-all duration-700">
       <div className="flex items-center p-3 gap-5">
         <div className="relative w-12 h-16 bg-[#111] overflow-hidden shrink-0 border border-white/5">
           {img && <Image src={img} alt="item" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-1000" unoptimized />}
@@ -19,7 +19,7 @@ export default function OrderCard({ order }: { order: Order }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="font-mono text-[9px] text-zinc-700">#{shortId}</span>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[#C9A84C] border border-[#C9A84C]/20 px-1">
+            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[#3DBA6F] border border-[#3DBA6F]/20 px-1">
               {order.status.replace('_', ' ')}
             </span>
           </div>

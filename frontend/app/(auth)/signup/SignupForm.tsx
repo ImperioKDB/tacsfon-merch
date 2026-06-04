@@ -149,7 +149,7 @@ export default function SignupForm() {
             margin:        '0 0 24px',
             fontFamily:    'var(--font-mono)',
             fontSize:      '11px',
-            color:         'var(--accent)',
+            color:         '#3DBA6F',
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
           }}>
@@ -164,7 +164,7 @@ export default function SignupForm() {
             color:         'var(--text-primary)',
           }}>
             JOIN<br />THE<br />
-            <span style={{ color: 'var(--accent)' }}>MOVEMENT.</span>
+            <span style={{ color: '#3DBA6F' }}>MOVEMENT.</span>
           </h2>
           {!isMobile && (
             <p style={{
@@ -238,7 +238,7 @@ export default function SignupForm() {
                 required
                 placeholder="First Last"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -253,7 +253,7 @@ export default function SignupForm() {
                 required
                 placeholder="your@email.com"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -268,7 +268,7 @@ export default function SignupForm() {
                 required
                 placeholder="e.g. 08012345678"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -283,7 +283,7 @@ export default function SignupForm() {
                 required
                 placeholder="Min. 8 characters"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onFocus={e => (e.target.style.borderColor = '#3DBA6F')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
@@ -305,7 +305,7 @@ export default function SignupForm() {
                 }}
                 onFocus={e => {
                   e.target.style.borderColor =
-                    confirm && confirm !== password ? 'var(--danger)' : 'var(--accent)'
+                    confirm && confirm !== password ? 'var(--danger)' : '#3DBA6F'
                 }}
                 onBlur={e => {
                   e.target.style.borderColor =
@@ -332,7 +332,7 @@ export default function SignupForm() {
                 marginTop:     '8px',
                 width:         '100%',
                 minHeight:     '52px',
-                background:    loading ? 'var(--bg-elevated)' : 'var(--accent)',
+                background:    loading ? 'var(--bg-elevated)' : '#3DBA6F',
                 border:        'none',
                 color:         loading ? 'var(--text-muted)' : '#0A0A0A',
                 fontFamily:    'var(--font-body)',
@@ -344,7 +344,7 @@ export default function SignupForm() {
                 transition:    'background 0.2s ease',
               }}
               onMouseEnter={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent-hover)') }}
-              onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = 'var(--accent)') }}
+              onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = '#3DBA6F') }}
             >
               {loading ? 'Creating account…' : 'Create Account'}
             </button>
@@ -360,9 +360,9 @@ export default function SignupForm() {
             Already have an account?{' '}
             <a
               href="/login"
-              style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
+              style={{ color: '#3DBA6F', textDecoration: 'none', fontWeight: 600 }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent)')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#3DBA6F')}
             >
               Sign in
             </a>

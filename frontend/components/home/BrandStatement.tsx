@@ -57,7 +57,7 @@ export default function BrandStatement() {
             fontWeight: 600,
             letterSpacing: '0.28em',
             textTransform: 'uppercase',
-            color: 'var(--accent)',
+            color: '#3DBA6F',
             marginBottom: '28px',
           }}
         >
@@ -83,7 +83,7 @@ export default function BrandStatement() {
             fontSize: 'clamp(36px, 6vw, 72px)',
             lineHeight: 1,
             letterSpacing: '0.04em',
-            color: 'var(--accent)',
+            color: '#3DBA6F',
             marginBottom: '36px',
           }}
         >
@@ -96,7 +96,7 @@ export default function BrandStatement() {
           style={{
             width: '48px',
             height: '2px',
-            background: 'var(--accent)',
+            background: '#3DBA6F',
             margin: '0 auto 32px',
           }}
         />
@@ -133,7 +133,7 @@ export default function BrandStatement() {
             textDecoration: 'none',
             transition: 'border-color 150ms ease, color 150ms ease',
           }}
-          className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="hover:border-[#3DBA6F] hover:text-[#3DBA6F]"
         >
           Our Story <ArrowRight size={13} strokeWidth={2} />
         </Link>

@@ -38,7 +38,7 @@ export default function EmptyCart() {
 
       <Link
         href="/products"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', minHeight: '52px', padding: '0 36px', background: 'var(--accent)', color: '#0A0A0A', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none', marginTop: '8px' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', minHeight: '52px', padding: '0 36px', background: '#3DBA6F', color: '#0A0A0A', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none', marginTop: '8px' }}
       >
         Shop Now →
       </Link>

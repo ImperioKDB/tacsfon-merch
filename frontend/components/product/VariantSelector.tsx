@@ -108,9 +108,9 @@ export default function VariantSelector({ variants, selectedId, onSelect }: Prop
                     minWidth:       '48px',
                     minHeight:      '48px',
                     padding:        '0 16px',
-                    border:         selected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    border:         selected ? '1px solid #3DBA6F' : '1px solid var(--border)',
                     background:     selected ? 'rgba(201,168,76,0.10)' : 'var(--bg-surface)',
-                    color:          oos ? 'var(--text-muted)' : selected ? 'var(--accent)' : 'var(--text-primary)',
+                    color:          oos ? 'var(--text-muted)' : selected ? '#3DBA6F' : 'var(--text-primary)',
                     fontFamily:     'var(--font-body)',
                     fontSize:       '13px',
                     fontWeight:     selected ? 700 : 500,
@@ -126,7 +126,7 @@ export default function VariantSelector({ variants, selectedId, onSelect }: Prop
                 >
                   {v.size}
                   {selected && (
-                    <span style={{ position: 'absolute', top: '4px', right: '4px', display: 'flex', color: 'var(--accent)' }}>
+                    <span style={{ position: 'absolute', top: '4px', right: '4px', display: 'flex', color: '#3DBA6F' }}>
                       <Check size={8} strokeWidth={3} />
                     </span>
                   )}
@@ -166,7 +166,7 @@ export default function VariantSelector({ variants, selectedId, onSelect }: Prop
                     borderRadius:   '50%',
                     background:     hex,
                     border:         '1px solid rgba(255,255,255,0.12)',
-                    boxShadow:      selected ? '0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent)' : 'none',
+                    boxShadow:      selected ? '0 0 0 2px var(--bg-base), 0 0 0 4px #3DBA6F' : 'none',
                     opacity:        oos ? 0.3 : 1,
                     cursor:         oos ? 'not-allowed' : 'pointer',
                     display:        'flex',

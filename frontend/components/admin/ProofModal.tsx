@@ -27,7 +27,7 @@ export default function ProofModal({ src: propSrc, orderId, onClose }: ProofModa
       <div className="relative max-w-lg w-full bg-[#0D0D0D] border border-white/5">
         <div className="flex justify-between items-center p-4 border-b border-white/5">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">PROOFS // {orderId.slice(0,8)}</p>
-          <button onClick={onClose} className="text-white hover:text-[#C9A84C] transition-colors"><X size={16}/></button>
+          <button onClick={onClose} className="text-white hover:text-[#3DBA6F] transition-colors"><X size={16}/></button>
         </div>
         <div className="aspect-[3/4] relative bg-black flex items-center justify-center">
           {loading ? (
