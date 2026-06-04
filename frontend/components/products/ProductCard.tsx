@@ -1,8 +1,13 @@
 'use client'
 
-import Image from 'next/image'
-import Link  from 'next/link'
-import { ShoppingBag } from 'lucide-react'
+import { useState }   from 'react'
+import Image          from 'next/image'
+import Link           from 'next/link'
+import { ShoppingBag, Loader2 } from 'lucide-react'
+import { toast }      from 'sonner'
+import { formatPrice, resolveImageUrl } from '@/lib/utils/formatters'
+import { useCartStore } from '@/store/cart'
+import { apiFetch }   from '@/lib/api/fetch'
 
 interface Variant {
   id:             string
@@ -13,49 +18,72 @@ interface Variant {
 }
 
 interface Product {
-  id:               string
-  name:             string
-  base_price:       number
-  image_url:        string | null
-  stock_type:       'stock' | 'preorder' | 'both'
-  is_available:     boolean
+  id:                string
+  name:              string
+  base_price:        number
+  image_url:         string | null
+  stock_type:        'stock' | 'preorder' | 'both'
+  is_available:      boolean
   product_variants?: Variant[]
+  variants?:         Variant[]
 }
 
 function getStockBadge(product: Product) {
-  const variants = product.product_variants ?? []
-  const totalQty = variants.reduce((sum, v) => sum + (v.stock_qty ?? 0), 0)
-  if (product.stock_type === 'preorder') return { label: 'Pre-order', color: 'var(--accent)',     bg: 'rgba(201,168,76,0.12)' }
-  if (totalQty <= 3 && totalQty > 0)    return { label: 'Low Stock', color: 'var(--danger)',     bg: 'rgba(224,82,82,0.12)' }
-  if (totalQty === 0)                   return { label: 'Sold Out',  color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
+  const variants = product.product_variants ?? product.variants ?? []
+  const totalQty = variants.reduce((s, v) => s + (v.stock_qty ?? 0), 0)
+  if (product.stock_type === 'preorder') return { label: 'Pre-order', color: '#C9A84C', bg: 'rgba(201,168,76,0.10)' }
+  if (totalQty <= 3 && totalQty > 0)    return { label: 'Low Stock', color: '#E05252', bg: 'rgba(224,82,82,0.10)' }
+  if (totalQty === 0)                   return { label: 'Sold Out',  color: '#666',    bg: 'rgba(255,255,255,0.05)' }
   return null
 }
 
-function getDisplayPrice(product: Product): string {
-  const variants = product.product_variants ?? []
-  const prices   = variants.map((v) => v.price_override ?? product.base_price)
-  if (!prices.length) return `₦${product.base_price.toLocaleString()}`
-  const min = Math.min(...prices)
-  const max = Math.max(...prices)
-  return min === max ? `₦${min.toLocaleString()}` : `from ₦${min.toLocaleString()}`
-}
-
 export default function ProductCard({ product }: { product: Product }) {
+  const [adding, setAdding] = useState(false)
+  const increment = useCartStore(s => s.increment)
+
+  const variants     = product.product_variants ?? product.variants ?? []
+  const firstVariant = variants[0]
+  const totalQty     = variants.reduce((s, v) => s + (v.stock_qty ?? 0), 0)
   const badge        = getStockBadge(product)
-  const displayPrice = getDisplayPrice(product)
+  const soldOut      = totalQty === 0 && product.stock_type !== 'preorder'
+
+  const rawPrice  = firstVariant?.price_override ?? product.base_price
+  const prices    = variants.map(v => v.price_override ?? product.base_price)
+  const min       = prices.length ? Math.min(...prices) : product.base_price
+  const max       = prices.length ? Math.max(...prices) : product.base_price
+  const priceStr  = min === max ? `₦${min.toLocaleString()}` : `from ₦${min.toLocaleString()}`
+  const img       = resolveImageUrl(product.image_url)
+
+  const handleQuickAdd = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!firstVariant) return toast.error('Select a variant on the product page')
+    setAdding(true)
+    try {
+      await apiFetch('/cart/items', {
+        method: 'POST',
+        body: JSON.stringify({ variant_id: firstVariant.id, quantity: 1 }),
+      })
+      increment(1)
+      toast.success(`${product.name} added to cart`)
+    } catch (err: any) {
+      toast.error(err.message || 'Sign in to add to cart')
+    } finally {
+      setAdding(false)
+    }
+  }
 
   return (
-    <Link
-      href={`/products/${product.id}`}
-      className="product-card"
-      style={{ display: 'block', textDecoration: 'none' }}
-      aria-label={`${product.name} — ${displayPrice}`}
-    >
-      {/* Image container */}
-      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
-        {product.image_url ? (
+    <div className="product-card">
+      {/* ── Image + hover layer ── */}
+      <Link
+        href={`/products/${product.id}`}
+        style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}
+        aria-label={`View ${product.name}`}
+      >
+        {img ? (
           <Image
-            src={product.image_url}
+            src={img}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -64,110 +92,96 @@ export default function ProductCard({ product }: { product: Product }) {
             unoptimized
           />
         ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              background: 'var(--bg-elevated)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ShoppingBag size={32} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
+          <div style={{
+            width: '100%', height: '100%',
+            background: 'var(--bg-elevated)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ShoppingBag size={28} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
           </div>
         )}
 
-        {/* Hover overlay */}
-        <div className="product-card__overlay" aria-hidden="true" />
-
-        {/* Hover reveal panel */}
-        <div className="product-card__info" style={{ pointerEvents: 'none' }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '20px',
-              letterSpacing: '0.04em',
-              color: '#fff',
-              lineHeight: 1.1,
-              marginBottom: '4px',
-              textShadow: '0 1px 4px rgba(0,0,0,0.6)',
-            }}
-          >
-            {product.name}
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: 'var(--accent)',
-            }}
-          >
-            {displayPrice}
-          </p>
-        </div>
+        <div className="product-card__overlay" aria-hidden />
 
         {/* Stock badge */}
         {badge && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '12px',
-              left: '12px',
-              fontFamily: 'var(--font-body)',
-              fontSize: '10px',
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: badge.color,
-              background: badge.bg,
-              padding: '4px 10px',
-              border: `1px solid ${badge.color}40`,
-            }}
-          >
+          <span style={{
+            position: 'absolute', top: '10px', left: '10px',
+            fontFamily: 'var(--font-body)', fontSize: '9px', fontWeight: 700,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: badge.color, background: badge.bg,
+            padding: '3px 8px', border: `1px solid ${badge.color}40`,
+          }}>
             {badge.label}
-          </div>
+          </span>
         )}
-      </div>
+      </Link>
 
-      {/* Below-image info row */}
-      <div
-        style={{
-          padding: '12px 14px',
-          borderTop: '1px solid var(--border)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <p
+      {/* ── Below-image row: name / price / cart ── */}
+      <div style={{
+        padding:     '10px 12px 11px',
+        borderTop:   '1px solid var(--border)',
+        display:     'flex',
+        alignItems:  'center',
+        gap:         '8px',
+      }}>
+        {/* Name + price stacked */}
+        <Link
+          href={`/products/${product.id}`}
+          style={{ flex: 1, minWidth: 0, textDecoration: 'none' }}
+        >
+          <p style={{
+            fontFamily:    'var(--font-body)',
+            fontSize:      '11px',
+            fontWeight:    500,
+            letterSpacing: '0.02em',
+            color:         'var(--text-primary)',
+            overflow:      'hidden',
+            textOverflow:  'ellipsis',
+            whiteSpace:    'nowrap',
+            margin:        '0 0 2px 0',
+          }}>
+            {product.name}
+          </p>
+          <p style={{
+            fontFamily:    'var(--font-body)',
+            fontSize:      '11px',
+            fontWeight:    700,
+            letterSpacing: '0.03em',
+            color:         'var(--accent)',
+            margin:        0,
+          }}>
+            {priceStr}
+          </p>
+        </Link>
+
+        {/* Add to cart button */}
+        <button
+          onClick={handleQuickAdd}
+          disabled={adding || soldOut}
+          aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
+          title={soldOut ? 'Sold Out' : 'Add to Cart'}
           style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--text-primary)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            flexShrink:     0,
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+            width:          '34px',
+            height:         '34px',
+            background:     soldOut ? 'var(--bg-elevated)' : adding ? 'var(--accent-hover, #b8922a)' : 'var(--accent)',
+            border:         'none',
+            color:          soldOut ? 'var(--text-muted)' : '#0A0A0A',
+            cursor:         soldOut || adding ? 'not-allowed' : 'pointer',
+            opacity:        soldOut ? 0.45 : 1,
+            transition:     'background 150ms, opacity 150ms',
           }}
         >
-          {product.name}
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '14px',
-            fontWeight: 700,
-            color: 'var(--accent)',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          {displayPrice}
-        </p>
+          {adding
+            ? <Loader2 size={13} className="animate-spin" />
+            : <ShoppingBag size={13} strokeWidth={2} />
+          }
+        </button>
       </div>
-    </Link>
+    </div>
   )
 }
