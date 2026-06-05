@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams }               from 'next/navigation'
 import { SlidersHorizontal }             from 'lucide-react'
+import { apiFetch }                      from '@/lib/api/fetch'
 import FilterSidebar                     from '@/components/products/FilterSidebar'
 import FilterBottomSheet                 from '@/components/products/FilterBottomSheet'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
@@ -31,20 +32,6 @@ interface Category {
   name: string
 }
 
-/**
- * Fetch helper — always uses absolute URL so Vercel edge runtime
- * never chokes on a bare relative path.
- * On the client, window.location.origin gives us the correct base.
- * NEXT_PUBLIC_API_URL is intentionally NOT used here — the frontend
- * /api/* routes proxy through to the Express backend server-side.
- */
-async function clientFetch(path: string): Promise<any> {
-  const base = typeof window !== 'undefined' ? window.location.origin : ''
-  const res  = await fetch(`${base}${path}`)
-  if (!res.ok) throw new Error(`Fetch ${path} failed: ${res.status}`)
-  return res.json()
-}
-
 function ProductsContent() {
   const params = useSearchParams()
 
@@ -60,16 +47,18 @@ function ProductsContent() {
     if (params.get('sort'))     query.set('sort',        params.get('sort')!)
     if (params.get('stock'))    query.set('stock_type',  params.get('stock')!)
 
+    const qs = query.toString()
+
     setLoading(true)
     setError(null)
 
     Promise.all([
-      clientFetch(`/api/products?${query.toString()}`),
-      clientFetch('/api/categories'),
+      apiFetch<{ data: Product[] }>(`/products${qs ? `?${qs}` : ''}`),
+      apiFetch<{ data: Category[] }>('/categories'),
     ])
       .then(([pRes, cRes]) => {
-        setProducts(pRes.data   ?? pRes ?? [])
-        setCategories(cRes.data ?? cRes ?? [])
+        setProducts(pRes.data   ?? (pRes as any) ?? [])
+        setCategories(cRes.data ?? (cRes as any) ?? [])
       })
       .catch(err => {
         console.error('[ProductsPage] fetch error:', err)
@@ -152,11 +141,11 @@ function ProductsContent() {
       {/* Error state */}
       {error && (
         <div style={{
-          padding:        '48px 0',
-          textAlign:      'center',
-          fontFamily:     'var(--font-body)',
-          fontSize:       '14px',
-          color:          'var(--danger)',
+          padding:    '48px 0',
+          textAlign:  'center',
+          fontFamily: 'var(--font-body)',
+          fontSize:   '14px',
+          color:      'var(--danger)',
         }}>
           <p style={{ marginBottom: '16px' }}>{error}</p>
           <button
