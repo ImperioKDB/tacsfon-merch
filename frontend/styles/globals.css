@@ -55,6 +55,21 @@
   --text-primary: #0A0A0A;
   --text-muted:   #666660;
   --border:       rgba(0, 0, 0, 0.1);
+
+  /* ── Extended light-mode tokens (patch P2) ── */
+  --nav-bg:         rgba(250, 250, 248, 0.96);
+  --card-bg:        #F2F2EE;
+  --overlay-bg:     rgba(255, 255, 255, 0.70);
+  --sheet-bg:       #FAFAF8;
+  --input-bg:       #FFFFFF;
+  --skeleton-base:  #E4E4E0;
+  --skeleton-shine: #EFEFEB;
+  --danger:         #C0392B;
+  --danger-dim:     rgba(192, 57, 43, 0.10);
+  --success:        #27AE60;
+  --success-dim:    rgba(39, 174, 96, 0.10);
+  --accent-hover:   #34A863;
+  --accent-dim:     rgba(61, 186, 111, 0.12);
 }
 
 /* ── Reset ── */
