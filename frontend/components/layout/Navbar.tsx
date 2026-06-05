@@ -3,19 +3,14 @@
 /**
  * Navbar
  *
- * Layout:
- *   Left  — "TACSFON MERCH" wordmark (links to /)
- *   Right — Theme toggle · Cart badge · Hamburger
+ * Left  — "TACSFON MERCH" wordmark (links to /)
+ * Right — Theme toggle · Cart badge · Hamburger
  *
- * Hamburger drawer contains:
- *   Nav links: Home · Products · About · Contact
- *   Auth:      Sign In / Sign Out
+ * Hamburger drawer:
+ *   Home · Products · About · Contact
  *   My Orders
- *   ── divider ──
- *   Admin Dashboard  (admin role only)
- *
- * Bottom nav handles primary mobile navigation — this bar is lean.
- * All colour via var(--accent) / CSS tokens — no hardcoded hex.
+ *   Sign In / Sign Out
+ *   Admin Dashboard (admin only)
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -27,13 +22,14 @@ export default function Navbar() {
   const pathname  = usePathname()
   const router    = useRouter()
 
-  const [drawerOpen,  setDrawerOpen]  = useState(false)
-  const [theme,       setTheme]       = useState<'dark' | 'light'>('dark')
-  const [user,        setUser]        = useState<any>(null)
-  const [isAdmin,     setIsAdmin]     = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [theme,      setTheme]      = useState<'dark' | 'light'>('dark')
+  const [user,       setUser]       = useState<any>(null)
+  const [isAdmin,    setIsAdmin]    = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
 
-  const cartCount = useCartStore(s => s.items.reduce((n, i) => n + i.quantity, 0))
+  // ✅ Fixed: CartStore exposes `count`, not `items`
+  const cartCount = useCartStore(s => s.count)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,6 +53,7 @@ export default function Navbar() {
 
   /* ── Auth ── */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user ?? null)
       const role = data.user?.app_metadata?.role ?? data.user?.user_metadata?.role
@@ -69,7 +66,7 @@ export default function Navbar() {
       setIsAdmin(role === 'admin')
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Close drawer on outside click ── */
   useEffect(() => {
@@ -92,15 +89,14 @@ export default function Navbar() {
     router.refresh()
   }
 
-  /* ── Drawer nav link ── */
   function DrawerLink({
     href,
     children,
     accent = false,
   }: {
-    href: string
-    children: React.ReactNode
-    accent?: boolean
+    href:      string
+    children:  React.ReactNode
+    accent?:   boolean
   }) {
     const active = pathname === href || (href !== '/' && pathname.startsWith(href))
     return (
@@ -117,20 +113,20 @@ export default function Navbar() {
           textTransform:  'uppercase',
           color:          accent
             ? 'var(--accent)'
-            : active
-              ? 'var(--text-primary)'
-              : 'var(--text-muted)',
+            : active ? 'var(--text-primary)' : 'var(--text-muted)',
           textDecoration: 'none',
           borderLeft:     active ? '2px solid var(--accent)' : '2px solid transparent',
           background:     active ? 'var(--accent-dim)' : 'none',
           transition:     'color 150ms, background 150ms',
         }}
         onMouseEnter={e => {
-          if (!active) (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'
+          if (!active)
+            (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'
         }}
         onMouseLeave={e => {
-          if (!active) (e.currentTarget as HTMLAnchorElement).style.color =
-            accent ? 'var(--accent)' : 'var(--text-muted)'
+          if (!active)
+            (e.currentTarget as HTMLAnchorElement).style.color =
+              accent ? 'var(--accent)' : 'var(--text-muted)'
         }}
       >
         {children}
@@ -142,33 +138,24 @@ export default function Navbar() {
     <>
       {/* ── Top bar ── */}
       <nav style={{
-        position:        'fixed',
-        top:             0,
-        left:            0,
-        right:           0,
-        zIndex:          100,
-        height:          '64px',
-        display:         'flex',
-        alignItems:      'center',
-        justifyContent:  'space-between',
-        padding:         '0 20px',
-        background:      'color-mix(in srgb, var(--bg-base) 85%, transparent)',
-        backdropFilter:  'blur(12px)',
+        position:             'fixed',
+        top:                  0,
+        left:                 0,
+        right:                0,
+        zIndex:               100,
+        height:               '64px',
+        display:              'flex',
+        alignItems:           'center',
+        justifyContent:       'space-between',
+        padding:              '0 20px',
+        background:           'color-mix(in srgb, var(--bg-base) 85%, transparent)',
+        backdropFilter:       'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom:    '1px solid var(--border)',
+        borderBottom:         '1px solid var(--border)',
       }}>
 
         {/* Wordmark */}
-        <a
-          href="/"
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            gap:            '4px',
-            textDecoration: 'none',
-            flexShrink:     0,
-          }}
-        >
+        <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
           <span style={{
             fontFamily:    'var(--font-display)',
             fontSize:      '20px',
@@ -207,14 +194,12 @@ export default function Navbar() {
               border:          'none',
               color:           'var(--text-muted)',
               cursor:          'pointer',
-              borderRadius:    '0',
               transition:      'color 150ms',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
             {theme === 'dark' ? (
-              /* Sun */
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <circle cx="12" cy="12" r="5"/>
                 <line x1="12" y1="1"  x2="12" y2="3"/>
@@ -227,7 +212,6 @@ export default function Navbar() {
                 <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
               </svg>
             ) : (
-              /* Moon */
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
@@ -237,7 +221,7 @@ export default function Navbar() {
           {/* Cart */}
           <a
             href="/cart"
-            aria-label={`Cart, ${cartCount} items`}
+            aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
             style={{
               position:        'relative',
               width:           '40px',
@@ -287,21 +271,21 @@ export default function Navbar() {
             aria-label="Open menu"
             aria-expanded={drawerOpen}
             style={{
-              width:           '40px',
-              height:          '40px',
-              display:         'flex',
-              alignItems:      'center',
-              justifyContent:  'center',
-              background:      'none',
-              border:          'none',
-              color:           'var(--text-primary)',
-              cursor:          'pointer',
+              width:          '40px',
+              height:         '40px',
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              background:     'none',
+              border:         'none',
+              color:          'var(--text-primary)',
+              cursor:         'pointer',
             }}
           >
             {drawerOpen ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6"  y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6"  x2="6"  y2="18"/>
+                <line x1="6"  y1="6"  x2="18" y2="18"/>
               </svg>
             ) : (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -314,21 +298,21 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ── Drawer backdrop ── */}
+      {/* ── Backdrop ── */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
           style={{
-            position:   'fixed',
-            inset:      0,
-            zIndex:     149,
-            background: 'rgba(10,10,10,0.6)',
+            position:       'fixed',
+            inset:          0,
+            zIndex:         149,
+            background:     'rgba(10,10,10,0.6)',
             backdropFilter: 'blur(2px)',
           }}
         />
       )}
 
-      {/* ── Drawer panel ── */}
+      {/* ── Drawer ── */}
       <div
         ref={drawerRef}
         style={{
@@ -378,8 +362,8 @@ export default function Navbar() {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6"  y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6"  x2="6"  y2="18"/>
+              <line x1="6"  y1="6"  x2="18" y2="18"/>
             </svg>
           </button>
         </div>
@@ -391,16 +375,10 @@ export default function Navbar() {
           <DrawerLink href="/about">About</DrawerLink>
           <DrawerLink href="/contact">Contact</DrawerLink>
 
-          {/* Divider */}
-          <div style={{
-            height:  '1px',
-            background: 'var(--border)',
-            margin:  '8px 24px',
-          }} />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '8px 24px' }} />
 
           <DrawerLink href="/orders">My Orders</DrawerLink>
 
-          {/* Auth */}
           {user ? (
             <button
               onClick={handleSignOut}
@@ -431,26 +409,19 @@ export default function Navbar() {
             <DrawerLink href="/login" accent>Sign In</DrawerLink>
           )}
 
-          {/* Admin — only if role === admin */}
           {isAdmin && (
             <>
-              <div style={{
-                height:     '1px',
-                background: 'var(--border)',
-                margin:     '8px 24px',
-              }} />
-              <DrawerLink href="/admin" accent>
-                Admin Dashboard
-              </DrawerLink>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '8px 24px' }} />
+              <DrawerLink href="/admin" accent>Admin Dashboard</DrawerLink>
             </>
           )}
         </nav>
 
         {/* Drawer footer */}
         <div style={{
-          padding:      '16px 24px',
-          borderTop:    '1px solid var(--border)',
-          flexShrink:   0,
+          padding:    '16px 24px',
+          borderTop:  '1px solid var(--border)',
+          flexShrink: 0,
         }}>
           <p style={{
             fontFamily:    'var(--font-mono)',
