@@ -13,38 +13,60 @@ import {
 } from 'lucide-react'
 import type { Order, Profile, Notification } from '@/types'
 
-// ─── Status stepper ───────────────────────────────────────────
+/* ── Status colours matching the design system ── */
+const STATUS_COLORS: Record<string, string> = {
+  pending_payment:   'var(--warning)',
+  payment_submitted: 'var(--info)',
+  confirmed:         '#2DD4BF',
+  dispatched:        '#C084FC',
+  received:          'var(--success)',
+  cancelled:         'var(--danger)',
+}
+
+/* ── Order status stepper ── */
 const STEPS       = ['pending_payment', 'payment_submitted', 'confirmed', 'dispatched'] as const
 const STEP_LABELS = ['Placed', 'Verified', 'Confirmed', 'Dispatched']
-const TERMINAL    = ['received', 'cancelled']
 
 function OrderStepper({ status }: { status: string }) {
   const idx = STEPS.indexOf(status as typeof STEPS[number])
   return (
-    <div className="flex items-end w-full mt-4 gap-0">
+    <div style={{ display: 'flex', alignItems: 'flex-end', width: '100%', marginTop: '16px', gap: 0 }}>
       {STEP_LABELS.map((label, i) => (
-        <div key={i} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full transition-all duration-500"
-              style={{
-                background: i <= idx ? '#3DBA6F' : '#2A2A38',
-                boxShadow : i === idx ? '0 0 8px 2px rgba(61,186,111,0.5)' : 'none',
-                transform : i === idx ? 'scale(1.4)' : 'scale(1)',
-              }}
-            />
-            <p
-              className="text-[8px] font-black uppercase tracking-wider whitespace-nowrap"
-              style={{ color: i <= idx ? '#3DBA6F' : '#3A3A48' }}
-            >
+        <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < STEP_LABELS.length - 1 ? 1 : 'none' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <div style={{
+              width:      '8px',
+              height:     '8px',
+              borderRadius: '50%',
+              background:  i <= idx ? 'var(--accent)' : 'var(--bg-elevated)',
+              boxShadow:   i === idx ? '0 0 8px 2px var(--accent-dim)' : 'none',
+              transform:   i === idx ? 'scale(1.4)' : 'scale(1)',
+              transition:  'all 500ms ease',
+              border:      i <= idx ? 'none' : '1px solid var(--border)',
+            }} />
+            <p style={{
+              fontSize:      '8px',
+              fontFamily:    'var(--font-mono)',
+              fontWeight:    700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              whiteSpace:    'nowrap',
+              color:         i <= idx ? 'var(--accent)' : 'var(--text-muted)',
+              margin:        0,
+            }}>
               {label}
             </p>
           </div>
           {i < STEP_LABELS.length - 1 && (
-            <div
-              className="flex-1 h-px mx-1 mb-4 transition-all duration-500"
-              style={{ background: i < idx ? '#3DBA6F' : '#2A2A38' }}
-            />
+            <div style={{
+              flex:       1,
+              height:     '1px',
+              marginBottom: '18px',
+              marginLeft:   '4px',
+              marginRight:  '4px',
+              background:  i < idx ? 'var(--accent)' : 'var(--border)',
+              transition:  'background 500ms ease',
+            }} />
           )}
         </div>
       ))}
@@ -52,351 +74,494 @@ function OrderStepper({ status }: { status: string }) {
   )
 }
 
-// ─── Tile wrapper ─────────────────────────────────────────────
+/* ── Tile wrapper ── */
 function Tile({
-  children, href, onClick, className = '', style = {},
+  children, href, onClick, style = {},
 }: {
-  children : React.ReactNode
-  href?    : string
-  onClick? : () => void
-  className?: string
-  style?   : React.CSSProperties
+  children:  React.ReactNode
+  href?:     string
+  onClick?:  () => void
+  style?:    React.CSSProperties
 }) {
   const base: React.CSSProperties = {
-    background   : '#0D0D14',
-    border       : '1px solid #1E1E2A',
-    padding      : '28px',
-    display      : 'flex',
-    flexDirection: 'column',
-    transition   : 'transform 120ms ease, border-color 200ms ease, box-shadow 200ms ease',
-    cursor       : href || onClick ? 'pointer' : 'default',
-    textDecoration: 'none',
+    background:   'var(--bg-surface)',
+    border:       '1px solid var(--border)',
+    padding:      '18px',
+    display:      'flex',
+    flexDirection:'column',
+    cursor:       href || onClick ? 'pointer' : 'default',
+    transition:   'border-color 200ms ease, transform 150ms ease',
+    position:     'relative',
+    overflow:     'hidden',
     ...style,
   }
 
-  const handlePress = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget
-    el.style.transform = 'scale(0.97)'
-    setTimeout(() => { el.style.transform = 'scale(1)' }, 120)
-    onClick?.()
+  const hoverIn  = (e: React.MouseEvent<HTMLElement>) => {
+    if (href || onClick) {
+      (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'
+      ;(e.currentTarget as HTMLElement).style.transform  = 'translateY(-1px)'
+    }
+  }
+  const hoverOut = (e: React.MouseEvent<HTMLElement>) => {
+    if (href || onClick) {
+      (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
+      ;(e.currentTarget as HTMLElement).style.transform  = 'translateY(0)'
+    }
   }
 
-  const inner = (
-    <div
-      className={className}
-      style={base}
-      onClick={handlePress}
-      onMouseEnter={e => {
-        if (!href && !onClick) return
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = '#3DBA6F40'
-        el.style.boxShadow   = '0 0 24px rgba(61,186,111,0.06)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = '#1E1E2A'
-        el.style.boxShadow   = 'none'
-      }}
-    >
+  if (href) {
+    return (
+      <Link href={href} style={{ ...base, textDecoration: 'none' }}
+        onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+        {children}
+      </Link>
+    )
+  }
+  return (
+    <div style={base} onClick={onClick} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
       {children}
     </div>
   )
-
-  return href
-    ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link>
-    : inner
 }
 
-// ─── Eyebrow label ────────────────────────────────────────────
+/* ── Section label ── */
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <p style={{
-      fontSize     : '9px',
-      fontWeight   : 900,
-      letterSpacing: '0.2em',
+      fontSize:      '9px',
+      fontFamily:    'var(--font-mono)',
+      fontWeight:    700,
+      letterSpacing: '0.22em',
       textTransform: 'uppercase',
-      color        : '#3E3E52',
-      marginBottom : '10px',
-      fontFamily   : 'var(--font-inter, monospace)',
+      color:         'var(--text-muted)',
+      marginBottom:  '12px',
     }}>
       {children}
     </p>
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────
+/* ── Main component ── */
 export default function ProfilePage() {
-  const { user, isAdmin, loading: authLoading, signOut } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const supabase = createBrowserClient()
 
-  const [profile,     setProfile]     = useState<Profile | null>(null)
-  const [pageLoading, setPageLoading] = useState(true)
-  const [activeOrder, setActiveOrder] = useState<Order | null>(null)
-  const [latestNotif, setLatestNotif] = useState<Notification | null>(null)
-  const [isEditing,   setIsEditing]   = useState(false)
-  const [isSaving,    setIsSaving]    = useState(false)
-  const [form,        setForm]        = useState({ phone: '', delivery_address: '' })
+  const [profile,      setProfile]      = useState<Profile | null>(null)
+  const [activeOrder,  setActiveOrder]  = useState<Order | null>(null)
+  const [notifications,setNotifications]= useState<Notification[]>([])
+  const [isEditing,    setIsEditing]    = useState(false)
+  const [isSaving,     setIsSaving]     = useState(false)
+  const [form,         setForm]         = useState({ phone: '', delivery_address: '' })
+  const [saveMsg,      setSaveMsg]      = useState<string | null>(null)
+  const [refreshing,   setRefreshing]   = useState(false)
 
-  const unread = useNotificationStore(s => s.unreadCount)
+  const unreadCount = useNotificationStore(s => s.unreadCount)
 
   const load = useCallback(async () => {
-    if (!user) return
     try {
-      const [{ data: prof }, ordersData, notifsData] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-
-        // FIX (a): GET /orders returns Order[] directly via apiFetch (body.data is the array).
-        //          Do NOT do ordersData?.orders — that is always undefined.
-        apiFetch<Order[]>('/orders').catch(() => null),
-
-        // GET /notifications returns { notifications: Notification[], unread: number }
-        apiFetch<{ notifications: Notification[]; unread: number }>('/notifications').catch(() => null),
+      const [profRes, ordersRes, notifRes] = await Promise.all([
+        apiFetch<{ data: Profile }>('/auth/profile'),
+        apiFetch<{ data: Order[]  }>('/orders'),
+        apiFetch<{ data: Notification[] }>('/notifications'),
       ])
+      const p = profRes.data
+      setProfile(p)
+      setForm({ phone: p?.phone || '', delivery_address: (p as any)?.delivery_address || '' })
 
-      if (prof) {
-        setProfile(prof as Profile)
-        setForm({ phone: prof.phone || '', delivery_address: (prof as any).delivery_address || '' })
-      }
-
-      // FIX (a) continued: guard with Array.isArray
-      const orders: Order[] = Array.isArray(ordersData) ? ordersData : []
-      const active = orders.find(o => !TERMINAL.includes(o.status))
-      setActiveOrder(active ?? null)
-
-      const notifs = notifsData?.notifications
-      if (notifs?.length) setLatestNotif(notifs[0])
-
-    } finally {
-      // FIX (b): always clear loading, even if fetches fail
-      setPageLoading(false)
+      const active = (ordersRes.data ?? []).find(
+        o => !['received', 'cancelled'].includes(o.status)
+      ) ?? null
+      setActiveOrder(active)
+      setNotifications((notifRes.data ?? []).slice(0, 3))
+    } catch (err) {
+      console.error('[Profile] load error:', err)
     }
-  }, [user, supabase])
+  }, [])
+
+  useEffect(() => { if (!authLoading && user) load() }, [authLoading, user, load])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveMsg(null)
     try {
-      const updated = await apiFetch<Profile>('/auth/profile', {
+      await apiFetch('/auth/profile', {
         method: 'PATCH',
-        body  : JSON.stringify(form),
+        body:   JSON.stringify(form),
       })
-      setProfile(updated)
-      setForm({ phone: updated.phone || '', delivery_address: updated.delivery_address || '' })
+      setSaveMsg('Saved')
       setIsEditing(false)
-    } catch (err: any) {
-      alert(err.message || 'Failed to save. Please try again.')
+      load()
+    } catch {
+      setSaveMsg('Failed to save')
     } finally {
       setIsSaving(false)
+      setTimeout(() => setSaveMsg(null), 3000)
     }
   }
 
-  useEffect(() => { if (user) load() }, [user, load])
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
 
-  if (authLoading || pageLoading) {
+  if (authLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#050508', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <RefreshCw className="animate-spin" style={{ color: '#3DBA6F' }} size={28} />
+      <div style={{
+        minHeight:      'calc(100dvh - 64px)',
+        display:        'flex',
+        alignItems:     'center',
+        justifyContent: 'center',
+        background:     'var(--bg-base)',
+      }}>
+        <Loader2 size={20} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
-  const firstName = profile?.full_name?.split(' ')[0]?.toUpperCase() || 'MEMBER'
-  const memberId  = user?.id?.slice(0, 8).toUpperCase() ?? '--------'
-  const sinceYear = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase()
-    : '---'
+  if (!user) {
+    return (
+      <div style={{
+        minHeight:      'calc(100dvh - 64px)',
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: 'center',
+        gap:            '20px',
+        background:     'var(--bg-base)',
+        padding:        '24px',
+        textAlign:      'center',
+      }}>
+        <p style={{
+          fontFamily:    'var(--font-display)',
+          fontSize:      '28px',
+          letterSpacing: '0.08em',
+          color:         'var(--text-primary)',
+        }}>
+          SIGN IN TO CONTINUE
+        </p>
+        <Link href="/login" style={{
+          display:       'inline-block',
+          padding:       '14px 40px',
+          background:    'var(--accent)',
+          color:         '#0A0A0A',
+          fontFamily:    'var(--font-body)',
+          fontSize:      '12px',
+          fontWeight:    700,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          textDecoration:'none',
+        }}>
+          Sign In
+        </Link>
+      </div>
+    )
+  }
+
+  const displayName = profile?.full_name
+    || user.user_metadata?.full_name
+    || user.email?.split('@')[0]
+    || 'Member'
+
+  const memberSince = user.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' }).toUpperCase()
+    : '—'
+
+  const shortId = user.id.slice(0, 8).toUpperCase()
+  const isAdmin = profile?.role === 'admin'
+    || user.app_metadata?.role === 'admin'
+    || user.user_metadata?.role === 'admin'
+
+  /* ── Input style ── */
+  const inputStyle: React.CSSProperties = {
+    width:        '100%',
+    boxSizing:    'border-box',
+    padding:      '12px 14px',
+    background:   'var(--bg-elevated)',
+    border:       '1px solid var(--border)',
+    color:        'var(--text-primary)',
+    fontFamily:   'var(--font-body)',
+    fontSize:     '13px',
+    outline:      'none',
+    borderRadius: 0,
+    transition:   'border-color 200ms ease',
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050508', color: '#F7F5F0', paddingBottom: '80px' }}>
+    <div style={{
+      minHeight:  'calc(100dvh - 64px)',
+      background: 'var(--bg-base)',
+      padding:    '24px 16px 120px',
+      maxWidth:   '680px',
+      margin:     '0 auto',
+    }}>
 
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '80px 24px 40px' }}>
-        <div style={{ position: 'relative', marginBottom: '6px' }}>
-          <div style={{
-            position    : 'absolute',
-            top         : '50%', left: '-10%',
-            width       : '60%', height: '120%',
-            background  : 'radial-gradient(ellipse, rgba(61,186,111,0.07) 0%, transparent 70%)',
-            transform   : 'translateY(-50%)',
-            pointerEvents: 'none',
-          }} />
-          <h1 style={{
-            fontSize     : 'clamp(32px, 9vw, 52px)',
-            fontWeight   : 900,
-            letterSpacing: '-0.04em',
-            textTransform: 'uppercase',
-            fontStyle    : 'italic',
-            lineHeight   : 1,
-            fontFamily   : 'var(--font-urbanist, sans-serif)',
-            color        : '#F7F5F0',
-            position     : 'relative',
-          }}>
-            {firstName}<span style={{ color: '#3DBA6F' }}>.</span>
-          </h1>
+      {/* ── Header ── */}
+      <div style={{
+        marginBottom: '32px',
+        paddingBottom:'24px',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        {/* Name */}
+        <h1 style={{
+          fontFamily:    'var(--font-display)',
+          fontSize:      'clamp(36px, 8vw, 56px)',
+          letterSpacing: '0.04em',
+          lineHeight:    1,
+          color:         'var(--text-primary)',
+          margin:        '0 0 8px',
+          textTransform: 'uppercase',
+        }}>
+          {displayName.toUpperCase()}
+          <span style={{ color: 'var(--accent)' }}>.</span>
+        </h1>
+
+        {/* Meta row */}
+        <div style={{
+          display:    'flex',
+          alignItems: 'center',
+          gap:        '8px',
+          flexWrap:   'wrap',
+        }}>
+          {[
+            isAdmin ? 'ADMIN' : 'MEMBER',
+            shortId,
+            `SINCE ${memberSince}`,
+          ].map((item, i) => (
+            <span key={i} style={{
+              fontFamily:    'var(--font-mono)',
+              fontSize:      '10px',
+              letterSpacing: '0.16em',
+              color:         'var(--text-muted)',
+            }}>
+              {i > 0 && <span style={{ marginRight: '8px', opacity: 0.3 }}>·</span>}
+              {item}
+            </span>
+          ))}
         </div>
 
-        <p style={{
-          fontFamily   : 'monospace',
-          fontSize     : '10px',
-          letterSpacing: '0.25em',
-          color        : '#3E3E52',
-          textTransform: 'uppercase',
-          marginBottom : '8px',
+        {/* Role badge */}
+        <div style={{
+          display:    'inline-flex',
+          alignItems: 'center',
+          gap:        '6px',
+          marginTop:  '12px',
+          padding:    '4px 12px',
+          background: 'var(--accent-dim)',
+          border:     '1px solid var(--accent)',
         }}>
-          MEMBER · {memberId} · SINCE {sinceYear}
-        </p>
-
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <ShieldCheck size={12} style={{ color: isAdmin ? '#3DBA6F' : '#3E3E52' }} />
+          <ShieldCheck size={11} style={{ color: 'var(--accent)' }} />
           <span style={{
-            fontSize     : '9px',
-            fontWeight   : 900,
-            letterSpacing: '0.2em',
+            fontFamily:    'var(--font-mono)',
+            fontSize:      '10px',
+            letterSpacing: '0.15em',
+            color:         'var(--accent)',
             textTransform: 'uppercase',
-            color        : isAdmin ? '#3DBA6F' : '#3E3E52',
-            fontFamily   : 'monospace',
           }}>
-            {isAdmin ? 'Administrator' : 'Standard Access'}
+            {isAdmin ? 'Admin Access' : 'Standard Access'}
           </span>
         </div>
       </div>
 
-      {/* ── Bento Grid ─────────────────────────────────────── */}
+      {/* ── Refresh button ── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          style={{
+            display:       'flex',
+            alignItems:    'center',
+            gap:           '6px',
+            background:    'none',
+            border:        '1px solid var(--border)',
+            color:         'var(--text-muted)',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '11px',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding:       '8px 14px',
+            cursor:        refreshing ? 'not-allowed' : 'pointer',
+            transition:    'color 150ms, border-color 150ms',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.color = 'var(--text-primary)'
+            e.currentTarget.style.borderColor = 'var(--border)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color = 'var(--text-muted)'
+          }}
+        >
+          <RefreshCw size={12} style={{
+            animation: refreshing ? 'spin 1s linear infinite' : 'none',
+          }} />
+          Refresh
+        </button>
+      </div>
+
+      {/* ── Bento grid ── */}
       <div style={{
-        maxWidth           : '720px',
-        margin             : '0 auto',
-        padding            : '0 24px',
-        display            : 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap                : '12px',
+        display:             'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap:                 '8px',
       }}>
 
-        {/* A — Notification Portal */}
+        {/* A — Notifications (full width) */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile href="/notifications">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Label>Order Updates</Label>
-              {unread > 0 && (
+            <Label>Order Updates</Label>
+            {notifications.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                 <div style={{
-                  background   : '#3DBA6F',
-                  color        : '#050508',
-                  fontSize     : '9px',
-                  fontWeight   : 900,
-                  padding      : '3px 8px',
-                  fontFamily   : 'monospace',
-                  letterSpacing: '0.1em',
-                  borderRadius : '2px',
-                  display      : 'flex',
-                  alignItems   : 'center',
-                  gap          : '5px',
+                  width:          '40px',
+                  height:         '40px',
+                  flexShrink:     0,
+                  background:     'var(--accent-dim)',
+                  border:         '1px solid var(--accent)',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  position:       'relative',
                 }}>
-                  <Zap size={9} />
-                  {unread} UNREAD
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-              <div style={{
-                width          : '40px', height: '40px',
-                borderRadius   : '50%',
-                background     : unread > 0 ? 'rgba(61,186,111,0.1)' : '#13131A',
-                border         : `1px solid ${unread > 0 ? 'rgba(61,186,111,0.3)' : '#1E1E2A'}`,
-                display        : 'flex',
-                alignItems     : 'center',
-                justifyContent : 'center',
-                flexShrink     : 0,
-                position       : 'relative',
-              }}>
-                <Bell size={16} style={{ color: unread > 0 ? '#3DBA6F' : '#3E3E52' }} />
-                {unread > 0 && (
-                  <span style={{
-                    position  : 'absolute', top: '-4px', right: '-4px',
-                    width     : '8px', height: '8px',
-                    background: '#3DBA6F', borderRadius: '50%',
-                    boxShadow : '0 0 6px #3DBA6F',
-                    animation : 'pulse 2s infinite',
-                  }} />
-                )}
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {latestNotif ? (
-                  <>
-                    <p style={{
-                      fontSize        : '11px',
-                      fontWeight      : latestNotif.is_read ? 400 : 700,
-                      color           : latestNotif.is_read ? '#6B7280' : '#F7F5F0',
-                      lineHeight      : 1.4,
-                      overflow        : 'hidden',
-                      display         : '-webkit-box',
-                      WebkitLineClamp : 2,
-                      WebkitBoxOrient : 'vertical',
+                  <Bell size={16} style={{ color: 'var(--accent)' }} />
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position:        'absolute',
+                      top:             '-4px',
+                      right:           '-4px',
+                      minWidth:        '16px',
+                      height:          '16px',
+                      background:      'var(--danger)',
+                      color:           '#fff',
+                      fontSize:        '9px',
+                      fontFamily:      'var(--font-body)',
+                      fontWeight:      700,
+                      display:         'flex',
+                      alignItems:      'center',
+                      justifyContent:  'center',
+                      borderRadius:    '99px',
+                      padding:         '0 3px',
                     }}>
-                      {latestNotif.message}
-                    </p>
-                    <p style={{ fontSize: '10px', color: '#3E3E52', marginTop: '4px', fontFamily: 'monospace' }}>
-                      Tap to view all →
-                    </p>
-                  </>
-                ) : (
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{
-                    fontSize     : '10px',
-                    fontWeight   : 900,
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase',
-                    color        : '#3E3E52',
-                    fontFamily   : 'monospace',
+                    fontFamily:   'var(--font-body)',
+                    fontSize:     '13px',
+                    color:        'var(--text-primary)',
+                    lineHeight:   1.4,
+                    margin:       '0 0 6px',
+                    overflow:     'hidden',
+                    display:      '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
                   }}>
-                    SYSTEM STATUS: CLEAR — No pending alerts
+                    {notifications[0].message}
                   </p>
-                )}
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '10px',
+                    color:         'var(--accent)',
+                    letterSpacing: '0.1em',
+                    margin:        0,
+                  }}>
+                    Tap to view all →
+                  </p>
+                </div>
+                <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               </div>
-              <ChevronRight size={14} style={{ color: '#3E3E52', flexShrink: 0 }} />
-            </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Bell size={16} style={{ color: 'var(--text-muted)' }} />
+                <p style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize:   '13px',
+                  color:      'var(--text-muted)',
+                  margin:     0,
+                }}>
+                  No new notifications
+                </p>
+              </div>
+            )}
           </Tile>
         </div>
 
-        {/* B — Active Order Snapshot */}
+        {/* B — Active order (full width) */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile href={activeOrder ? `/orders/${activeOrder.id}` : '/orders'}>
             <Label>Active Order</Label>
             {activeOrder ? (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 900, color: '#F7F5F0', letterSpacing: '0.05em' }}>
+                <div style={{
+                  display:        'flex',
+                  justifyContent: 'space-between',
+                  alignItems:     'center',
+                  gap:            '12px',
+                }}>
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '16px',
+                    fontWeight:    700,
+                    color:         'var(--text-primary)',
+                    letterSpacing: '0.06em',
+                    margin:        0,
+                  }}>
                     #{activeOrder.id.slice(0, 8).toUpperCase()}
                   </p>
-                  <p style={{
-                    fontSize     : '9px',
-                    fontWeight   : 900,
-                    letterSpacing: '0.2em',
+                  <span style={{
+                    display:       'inline-block',
+                    padding:       '4px 10px',
+                    background:    `color-mix(in srgb, ${STATUS_COLORS[activeOrder.status] ?? 'var(--text-muted)'} 15%, transparent)`,
+                    border:        `1px solid color-mix(in srgb, ${STATUS_COLORS[activeOrder.status] ?? 'var(--text-muted)'} 35%, transparent)`,
+                    color:         STATUS_COLORS[activeOrder.status] ?? 'var(--text-muted)',
+                    fontFamily:    'var(--font-body)',
+                    fontSize:      '10px',
+                    fontWeight:    700,
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    color        : '#3DBA6F',
-                    fontFamily   : 'monospace',
-                    background   : 'rgba(61,186,111,0.08)',
-                    border       : '1px solid rgba(61,186,111,0.2)',
-                    padding      : '4px 10px',
+                    whiteSpace:    'nowrap',
                   }}>
-                    {activeOrder.status.replace(/_/g, ' ')}
-                  </p>
+                    {activeOrder.status.replace(/_/g, ' ').toUpperCase()}
+                  </span>
                 </div>
                 <OrderStepper status={activeOrder.status} />
                 <p style={{
-                  fontSize     : '10px',
-                  color        : '#3E3E52',
-                  marginTop    : '14px',
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      '11px',
+                  color:         'var(--text-muted)',
+                  marginTop:     '14px',
                   letterSpacing: '0.1em',
-                  fontFamily   : 'monospace',
+                  margin:        '14px 0 0',
                 }}>
                   ₦{Number(activeOrder.total).toLocaleString()} · Tap to view details →
                 </p>
               </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Package2 size={20} style={{ color: '#3E3E52' }} />
+                <Package2 size={20} style={{ color: 'var(--text-muted)' }} />
                 <div>
-                  <p style={{ fontSize: '11px', color: '#3E3E52', fontWeight: 600 }}>No active orders</p>
-                  <p style={{ fontSize: '10px', color: '#2A2A38', marginTop: '2px', fontFamily: 'monospace' }}>
+                  <p style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize:   '13px',
+                    color:      'var(--text-muted)',
+                    fontWeight: 600,
+                    margin:     '0 0 2px',
+                  }}>
+                    No active orders
+                  </p>
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '10px',
+                    color:         'var(--accent)',
+                    letterSpacing: '0.12em',
+                    margin:        0,
+                  }}>
                     VIEW ORDER HISTORY →
                   </p>
                 </div>
@@ -409,25 +574,29 @@ export default function ProfilePage() {
         <Tile href="/orders">
           <Label>Inventory</Label>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-            <Package2 size={22} style={{ color: '#3DBA6F', marginBottom: '16px' }} />
+            <Package2 size={22} style={{ color: 'var(--accent)', marginBottom: '16px' }} />
             <div>
               <p style={{
-                fontSize     : 'clamp(13px, 3vw, 16px)',
-                fontWeight   : 900,
-                fontStyle    : 'italic',
+                fontFamily:    'var(--font-display)',
+                fontSize:      'clamp(16px, 4vw, 20px)',
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color        : '#F7F5F0',
-                letterSpacing: '-0.02em',
-                fontFamily   : 'var(--font-urbanist, sans-serif)',
-                lineHeight   : 1,
+                color:         'var(--text-primary)',
+                lineHeight:    1,
+                margin:        '0 0 8px',
               }}>
                 My Orders
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-                <span style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.15em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      '9px',
+                  color:         'var(--text-muted)',
+                  letterSpacing: '0.15em',
+                }}>
                   FULL HISTORY
                 </span>
-                <ChevronRight size={10} style={{ color: '#3E3E52' }} />
+                <ChevronRight size={10} style={{ color: 'var(--text-muted)' }} />
               </div>
             </div>
           </div>
@@ -437,50 +606,48 @@ export default function ProfilePage() {
         <Tile href="/cart">
           <Label>Cart</Label>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-            <ShoppingBag size={22} style={{ color: '#3DBA6F', marginBottom: '16px' }} />
+            <ShoppingBag size={22} style={{ color: 'var(--accent)', marginBottom: '16px' }} />
             <div>
               <p style={{
-                fontSize     : 'clamp(13px, 3vw, 16px)',
-                fontWeight   : 900,
-                fontStyle    : 'italic',
+                fontFamily:    'var(--font-display)',
+                fontSize:      'clamp(16px, 4vw, 20px)',
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color        : '#F7F5F0',
-                letterSpacing: '-0.02em',
-                fontFamily   : 'var(--font-urbanist, sans-serif)',
-                lineHeight   : 1,
+                color:         'var(--text-primary)',
+                lineHeight:    1,
+                margin:        '0 0 8px',
               }}>
                 View Bag
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-                <span style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.15em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      '9px',
+                  color:         'var(--text-muted)',
+                  letterSpacing: '0.15em',
+                }}>
                   OPEN CART
                 </span>
-                <ChevronRight size={10} style={{ color: '#3E3E52' }} />
+                <ChevronRight size={10} style={{ color: 'var(--text-muted)' }} />
               </div>
             </div>
           </div>
         </Tile>
 
-        {/* D — Account Info (editable) */}
+        {/* D — Account Info (editable, full width) */}
         <div style={{ gridColumn: '1 / -1' }}>
           <Tile>
-            {/* Header row: label + edit/save/cancel buttons */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <p style={{
-                fontSize     : '9px',
-                fontWeight   : 900,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color        : '#3E3E52',
-                fontFamily   : 'var(--font-inter, monospace)',
-                margin       : 0,
-              }}>
-                Account Info
-              </p>
+            {/* Header row */}
+            <div style={{
+              display:        'flex',
+              justifyContent: 'space-between',
+              alignItems:     'center',
+              marginBottom:   '20px',
+            }}>
+              <Label>Account Info</Label>
 
               {isEditing ? (
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  {/* Cancel */}
                   <button
                     onClick={() => {
                       setIsEditing(false)
@@ -488,28 +655,41 @@ export default function ProfilePage() {
                     }}
                     disabled={isSaving}
                     style={{
-                      display     : 'flex', alignItems: 'center', gap: '5px',
-                      background  : 'none', border: '1px solid #2A2A38',
-                      cursor      : 'pointer', color: '#6B7280',
-                      fontSize    : '9px', fontWeight: 900,
-                      letterSpacing: '0.15em', textTransform: 'uppercase',
-                      fontFamily  : 'monospace', padding: '5px 10px',
+                      display:       'flex',
+                      alignItems:    'center',
+                      gap:           '5px',
+                      background:    'none',
+                      border:        '1px solid var(--border)',
+                      cursor:        'pointer',
+                      color:         'var(--text-muted)',
+                      fontFamily:    'var(--font-body)',
+                      fontSize:      '10px',
+                      fontWeight:    600,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      padding:       '6px 12px',
                     }}
                   >
-                    <Check size={10} /> Cancel
+                    Cancel
                   </button>
-                  {/* Save */}
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
                     style={{
-                      display     : 'flex', alignItems: 'center', gap: '5px',
-                      background  : '#3DBA6F', border: 'none',
-                      cursor      : 'pointer', color: '#050508',
-                      fontSize    : '9px', fontWeight: 900,
-                      letterSpacing: '0.15em', textTransform: 'uppercase',
-                      fontFamily  : 'monospace', padding: '5px 12px',
-                      opacity     : isSaving ? 0.6 : 1,
+                      display:       'flex',
+                      alignItems:    'center',
+                      gap:           '5px',
+                      background:    'var(--accent)',
+                      border:        'none',
+                      cursor:        isSaving ? 'not-allowed' : 'pointer',
+                      color:         '#0A0A0A',
+                      fontFamily:    'var(--font-body)',
+                      fontSize:      '10px',
+                      fontWeight:    700,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      padding:       '6px 14px',
+                      opacity:       isSaving ? 0.6 : 1,
                     }}
                   >
                     {isSaving
@@ -523,41 +703,73 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setIsEditing(true)}
                   style={{
-                    display     : 'flex', alignItems: 'center', gap: '5px',
-                    background  : 'none', border: '1px solid #2A2A38',
-                    cursor      : 'pointer', color: '#3DBA6F',
-                    fontSize    : '9px', fontWeight: 900,
-                    letterSpacing: '0.15em', textTransform: 'uppercase',
-                    fontFamily  : 'monospace', padding: '5px 10px',
-                    transition  : 'border-color 150ms ease',
+                    display:       'flex',
+                    alignItems:    'center',
+                    gap:           '5px',
+                    background:    'none',
+                    border:        '1px solid var(--border)',
+                    cursor:        'pointer',
+                    color:         'var(--accent)',
+                    fontFamily:    'var(--font-body)',
+                    fontSize:      '10px',
+                    fontWeight:    600,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    padding:       '6px 12px',
+                    transition:    'border-color 150ms ease',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#3DBA6F')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#2A2A38')}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
                   <Pencil size={10} /> Edit
                 </button>
               )}
             </div>
 
+            {saveMsg && (
+              <p style={{
+                fontFamily:    'var(--font-body)',
+                fontSize:      '12px',
+                color:         saveMsg === 'Saved' ? 'var(--success)' : 'var(--danger)',
+                marginBottom:  '16px',
+              }}>
+                {saveMsg}
+              </p>
+            )}
+
             {/* Email — always read-only */}
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                EMAIL
+              <p style={{
+                fontFamily:    'var(--font-mono)',
+                fontSize:      '9px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color:         'var(--text-muted)',
+                marginBottom:  '6px',
+              }}>
+                Email
               </p>
-              <p style={{ fontSize: '10px', color: '#6B7280', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              <p style={{
+                fontFamily:    'var(--font-body)',
+                fontSize:      '13px',
+                color:         'var(--text-primary)',
+                wordBreak:     'break-all',
+              }}>
                 {user?.email ?? '—'}
               </p>
             </div>
 
             {isEditing ? (
-              /* ── Edit mode ── */
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '8px' }}>
                 <div>
                   <label style={{
-                    display      : 'block',
-                    fontSize     : '9px', color: '#3E3E52',
-                    fontFamily   : 'monospace', letterSpacing: '0.2em',
-                    textTransform: 'uppercase', marginBottom: '8px',
+                    display:       'block',
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '9px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color:         'var(--text-muted)',
+                    marginBottom:  '8px',
                   }}>
                     Contact Phone
                   </label>
@@ -566,93 +778,163 @@ export default function ProfilePage() {
                     value={form.phone}
                     onChange={e => setForm({ ...form, phone: e.target.value })}
                     placeholder="e.g. 08012345678"
-                    style={{
-                      width        : '100%', boxSizing: 'border-box',
-                      background   : '#0A0A0F', border: '1px solid #2A2A38',
-                      color        : '#F7F5F0', fontFamily: 'monospace',
-                      fontSize     : '13px', padding: '12px 14px',
-                      outline      : 'none',
-                    }}
-                    onFocus={e  => (e.target.style.borderColor = '#3DBA6F')}
-                    onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
+                    style={inputStyle}
+                    onFocus={e  => (e.target.style.borderColor = 'var(--accent)')}
+                    onBlur={e   => (e.target.style.borderColor = 'var(--border)')}
                   />
                 </div>
                 <div>
                   <label style={{
-                    display      : 'block',
-                    fontSize     : '9px', color: '#3E3E52',
-                    fontFamily   : 'monospace', letterSpacing: '0.2em',
-                    textTransform: 'uppercase', marginBottom: '8px',
+                    display:       'block',
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '9px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color:         'var(--text-muted)',
+                    marginBottom:  '8px',
                   }}>
-                    Default Delivery Address
+                    Delivery Address
                   </label>
                   <textarea
                     value={form.delivery_address}
                     onChange={e => setForm({ ...form, delivery_address: e.target.value })}
-                    placeholder="e.g. Room 12, Block A, Campus Hostel"
+                    placeholder="Your campus / delivery address"
                     rows={3}
                     style={{
-                      width       : '100%', boxSizing: 'border-box',
-                      background  : '#0A0A0F', border: '1px solid #2A2A38',
-                      color       : '#F7F5F0', fontFamily: 'monospace',
-                      fontSize    : '13px', padding: '12px 14px',
-                      outline     : 'none', resize: 'vertical',
+                      ...inputStyle,
+                      resize:     'vertical',
+                      lineHeight: 1.5,
                     }}
-                    onFocus={e  => (e.target.style.borderColor = '#3DBA6F')}
-                    onBlur={e   => (e.target.style.borderColor = '#2A2A38')}
+                    onFocus={e  => (e.target.style.borderColor = 'var(--accent)')}
+                    onBlur={e   => (e.target.style.borderColor = 'var(--border)')}
                   />
                 </div>
               </div>
             ) : (
-              /* ── Read mode ── */
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                    CONTACT
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '9px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color:         'var(--text-muted)',
+                    marginBottom:  '6px',
+                  }}>
+                    Phone
                   </p>
-                  <p style={{ fontSize: '12px', color: profile?.phone ? '#F7F5F0' : '#3E3E52', fontFamily: 'monospace' }}>
-                    {profile?.phone ?? 'Not set'}
+                  <p style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize:   '13px',
+                    color:      profile?.phone ? 'var(--text-primary)' : 'var(--text-muted)',
+                  }}>
+                    {profile?.phone || 'Not set'}
                   </p>
                 </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <p style={{ fontSize: '9px', color: '#3E3E52', fontFamily: 'monospace', letterSpacing: '0.2em', marginBottom: '6px' }}>
-                    DEFAULT DELIVERY ADDRESS
+                <div>
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '9px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color:         'var(--text-muted)',
+                    marginBottom:  '6px',
+                  }}>
+                    Delivery
                   </p>
-                  <p style={{ fontSize: '12px', color: (profile as any)?.delivery_address ? '#F7F5F0' : '#3E3E52', fontFamily: 'monospace' }}>
-                    {(profile as any)?.delivery_address ?? 'Not set'}
+                  <p style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize:   '13px',
+                    color:      (profile as any)?.delivery_address ? 'var(--text-primary)' : 'var(--text-muted)',
+                    lineHeight: 1.4,
+                  }}>
+                    {(profile as any)?.delivery_address || 'Not set'}
                   </p>
                 </div>
               </div>
             )}
+          </Tile>
+        </div>
 
-            <div style={{ height: '1px', background: '#1A1A24', margin: '0 0 20px' }} />
+        {/* E — Admin link (if admin) */}
+        {isAdmin && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Tile href="/admin">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{
+                  width:          '40px',
+                  height:         '40px',
+                  flexShrink:     0,
+                  background:     'var(--admin-accent-dim)',
+                  border:         '1px solid var(--admin-accent)',
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                }}>
+                  <Zap size={16} style={{ color: 'var(--admin-accent)' }} />
+                </div>
+                <div>
+                  <p style={{
+                    fontFamily:    'var(--font-display)',
+                    fontSize:      '16px',
+                    letterSpacing: '0.08em',
+                    color:         'var(--text-primary)',
+                    margin:        '0 0 3px',
+                  }}>
+                    ADMIN DASHBOARD
+                  </p>
+                  <p style={{
+                    fontFamily:    'var(--font-mono)',
+                    fontSize:      '10px',
+                    letterSpacing: '0.12em',
+                    color:         'var(--admin-accent)',
+                    margin:        0,
+                  }}>
+                    MANAGE STORE →
+                  </p>
+                </div>
+                <ChevronRight size={16} style={{ color: 'var(--text-muted)', marginLeft: 'auto' }} />
+              </div>
+            </Tile>
+          </div>
+        )}
 
-            <button
-              onClick={signOut}
-              style={{
-                display      : 'flex', alignItems: 'center', gap: '8px',
-                background   : 'none', border: 'none',
-                cursor       : 'pointer', color: '#4B1C1C',
-                fontSize     : '9px', fontWeight: 900,
-                letterSpacing: '0.2em', textTransform: 'uppercase',
-                fontFamily   : 'monospace', padding: 0,
-                transition   : 'color 150ms ease',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#4B1C1C')}
-            >
-              <LogOut size={12} />
-              Terminate Session
-            </button>
+        {/* F — Sign out (full width) */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <Tile onClick={handleSignOut}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <LogOut size={16} style={{ color: 'var(--danger)' }} />
+              <div>
+                <p style={{
+                  fontFamily:    'var(--font-body)',
+                  fontSize:      '14px',
+                  fontWeight:    600,
+                  color:         'var(--danger)',
+                  margin:        0,
+                  letterSpacing: '0.04em',
+                }}>
+                  Sign Out
+                </p>
+                <p style={{
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      '10px',
+                  letterSpacing: '0.12em',
+                  color:         'var(--text-muted)',
+                  margin:        '2px 0 0',
+                }}>
+                  {user.email}
+                </p>
+              </div>
+            </div>
           </Tile>
         </div>
 
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1);    }
-          50%       { opacity: 0.6; transform: scale(0.85); }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
       `}</style>
     </div>
