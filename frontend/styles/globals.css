@@ -3,73 +3,71 @@
 /* ─────────────────────────────────────────────────────────
    TACSFON MERCH — Design tokens
    Accent: Boutique Green #3DBA6F
-   Rule: NEVER hardcode #3DBA6F in component files.
+   Rule: NEVER hardcode hex in component files.
          Always use var(--accent) / var(--accent-hover).
 ───────────────────────────────────────────────────────── */
 
 :root,
 [data-theme="dark"] {
-  /* Backgrounds */
   --bg-base:     #0A0A0A;
   --bg-surface:  #111111;
   --bg-elevated: #1A1A1A;
 
-  /* Text */
   --text-primary: #F5F5F0;
   --text-muted:   #888880;
 
-  /* ── Accent: Boutique Green ── */
   --accent:       #3DBA6F;
   --accent-hover: #34a863;
   --accent-dim:   rgba(61, 186, 111, 0.12);
 
-  /* Semantic */
   --success: #4CAF7D;
   --danger:  #E05252;
   --warning: #C9A84C;
   --info:    #60A5FA;
 
-  /* Structure */
   --border:       rgba(255, 255, 255, 0.08);
   --border-focus: var(--accent);
 
-  /* Admin accent */
   --admin-accent:     #5B8CFF;
   --admin-accent-dim: rgba(91, 140, 255, 0.12);
 
-  /* Typography */
   --font-display: 'Bebas Neue', sans-serif;
   --font-body:    'DM Sans', sans-serif;
   --font-mono:    'Space Mono', monospace;
 
-  /* Sizing */
   --radius: 0px;
   --nav-h:  64px;
   --bottom-nav-h: 60px;
 }
 
 [data-theme="light"] {
-  --bg-base:      #FAFAF8;
-  --bg-surface:   #F2F2EE;
-  --bg-elevated:  #E8E8E4;
-  --text-primary: #0A0A0A;
-  --text-muted:   #666660;
-  --border:       rgba(0, 0, 0, 0.1);
+  --bg-base:      #F5F5F0;
+  --bg-surface:   #EBEBЕ5;
+  --bg-elevated:  #E0E0DA;
 
-  /* ── Extended light-mode tokens (patch P2) ── */
-  --nav-bg:         rgba(250, 250, 248, 0.96);
-  --card-bg:        #F2F2EE;
-  --overlay-bg:     rgba(255, 255, 255, 0.70);
-  --sheet-bg:       #FAFAF8;
-  --input-bg:       #FFFFFF;
-  --skeleton-base:  #E4E4E0;
-  --skeleton-shine: #EFEFEB;
-  --danger:         #C0392B;
-  --danger-dim:     rgba(192, 57, 43, 0.10);
-  --success:        #27AE60;
-  --success-dim:    rgba(39, 174, 96, 0.10);
-  --accent-hover:   #34A863;
-  --accent-dim:     rgba(61, 186, 111, 0.12);
+  --text-primary: #0A0A0A;
+  --text-muted:   #555550;
+
+  --accent:       #2DA05E;
+  --accent-hover: #268A51;
+  --accent-dim:   rgba(45, 160, 94, 0.12);
+
+  --border: rgba(0, 0, 0, 0.1);
+
+  --admin-accent:     #3B6FE8;
+  --admin-accent-dim: rgba(59, 111, 232, 0.12);
+}
+
+/* Ensure body background always tracks the token */
+body {
+  background:  var(--bg-base);
+  color:       var(--text-primary);
+  font-family: var(--font-body);
+  font-size:   16px;
+  line-height: 1.5;
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 200ms ease, color 200ms ease;
 }
 
 /* ── Reset ── */
@@ -82,16 +80,6 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-}
-
-body {
-  background:  var(--bg-base);
-  color:       var(--text-primary);
-  font-family: var(--font-body);
-  font-size:   16px;
-  line-height: 1.5;
-  -webkit-font-smoothing:  antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Scrollbar ── */
@@ -120,12 +108,8 @@ body {
   text-transform: uppercase;
 }
 
-/* ── Divider ── */
-.divider-accent {
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent), transparent 60%);
-}
-/* alias — FeaturedProducts.tsx uses className="divider-gold" */
+/* ── Dividers ── */
+.divider-accent,
 .divider-gold {
   height: 1px;
   background: linear-gradient(90deg, var(--accent), transparent 60%);
