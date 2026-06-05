@@ -50,17 +50,16 @@ function ProductsContent() {
     if (params.get('stock'))    query.set('stock_type',  params.get('stock')!)
 
     const qs = query.toString()
-
     setLoading(true)
     setError(null)
 
     Promise.all([
-      apiFetch<any>(`/products${qs ? `?${qs}` : ''}`),
-      apiFetch<any>('/categories'),
+      apiFetch<{ data: Product[] }>(`/products${qs ? `?${qs}` : ''}`),
+      apiFetch<{ data: Category[] }>('/categories'),
     ])
       .then(([pRes, cRes]) => {
-        setProducts(pRes.products     ?? pRes.data?.products     ?? [])
-        setCategories(cRes.categories ?? cRes.data?.categories   ?? [])
+        setProducts(pRes.data   ?? (pRes as any) ?? [])
+        setCategories(cRes.data ?? (cRes as any) ?? [])
       })
       .catch(err => {
         console.error('[ProductsPage] fetch error:', err)
@@ -70,10 +69,10 @@ function ProductsContent() {
   }, [params])
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px' }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '80px 16px 120px' }}>
 
-      {/* Page header */}
-      <div style={{ marginBottom: '48px' }}>
+      {/* ── Page header ── */}
+      <div style={{ marginBottom: '24px' }}>
         <p style={{
           fontFamily:    'var(--font-body)',
           fontSize:      '11px',
@@ -81,21 +80,21 @@ function ProductsContent() {
           letterSpacing: '0.22em',
           textTransform: 'uppercase',
           color:         'var(--accent)',
-          marginBottom:  '8px',
+          marginBottom:  '6px',
         }}>
           TACSFON Merch
         </p>
 
         <div style={{
           display:        'flex',
-          alignItems:     'flex-end',
+          alignItems:     'center',
           justifyContent: 'space-between',
-          gap:            '16px',
+          gap:            '12px',
           flexWrap:       'wrap',
         }}>
           <h1 style={{
             fontFamily:    'var(--font-display)',
-            fontSize:      'clamp(40px, 6vw, 72px)',
+            fontSize:      'clamp(36px, 6vw, 64px)',
             lineHeight:    1,
             letterSpacing: '0.04em',
             color:         'var(--text-primary)',
@@ -104,6 +103,7 @@ function ProductsContent() {
             ALL PRODUCTS
           </h1>
 
+          {/* Mobile filter button */}
           <button
             onClick={() => setSheetOpen(true)}
             className="filter-trigger"
@@ -120,9 +120,10 @@ function ProductsContent() {
               color:         'var(--text-primary)',
               background:    'var(--bg-surface)',
               border:        '1px solid var(--border)',
-              padding:       '10px 18px',
+              padding:       '10px 16px',
               cursor:        'pointer',
               minHeight:     '44px',
+              whiteSpace:    'nowrap',
             }}
           >
             <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
@@ -130,15 +131,16 @@ function ProductsContent() {
           </button>
         </div>
 
+        {/* Accent rule */}
         <div aria-hidden="true" style={{
           height:     '1px',
           background: 'linear-gradient(90deg, var(--accent), transparent)',
-          marginTop:  '20px',
-          maxWidth:   '240px',
+          marginTop:  '14px',
+          maxWidth:   '200px',
         }} />
       </div>
 
-      {/* Error state */}
+      {/* ── Error state ── */}
       {error && (
         <div style={{
           padding:    '48px 0',
@@ -167,9 +169,9 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* Layout */}
+      {/* ── Sidebar + grid layout ── */}
       {!error && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '48px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '40px' }}>
           <FilterSidebar categories={categories} />
           <div style={{ flex: 1, minWidth: 0 }}>
             {loading
@@ -180,17 +182,18 @@ function ProductsContent() {
         </div>
       )}
 
+      {/* ── Mobile filter sheet ── */}
       <FilterBottomSheet
         categories={categories}
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
       />
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style>{`
         @media (max-width: 1023px) {
           .filter-trigger { display: inline-flex !important; }
         }
-      ` }} />
+      `}</style>
     </div>
   )
 }
