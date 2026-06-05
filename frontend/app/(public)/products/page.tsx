@@ -59,8 +59,8 @@ function ProductsContent() {
       apiFetch<any>('/categories'),
     ])
       .then(([pRes, cRes]) => {
-        setProducts(pRes.products   ?? pRes.data?.products   ?? [])
-        setCategories(cRes.categories ?? cRes.data?.categories ?? [])
+        setProducts(pRes.products     ?? pRes.data?.products     ?? [])
+        setCategories(cRes.categories ?? cRes.data?.categories   ?? [])
       })
       .catch(err => {
         console.error('[ProductsPage] fetch error:', err)
@@ -186,11 +186,11 @@ function ProductsContent() {
         onClose={() => setSheetOpen(false)}
       />
 
-      <style>{\`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 1023px) {
           .filter-trigger { display: inline-flex !important; }
         }
-      \`}</style>
+      ` }} />
     </div>
   )
 }
