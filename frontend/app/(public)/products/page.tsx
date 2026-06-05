@@ -8,12 +8,6 @@ import { apiFetch }                      from '@/lib/api/fetch'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
 
-/* ── Dynamic imports with ssr:false ──────────────────────────────────────────
-   FilterSidebar and FilterBottomSheet both call useRouter / useSearchParams
-   / usePathname. These hooks throw if executed during SSR. Wrapping them in
-   dynamic(..., { ssr: false }) ensures they only render on the client,
-   preventing the server-side crash that was bubbling up to error.tsx.
-────────────────────────────────────────────────────────────────────────── */
 const FilterSidebar     = dynamic(() => import('@/components/products/FilterSidebar'),     { ssr: false })
 const FilterBottomSheet = dynamic(() => import('@/components/products/FilterBottomSheet'), { ssr: false })
 
@@ -61,12 +55,12 @@ function ProductsContent() {
     setError(null)
 
     Promise.all([
-      apiFetch<{ data: Product[] }>(`/products${qs ? `?${qs}` : ''}`),
-      apiFetch<{ data: Category[] }>('/categories'),
+      apiFetch<any>(`/products${qs ? `?${qs}` : ''}`),
+      apiFetch<any>('/categories'),
     ])
       .then(([pRes, cRes]) => {
-        setProducts(pRes.data   ?? (pRes as any) ?? [])
-        setCategories(cRes.data ?? (cRes as any) ?? [])
+        setProducts(pRes.products   ?? pRes.data?.products   ?? [])
+        setCategories(cRes.categories ?? cRes.data?.categories ?? [])
       })
       .catch(err => {
         console.error('[ProductsPage] fetch error:', err)
@@ -192,11 +186,11 @@ function ProductsContent() {
         onClose={() => setSheetOpen(false)}
       />
 
-      <style>{`
+      <style>{\`
         @media (max-width: 1023px) {
           .filter-trigger { display: inline-flex !important; }
         }
-      `}</style>
+      \`}</style>
     </div>
   )
 }
