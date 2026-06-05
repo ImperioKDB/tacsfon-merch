@@ -1,13 +1,13 @@
 'use client'
 
-import { useState }   from 'react'
-import Image          from 'next/image'
-import Link           from 'next/link'
+import { useState }           from 'react'
+import Image                  from 'next/image'
+import Link                   from 'next/link'
 import { ShoppingBag, Loader2, Plus, Minus } from 'lucide-react'
-import { toast }      from 'sonner'
-import { resolveImageUrl } from '@/lib/utils/formatters'
-import { useCartStore }    from '@/store/cart'
-import { apiFetch }        from '@/lib/api/fetch'
+import { toast }              from 'sonner'
+import { resolveImageUrl }    from '@/lib/utils/formatters'
+import { useCartStore }       from '@/store/cart'
+import { apiFetch }           from '@/lib/api/fetch'
 
 interface Variant {
   id:             string
@@ -41,13 +41,15 @@ export default function ProductCard({ product }: { product: Product }) {
   const prices   = variants.map(v => v.price_override ?? product.base_price)
   const min      = prices.length ? Math.min(...prices) : product.base_price
   const max      = prices.length ? Math.max(...prices) : product.base_price
-  const priceStr = min === max ? `\u20a6${min.toLocaleString()}` : `from \u20a6${min.toLocaleString()}`
-  const img      = resolveImageUrl(product.image_url)
+  const priceStr = min === max
+    ? `\u20a6${min.toLocaleString()}`
+    : `from \u20a6${min.toLocaleString()}`
+  const img = resolveImageUrl(product.image_url)
 
   const badge =
-    product.stock_type === 'preorder'     ? { label: 'Pre-order', color: '#3DBA6F', bg: 'rgba(61,186,111,0.10)' }
-    : totalQty <= 3 && totalQty > 0       ? { label: 'Low Stock', color: '#E05252', bg: 'rgba(224,82,82,0.10)' }
-    : totalQty === 0                      ? { label: 'Sold Out',  color: '#555',    bg: 'rgba(255,255,255,0.05)' }
+    product.stock_type === 'preorder'   ? { label: 'Pre-order', color: 'var(--accent)',   bg: 'var(--accent-dim)' }
+    : totalQty <= 3 && totalQty > 0     ? { label: 'Low Stock', color: 'var(--danger)',   bg: 'rgba(224,82,82,0.10)' }
+    : totalQty === 0                    ? { label: 'Sold Out',  color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.05)' }
     : null
 
   const handleAdd = async (e: React.MouseEvent) => {
@@ -58,7 +60,7 @@ export default function ProductCard({ product }: { product: Product }) {
     try {
       await apiFetch('/cart/items', {
         method: 'POST',
-        body: JSON.stringify({ variant_id: firstVariant.id, quantity: qty }),
+        body:   JSON.stringify({ variant_id: firstVariant.id, quantity: qty }),
       })
       increment(qty)
       toast.success(`${product.name} \u00d7${qty} added to cart`)
@@ -76,9 +78,19 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="product-card">
+    <div style={{
+      display:        'flex',
+      flexDirection:  'column',
+      background:     'var(--bg-surface)',
+      border:         '1px solid var(--border)',
+      overflow:       'hidden',
+      transition:     'border-color 200ms ease',
+    }}
+    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+    >
 
-      {/* ── Image (tap = go to product, hover = name/price panel) ── */}
+      {/* ── Image — tap navigates to product detail ── */}
       <Link
         href={`/products/${product.id}`}
         style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}
@@ -90,67 +102,83 @@ export default function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="product-card__image"
-            style={{ objectFit: 'cover' }}
+            style={{ objectFit: 'cover', transition: 'transform 400ms ease' }}
             unoptimized
+            onMouseEnter={e => ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLImageElement).style.transform = 'scale(1)')}
           />
         ) : (
           <div style={{
-            width: '100%', height: '100%',
-            background: 'var(--bg-elevated)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width:           '100%',
+            height:          '100%',
+            background:      'var(--bg-elevated)',
+            display:         'flex',
+            alignItems:      'center',
+            justifyContent:  'center',
           }}>
             <ShoppingBag size={28} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
           </div>
         )}
 
-        {/* Gradient overlay on hover/touch */}
-        <div className="product-card__overlay" aria-hidden />
-
-        {/* Name + price — revealed on hover/touch */}
-        <div className="product-card__info" style={{ pointerEvents: 'none' }}>
-          <p style={{
-            fontFamily:    'var(--font-display)',
-            fontSize:      '13px',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color:         '#fff',
-            lineHeight:    1.15,
-            marginBottom:  '3px',
-            textShadow:    '0 1px 6px rgba(0,0,0,0.7)',
-          }}>
-            {product.name}
-          </p>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize:   '11px',
-            fontWeight: 700,
-            color:      '#3DBA6F',
-          }}>
-            {priceStr}
-          </p>
-        </div>
-
         {/* Stock badge */}
         {badge && (
           <span style={{
-            position: 'absolute', top: '10px', left: '10px',
-            fontFamily: 'var(--font-body)', fontSize: '9px', fontWeight: 700,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            color: badge.color, background: badge.bg,
-            padding: '3px 8px', border: `1px solid ${badge.color}40`,
+            position:      'absolute',
+            top:           '8px',
+            left:          '8px',
+            fontFamily:    'var(--font-body)',
+            fontSize:      '9px',
+            fontWeight:    700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color:         badge.color,
+            background:    badge.bg,
+            padding:       '3px 8px',
+            border:        `1px solid ${badge.color}40`,
           }}>
             {badge.label}
           </span>
         )}
       </Link>
 
-      {/* ── Bottom action bar: qty stepper + Add to Cart ── */}
+      {/* ── Static label — always visible, no hover required ── */}
       <div style={{
-        borderTop:   '1px solid var(--border)',
-        display:     'flex',
-        alignItems:  'center',
-        height:      '42px',
+        padding:       '10px 12px 8px',
+        borderTop:     '1px solid var(--border)',
+        borderBottom:  '1px solid var(--border)',
+        background:    'var(--bg-surface)',
+      }}>
+        <p style={{
+          margin:        '0 0 3px',
+          fontFamily:    'var(--font-display)',
+          fontSize:      '13px',
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color:         'var(--text-primary)',
+          lineHeight:    1.2,
+          overflow:      'hidden',
+          whiteSpace:    'nowrap',
+          textOverflow:  'ellipsis',
+        }}>
+          {product.name}
+        </p>
+        <p style={{
+          margin:     0,
+          fontFamily: 'var(--font-body)',
+          fontSize:   '12px',
+          fontWeight: 700,
+          color:      'var(--accent)',
+        }}>
+          {priceStr}
+        </p>
+      </div>
+
+      {/* ── Action bar: qty stepper + Add to Cart ── */}
+      <div style={{
+        display:    'flex',
+        alignItems: 'center',
+        height:     '44px',
+        flexShrink: 0,
       }}>
         {/* Minus */}
         <button
@@ -158,7 +186,7 @@ export default function ProductCard({ product }: { product: Product }) {
           disabled={qty <= 1 || soldOut}
           aria-label="Decrease quantity"
           style={{
-            width:          '34px',
+            width:          '36px',
             height:         '100%',
             background:     'none',
             border:         'none',
@@ -176,16 +204,16 @@ export default function ProductCard({ product }: { product: Product }) {
           <Minus size={11} strokeWidth={2} />
         </button>
 
-        {/* Qty display */}
+        {/* Qty */}
         <span style={{
-          width:          '28px',
-          textAlign:      'center',
-          fontFamily:     'var(--font-body)',
-          fontSize:       '11px',
-          fontWeight:     700,
-          color:          soldOut ? 'var(--text-muted)' : 'var(--text-primary)',
-          flexShrink:     0,
-          opacity:        soldOut ? 0.35 : 1,
+          width:      '28px',
+          textAlign:  'center',
+          fontFamily: 'var(--font-body)',
+          fontSize:   '12px',
+          fontWeight: 700,
+          color:      soldOut ? 'var(--text-muted)' : 'var(--text-primary)',
+          flexShrink: 0,
+          opacity:    soldOut ? 0.35 : 1,
         }}>
           {qty}
         </span>
@@ -196,7 +224,7 @@ export default function ProductCard({ product }: { product: Product }) {
           disabled={qty >= 10 || soldOut}
           aria-label="Increase quantity"
           style={{
-            width:          '34px',
+            width:          '36px',
             height:         '100%',
             background:     'none',
             border:         'none',
@@ -222,20 +250,21 @@ export default function ProductCard({ product }: { product: Product }) {
           style={{
             flex:           1,
             height:         '100%',
-            background:     soldOut ? 'transparent' : adding ? '#2EA05A' : '#3DBA6F',
+            background:     soldOut ? 'transparent' : adding ? 'var(--accent-hover)' : 'var(--accent)',
             border:         'none',
             color:          soldOut ? 'var(--text-muted)' : '#0A0A0A',
             fontFamily:     'var(--font-body)',
-            fontSize:       '9px',
+            fontSize:       '10px',
             fontWeight:     700,
-            letterSpacing:  '0.14em',
+            letterSpacing:  '0.1em',
             textTransform:  'uppercase',
             cursor:         soldOut || adding ? 'not-allowed' : 'pointer',
             opacity:        soldOut ? 0.4 : 1,
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
-            gap:            '6px',
+            gap:            '5px',
+            whiteSpace:     'nowrap',
             transition:     'background 150ms, opacity 150ms',
           }}
         >
