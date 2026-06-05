@@ -2,12 +2,20 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams }               from 'next/navigation'
+import dynamic                           from 'next/dynamic'
 import { SlidersHorizontal }             from 'lucide-react'
 import { apiFetch }                      from '@/lib/api/fetch'
-import FilterSidebar                     from '@/components/products/FilterSidebar'
-import FilterBottomSheet                 from '@/components/products/FilterBottomSheet'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
+
+/* ── Dynamic imports with ssr:false ──────────────────────────────────────────
+   FilterSidebar and FilterBottomSheet both call useRouter / useSearchParams
+   / usePathname. These hooks throw if executed during SSR. Wrapping them in
+   dynamic(..., { ssr: false }) ensures they only render on the client,
+   preventing the server-side crash that was bubbling up to error.tsx.
+────────────────────────────────────────────────────────────────────────── */
+const FilterSidebar     = dynamic(() => import('@/components/products/FilterSidebar'),     { ssr: false })
+const FilterBottomSheet = dynamic(() => import('@/components/products/FilterBottomSheet'), { ssr: false })
 
 interface Variant {
   id:             string
@@ -102,7 +110,6 @@ function ProductsContent() {
             ALL PRODUCTS
           </h1>
 
-          {/* Mobile filter button */}
           <button
             onClick={() => setSheetOpen(true)}
             className="filter-trigger"
@@ -129,7 +136,6 @@ function ProductsContent() {
           </button>
         </div>
 
-        {/* Accent rule */}
         <div aria-hidden="true" style={{
           height:     '1px',
           background: 'linear-gradient(90deg, var(--accent), transparent)',
@@ -167,7 +173,7 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* Layout: sidebar + grid */}
+      {/* Layout */}
       {!error && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '48px' }}>
           <FilterSidebar categories={categories} />
@@ -180,7 +186,6 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* Mobile bottom sheet */}
       <FilterBottomSheet
         categories={categories}
         open={sheetOpen}
