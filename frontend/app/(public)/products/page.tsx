@@ -1,15 +1,20 @@
 'use client'
 
+// ← This is the critical fix. Without it, Next.js statically prerenders
+// this page at build time. useSearchParams() then throws at runtime because
+// search params don't exist in a static context, crashing into error.tsx.
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams }               from 'next/navigation'
-import dynamic                           from 'next/dynamic'
+import dynamic_import                    from 'next/dynamic'
 import { SlidersHorizontal }             from 'lucide-react'
 import { apiFetch }                      from '@/lib/api/fetch'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
 
-const FilterSidebar     = dynamic(() => import('@/components/products/FilterSidebar'),     { ssr: false })
-const FilterBottomSheet = dynamic(() => import('@/components/products/FilterBottomSheet'), { ssr: false })
+const FilterSidebar     = dynamic_import(() => import('@/components/products/FilterSidebar'),     { ssr: false })
+const FilterBottomSheet = dynamic_import(() => import('@/components/products/FilterBottomSheet'), { ssr: false })
 
 interface Variant {
   id:             string
@@ -62,9 +67,8 @@ function ProductsContent() {
         setCategories(cRes.data ?? (cRes as any) ?? [])
       })
       .catch(err => {
-        // Render cold-start or network failure — show empty state, not error boundary
         console.error('[ProductsPage] fetch error:', err)
-        setError('Could not load products. The server may be waking up — try again in a moment.')
+        setError('Failed to load products. Please try again.')
       })
       .finally(() => setLoading(false))
   }, [params])
@@ -72,7 +76,7 @@ function ProductsContent() {
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '80px 16px 120px' }}>
 
-      {/* ── Page header ── */}
+      {/* Page header */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
           fontFamily:    'var(--font-body)',
@@ -104,7 +108,6 @@ function ProductsContent() {
             ALL PRODUCTS
           </h1>
 
-          {/* Mobile filter button */}
           <button
             onClick={() => setSheetOpen(true)}
             className="filter-trigger"
@@ -132,7 +135,6 @@ function ProductsContent() {
           </button>
         </div>
 
-        {/* Accent rule */}
         <div aria-hidden="true" style={{
           height:     '1px',
           background: 'linear-gradient(90deg, var(--accent), transparent)',
@@ -141,32 +143,26 @@ function ProductsContent() {
         }} />
       </div>
 
-      {/* ── Error state — graceful, not a crash ── */}
+      {/* Error state */}
       {error && (
         <div style={{
-          padding:    '64px 0',
+          padding:    '48px 0',
           textAlign:  'center',
+          fontFamily: 'var(--font-body)',
+          fontSize:   '14px',
+          color:      'var(--danger)',
         }}>
-          <p style={{
-            fontFamily:   'var(--font-body)',
-            fontSize:     '14px',
-            color:        'var(--text-muted)',
-            marginBottom: '20px',
-            lineHeight:   1.6,
-          }}>
-            {error}
-          </p>
+          <p style={{ marginBottom: '16px' }}>{error}</p>
           <button
             onClick={() => window.location.reload()}
             style={{
               background:    'none',
               border:        '1px solid var(--border)',
-              color:         'var(--text-primary)',
-              padding:       '10px 28px',
+              color:         'var(--text-muted)',
+              padding:       '10px 24px',
               fontFamily:    'var(--font-body)',
-              fontSize:      '11px',
-              fontWeight:    600,
-              letterSpacing: '0.12em',
+              fontSize:      '12px',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
               cursor:        'pointer',
             }}
@@ -176,7 +172,7 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* ── Sidebar + grid layout ── */}
+      {/* Layout */}
       {!error && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '40px' }}>
           <FilterSidebar categories={categories} />
@@ -189,7 +185,6 @@ function ProductsContent() {
         </div>
       )}
 
-      {/* ── Mobile filter sheet ── */}
       <FilterBottomSheet
         categories={categories}
         open={sheetOpen}
