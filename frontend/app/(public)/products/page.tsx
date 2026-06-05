@@ -62,8 +62,9 @@ function ProductsContent() {
         setCategories(cRes.data ?? (cRes as any) ?? [])
       })
       .catch(err => {
+        // Render cold-start or network failure — show empty state, not error boundary
         console.error('[ProductsPage] fetch error:', err)
-        setError('Failed to load products. Please try again.')
+        setError('Could not load products. The server may be waking up — try again in a moment.')
       })
       .finally(() => setLoading(false))
   }, [params])
@@ -140,26 +141,32 @@ function ProductsContent() {
         }} />
       </div>
 
-      {/* ── Error state ── */}
+      {/* ── Error state — graceful, not a crash ── */}
       {error && (
         <div style={{
-          padding:    '48px 0',
+          padding:    '64px 0',
           textAlign:  'center',
-          fontFamily: 'var(--font-body)',
-          fontSize:   '14px',
-          color:      'var(--danger)',
         }}>
-          <p style={{ marginBottom: '16px' }}>{error}</p>
+          <p style={{
+            fontFamily:   'var(--font-body)',
+            fontSize:     '14px',
+            color:        'var(--text-muted)',
+            marginBottom: '20px',
+            lineHeight:   1.6,
+          }}>
+            {error}
+          </p>
           <button
             onClick={() => window.location.reload()}
             style={{
               background:    'none',
               border:        '1px solid var(--border)',
-              color:         'var(--text-muted)',
-              padding:       '10px 24px',
+              color:         'var(--text-primary)',
+              padding:       '10px 28px',
               fontFamily:    'var(--font-body)',
-              fontSize:      '12px',
-              letterSpacing: '0.1em',
+              fontSize:      '11px',
+              fontWeight:    600,
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
               cursor:        'pointer',
             }}
