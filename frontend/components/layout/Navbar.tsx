@@ -5,8 +5,7 @@
  * Left  — TACSFON MERCH wordmark
  * Right — Theme toggle · Cart badge · Hamburger
  *
- * Top bar responds to theme.
- * Drawer is ALWAYS dark (it's a modal overlay, not a page element).
+ * Drawer: green background, white text, red Sign Out.
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -14,15 +13,16 @@ import { useRouter, usePathname }       from 'next/navigation'
 import { createBrowserClient }          from '@supabase/ssr'
 import { useCartStore }                 from '@/store/cart'
 
-/* Drawer constants — always dark regardless of theme */
-const D_BG     = '#111111'
-const D_SURF   = '#1A1A1A'
-const D_BORDER = 'rgba(255,255,255,0.08)'
-const D_TEXT   = '#F5F5F0'
-const D_MUTED  = '#888880'
-const D_ACCENT = '#3DBA6F'
-const D_DANGER = '#E05252'
-const D_ADMIN  = '#5B8CFF'
+/* Drawer — green background, white characters */
+const D_BG        = '#3DBA6F'
+const D_BG_HOVER  = '#34a863'
+const D_BORDER    = 'rgba(255,255,255,0.15)'
+const D_TEXT      = '#FFFFFF'
+const D_MUTED     = 'rgba(255,255,255,0.7)'
+const D_ACTIVE_BG = 'rgba(0,0,0,0.15)'
+const D_DANGER    = '#FF6B6B'   /* red on green — brighter than standard danger */
+const D_ADMIN     = '#FFE066'   /* yellow — stands out on green */
+const D_FOOTER_BG = '#34a863'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -70,7 +70,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Close drawer on outside click */
   useEffect(() => {
     function handle(e: MouseEvent) {
       if (drawerRef.current && !drawerRef.current.contains(e.target as Node))
@@ -93,28 +92,31 @@ export default function Navbar() {
     return href === '/' ? pathname === '/' : pathname.startsWith(href)
   }
 
-  function DrawerLink({ href, children, color = D_MUTED }: {
+  function DrawerLink({ href, children, color = D_TEXT }: {
     href: string; children: React.ReactNode; color?: string
   }) {
     const active = isActive(href)
-    const c = active ? D_TEXT : color
     return (
       <a href={href} style={{
-        display: 'flex', alignItems: 'center',
-        padding: '13px 24px',
-        fontFamily: 'var(--font-body)', fontSize: '13px',
-        fontWeight: active ? 700 : 500,
-        letterSpacing: '0.06em', textTransform: 'uppercase',
-        color: c, textDecoration: 'none',
-        borderLeft: active ? `2px solid ${D_ACCENT}` : '2px solid transparent',
-        background: active ? 'rgba(61,186,111,0.08)' : 'none',
-        transition: 'color 150ms',
+        display:        'flex',
+        alignItems:     'center',
+        padding:        '14px 24px',
+        fontFamily:     'var(--font-body)',
+        fontSize:       '14px',
+        fontWeight:     active ? 700 : 500,
+        letterSpacing:  '0.06em',
+        textTransform:  'uppercase',
+        color:          active ? D_TEXT : color,
+        textDecoration: 'none',
+        borderLeft:     active ? `3px solid ${D_TEXT}` : '3px solid transparent',
+        background:     active ? D_ACTIVE_BG : 'none',
+        transition:     'background 150ms',
       }}
       onMouseEnter={e => {
-        if (!active) (e.currentTarget as HTMLAnchorElement).style.color = D_TEXT
+        (e.currentTarget as HTMLAnchorElement).style.background = D_ACTIVE_BG
       }}
       onMouseLeave={e => {
-        if (!active) (e.currentTarget as HTMLAnchorElement).style.color = c
+        (e.currentTarget as HTMLAnchorElement).style.background = active ? D_ACTIVE_BG : 'none'
       }}>
         {children}
       </a>
@@ -125,15 +127,20 @@ export default function Navbar() {
     <>
       {/* Top bar — responds to theme */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        height: '64px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px',
-        background: 'color-mix(in srgb, var(--bg-base) 88%, transparent)',
-        backdropFilter: 'blur(12px)',
+        position:             'fixed',
+        top: 0, left: 0, right: 0,
+        zIndex:               100,
+        height:               '64px',
+        display:              'flex',
+        alignItems:           'center',
+        justifyContent:       'space-between',
+        padding:              '0 20px',
+        background:           'color-mix(in srgb, var(--bg-base) 88%, transparent)',
+        backdropFilter:       'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--border)',
+        borderBottom:         '1px solid var(--border)',
       }}>
+
         {/* Wordmark */}
         <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '0.12em', color: 'var(--text-primary)', lineHeight: 1 }}>
@@ -146,6 +153,7 @@ export default function Navbar() {
 
         {/* Icons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+
           {/* Theme toggle */}
           <button onClick={toggleTheme}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
@@ -168,7 +176,7 @@ export default function Navbar() {
           </button>
 
           {/* Cart */}
-          <a href="/cart" aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+          <a href="/cart"
             style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 150ms' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
@@ -203,34 +211,45 @@ export default function Navbar() {
       {/* Backdrop */}
       {drawerOpen && (
         <div onClick={() => setDrawerOpen(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 149, background: 'rgba(10,10,10,0.7)', backdropFilter: 'blur(2px)' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 149, background: 'rgba(10,10,10,0.6)', backdropFilter: 'blur(2px)' }}
         />
       )}
 
-      {/* Drawer — ALWAYS dark */}
+      {/* Drawer — GREEN background, white text */}
       <div ref={drawerRef} style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 150,
-        width: '280px', maxWidth: '85vw',
-        background: D_BG,
-        borderLeft: `1px solid ${D_BORDER}`,
-        display: 'flex', flexDirection: 'column',
-        transform: drawerOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 280ms cubic-bezier(0.32,0.72,0,1)',
+        position:      'fixed',
+        top: 0, right: 0, bottom: 0,
+        zIndex:        150,
+        width:         '280px',
+        maxWidth:      '85vw',
+        background:    D_BG,
+        borderLeft:    `1px solid ${D_BORDER}`,
+        display:       'flex',
+        flexDirection: 'column',
+        transform:     drawerOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition:    'transform 280ms cubic-bezier(0.32,0.72,0,1)',
       }}>
-        {/* Header */}
-        <div style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderBottom: `1px solid ${D_BORDER}`, flexShrink: 0 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.2em', color: D_ACCENT, textTransform: 'uppercase' }}>
+
+        {/* Drawer header */}
+        <div style={{
+          height: '64px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 20px',
+          borderBottom: `1px solid ${D_BORDER}`,
+          flexShrink: 0,
+        }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '0.12em', color: D_TEXT }}>
             MENU
           </span>
           <button onClick={() => setDrawerOpen(false)}
-            style={{ background: 'none', border: 'none', color: D_MUTED, cursor: 'pointer', padding: '8px', display: 'flex' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            style={{ background: 'none', border: 'none', color: D_TEXT, cursor: 'pointer', padding: '8px', display: 'flex', opacity: 0.8 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
 
-        {/* Nav */}
+        {/* Nav links */}
         <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           <DrawerLink href="/">Home</DrawerLink>
           <DrawerLink href="/products">Products</DrawerLink>
@@ -243,23 +262,41 @@ export default function Navbar() {
 
           {user ? (
             <button onClick={handleSignOut}
-              style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '13px 24px', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: D_DANGER, background: 'none', border: 'none', borderLeft: '2px solid transparent', cursor: 'pointer', textAlign: 'left' }}>
+              style={{
+                display: 'flex', alignItems: 'center',
+                width: '100%', padding: '14px 24px',
+                fontFamily: 'var(--font-body)', fontSize: '14px',
+                fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: D_DANGER,
+                background: 'none', border: 'none',
+                borderLeft: '3px solid transparent',
+                cursor: 'pointer', textAlign: 'left',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = D_ACTIVE_BG)}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
               Sign Out
             </button>
           ) : (
-            <DrawerLink href="/login" color={D_ACCENT}>Sign In</DrawerLink>
+            <DrawerLink href="/login">Sign In</DrawerLink>
           )}
 
           {isAdmin && (
             <>
               <div style={{ height: '1px', background: D_BORDER, margin: '8px 24px' }} />
-              <DrawerLink href="/admin" color={D_ADMIN}>Admin Dashboard</DrawerLink>
+              <DrawerLink href="/admin" color={D_ADMIN}>
+                Admin Dashboard
+              </DrawerLink>
             </>
           )}
         </nav>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: `1px solid ${D_BORDER}`, flexShrink: 0, background: D_SURF }}>
+        <div style={{
+          padding: '16px 24px',
+          borderTop: `1px solid ${D_BORDER}`,
+          flexShrink: 0,
+          background: D_FOOTER_BG,
+        }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', color: D_MUTED }}>
             TACSFON MERCH · UNIBEN
           </p>
