@@ -9,7 +9,7 @@ import { SlidersHorizontal }             from 'lucide-react'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
 
-const FilterSidebar     = dynamic_import(
+const FilterSidebar = dynamic_import(
   () => import('@/components/products/FilterSidebar'),
   { ssr: false }
 )
@@ -29,21 +29,6 @@ interface Product {
 }
 interface Category { id: string; name: string }
 
-// Public fetch — no auth header needed for product catalogue
-async function publicFetch(path: string): Promise<any> {
-  const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
-  const url  = `${base}/api${path.startsWith('/') ? path : '/' + path}`
-  const res  = await fetch(url, {
-    method:      'GET',
-    credentials: 'include',   // send cookies for session if present
-    headers:     { 'Content-Type': 'application/json' },
-  })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`)
-  const body = await res.json()
-  // Unwrap { data: [...] } or return raw array
-  return Array.isArray(body) ? body : (body?.data ?? body)
-}
-
 function ProductsContent() {
   const params = useSearchParams()
   const [products,   setProducts]   = useState<Product[]>([])
@@ -53,6 +38,7 @@ function ProductsContent() {
   const [sheetOpen,  setSheetOpen]  = useState(false)
 
   useEffect(() => {
+    // Build query params for filtering
     const query = new URLSearchParams()
     if (params.get('category')) query.set('category_id', params.get('category')!)
     if (params.get('sort'))     query.set('sort',        params.get('sort')!)
@@ -62,17 +48,20 @@ function ProductsContent() {
     setLoading(true)
     setError(null)
 
+    // Call our same-domain Next.js proxy routes — no CORS
     Promise.all([
-      publicFetch(`/products${qs ? `?${qs}` : ''}`),
-      publicFetch('/categories'),
+      fetch(`/api/proxy/products${qs ? `?${qs}` : ''}`).then(r => r.json()),
+      fetch('/api/proxy/categories').then(r => r.json()),
     ])
-      .then(([prods, cats]) => {
-        setProducts(Array.isArray(prods) ? prods : [])
-        setCategories(Array.isArray(cats) ? cats : [])
+      .then(([pRes, cRes]) => {
+        const prods = Array.isArray(pRes) ? pRes : (pRes?.data ?? [])
+        const cats  = Array.isArray(cRes) ? cRes : (cRes?.data ?? [])
+        setProducts(prods)
+        setCategories(cats)
       })
       .catch(err => {
         console.error('[ProductsPage]', err)
-        setError(`Failed to load products: ${err.message}`)
+        setError('Failed to load products. Please try again.')
       })
       .finally(() => setLoading(false))
   }, [params])
@@ -110,7 +99,8 @@ function ProductsContent() {
           </button>
         </div>
         <div aria-hidden="true" style={{
-          height: '1px', background: 'linear-gradient(90deg, var(--accent), transparent)',
+          height: '1px',
+          background: 'linear-gradient(90deg, var(--accent), transparent)',
           marginTop: '14px', maxWidth: '200px',
         }} />
       </div>
