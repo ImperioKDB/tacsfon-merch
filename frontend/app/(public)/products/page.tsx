@@ -1,8 +1,5 @@
 'use client'
 
-// ← This is the critical fix. Without it, Next.js statically prerenders
-// this page at build time. useSearchParams() then throws at runtime because
-// search params don't exist in a static context, crashing into error.tsx.
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -17,31 +14,18 @@ const FilterSidebar     = dynamic_import(() => import('@/components/products/Fil
 const FilterBottomSheet = dynamic_import(() => import('@/components/products/FilterBottomSheet'), { ssr: false })
 
 interface Variant {
-  id:             string
-  size:           string
-  color:          string
-  stock_qty:      number
-  price_override: number | null
+  id: string; size: string; color: string
+  stock_qty: number; price_override: number | null
 }
-
 interface Product {
-  id:                string
-  name:              string
-  base_price:        number
-  image_url:         string | null
-  stock_type:        'stock' | 'preorder' | 'both'
-  is_available:      boolean
-  product_variants?: Variant[]
+  id: string; name: string; base_price: number
+  image_url: string | null; stock_type: 'stock' | 'preorder' | 'both'
+  is_available: boolean; product_variants?: Variant[]
 }
-
-interface Category {
-  id:   string
-  name: string
-}
+interface Category { id: string; name: string }
 
 function ProductsContent() {
   const params = useSearchParams()
-
   const [products,   setProducts]   = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading,    setLoading]    = useState(true)
@@ -53,21 +37,19 @@ function ProductsContent() {
     if (params.get('category')) query.set('category_id', params.get('category')!)
     if (params.get('sort'))     query.set('sort',        params.get('sort')!)
     if (params.get('stock'))    query.set('stock_type',  params.get('stock')!)
-
     const qs = query.toString()
     setLoading(true)
     setError(null)
-
     Promise.all([
       apiFetch<{ data: Product[] }>(`/products${qs ? `?${qs}` : ''}`),
       apiFetch<{ data: Category[] }>('/categories'),
     ])
       .then(([pRes, cRes]) => {
-        setProducts(pRes.data   ?? (pRes as any) ?? [])
-        setCategories(cRes.data ?? (cRes as any) ?? [])
+        setProducts((pRes as any).data ?? pRes ?? [])
+        setCategories((cRes as any).data ?? cRes ?? [])
       })
       .catch(err => {
-        console.error('[ProductsPage] fetch error:', err)
+        console.error('[ProductsPage]', err)
         setError('Failed to load products. Please try again.')
       })
       .finally(() => setLoading(false))
@@ -75,126 +57,66 @@ function ProductsContent() {
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '80px 16px 120px' }}>
-
-      {/* Page header */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
-          fontFamily:    'var(--font-body)',
-          fontSize:      '11px',
-          fontWeight:    600,
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-          color:         'var(--accent)',
-          marginBottom:  '6px',
+          fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600,
+          letterSpacing: '0.22em', textTransform: 'uppercase',
+          color: 'var(--accent)', marginBottom: '6px',
         }}>
           TACSFON Merch
         </p>
-
-        <div style={{
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'space-between',
-          gap:            '12px',
-          flexWrap:       'wrap',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <h1 style={{
-            fontFamily:    'var(--font-display)',
-            fontSize:      'clamp(36px, 6vw, 64px)',
-            lineHeight:    1,
-            letterSpacing: '0.04em',
-            color:         'var(--text-primary)',
-            margin:        0,
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 6vw, 64px)',
+            lineHeight: 1, letterSpacing: '0.04em', color: 'var(--text-primary)', margin: 0,
           }}>
             ALL PRODUCTS
           </h1>
-
-          <button
-            onClick={() => setSheetOpen(true)}
-            className="filter-trigger"
-            aria-label="Open filters"
-            style={{
-              display:       'none',
-              alignItems:    'center',
-              gap:           '8px',
-              fontFamily:    'var(--font-body)',
-              fontSize:      '12px',
-              fontWeight:    600,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color:         'var(--text-primary)',
-              background:    'var(--bg-surface)',
-              border:        '1px solid var(--border)',
-              padding:       '10px 16px',
-              cursor:        'pointer',
-              minHeight:     '44px',
-              whiteSpace:    'nowrap',
-            }}
-          >
+          <button onClick={() => setSheetOpen(true)} className="filter-trigger"
+            aria-label="Open filters" style={{
+              display: 'none', alignItems: 'center', gap: '8px',
+              fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: 'var(--text-primary)', background: 'var(--bg-surface)',
+              border: '1px solid var(--border)', padding: '10px 16px',
+              cursor: 'pointer', minHeight: '44px', whiteSpace: 'nowrap',
+            }}>
             <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
             Filter
           </button>
         </div>
-
         <div aria-hidden="true" style={{
-          height:     '1px',
-          background: 'linear-gradient(90deg, var(--accent), transparent)',
-          marginTop:  '14px',
-          maxWidth:   '200px',
+          height: '1px', background: 'linear-gradient(90deg, var(--accent), transparent)',
+          marginTop: '14px', maxWidth: '200px',
         }} />
       </div>
 
-      {/* Error state */}
       {error && (
-        <div style={{
-          padding:    '48px 0',
-          textAlign:  'center',
-          fontFamily: 'var(--font-body)',
-          fontSize:   '14px',
-          color:      'var(--danger)',
-        }}>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--danger)' }}>
           <p style={{ marginBottom: '16px' }}>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              background:    'none',
-              border:        '1px solid var(--border)',
-              color:         'var(--text-muted)',
-              padding:       '10px 24px',
-              fontFamily:    'var(--font-body)',
-              fontSize:      '12px',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              cursor:        'pointer',
-            }}
-          >
+          <button onClick={() => window.location.reload()} style={{
+            background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)',
+            padding: '10px 24px', fontFamily: 'var(--font-body)', fontSize: '12px',
+            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          }}>
             Try Again
           </button>
         </div>
       )}
 
-      {/* Layout */}
       {!error && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '40px' }}>
           <FilterSidebar categories={categories} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            {loading
-              ? <ProductsSkeleton />
-              : <ProductsGrid products={products} totalCount={products.length} />
-            }
+            {loading ? <ProductsSkeleton /> : <ProductsGrid products={products} totalCount={products.length} />}
           </div>
         </div>
       )}
 
-      <FilterBottomSheet
-        categories={categories}
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-      />
+      <FilterBottomSheet categories={categories} open={sheetOpen} onClose={() => setSheetOpen(false)} />
 
       <style>{`
-        @media (max-width: 1023px) {
-          .filter-trigger { display: inline-flex !important; }
-        }
+        @media (max-width: 1023px) { .filter-trigger { display: inline-flex !important; } }
       `}</style>
     </div>
   )
