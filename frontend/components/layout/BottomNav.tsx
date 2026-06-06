@@ -2,22 +2,24 @@
 
 /**
  * BottomNav
- * Green background, white icons and labels.
- * Active tab: brighter white + underline indicator.
- * Cart badge: white background, green text.
+ * Deep premium green background.
+ * BLACK icons and labels for maximum contrast/visibility.
+ * Active tab: full black. Idle: 55% black opacity.
+ * Cart badge: black bg, white text.
  */
 
 import { usePathname } from 'next/navigation'
 import { useCartStore } from '@/store/cart'
 
-const NAV_BG       = '#3DBA6F'   /* solid accent green */
-const ICON_ACTIVE  = '#FFFFFF'
-const ICON_IDLE    = 'rgba(255,255,255,0.6)'
-const LABEL_ACTIVE = '#FFFFFF'
-const LABEL_IDLE   = 'rgba(255,255,255,0.6)'
-const INDICATOR    = '#FFFFFF'
-const BADGE_BG     = '#FFFFFF'
-const BADGE_TEXT   = '#3DBA6F'
+/* Premium green — richer/deeper than #3DBA6F */
+const NAV_BG      = '#2A9E5A'
+const ICON_ACTIVE = '#0A0A0A'
+const ICON_IDLE   = 'rgba(0,0,0,0.5)'
+const LBL_ACTIVE  = '#0A0A0A'
+const LBL_IDLE    = 'rgba(0,0,0,0.5)'
+const INDICATOR   = '#0A0A0A'
+const BADGE_BG    = '#0A0A0A'
+const BADGE_TEXT  = '#FFFFFF'
 
 const TABS = [
   {
@@ -103,16 +105,13 @@ export default function BottomNav() {
         className="bottom-nav"
         style={{
           position:   'fixed',
-          bottom:     0,
-          left:       0,
-          right:      0,
+          bottom:     0, left: 0, right: 0,
           zIndex:     90,
-          height:     '60px',
+          height:     '62px',
           display:    'flex',
           alignItems: 'stretch',
           background: NAV_BG,
-          borderTop:  'none',
-          boxShadow:  '0 -2px 12px rgba(61,186,111,0.25)',
+          boxShadow:  '0 -4px 20px rgba(42,158,90,0.4)',
         }}
       >
         {TABS.map(tab => {
@@ -133,11 +132,9 @@ export default function BottomNav() {
                 gap:            '3px',
                 textDecoration: 'none',
                 position:       'relative',
-                transition:     'opacity 150ms ease',
-                opacity:        active ? 1 : 0.85,
               }}
             >
-              {/* Active indicator — white bar at top */}
+              {/* Active indicator — black bar at top */}
               {active && (
                 <span style={{
                   position:     'absolute',
@@ -145,7 +142,7 @@ export default function BottomNav() {
                   left:         '50%',
                   transform:    'translateX(-50%)',
                   width:        '28px',
-                  height:       '2px',
+                  height:       '3px',
                   background:   INDICATOR,
                   borderRadius: '0 0 3px 3px',
                 }} />
@@ -186,7 +183,7 @@ export default function BottomNav() {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 lineHeight:    1,
-                color:         active ? LABEL_ACTIVE : LABEL_IDLE,
+                color:         active ? LBL_ACTIVE : LBL_IDLE,
               }}>
                 {tab.label}
               </span>
