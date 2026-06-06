@@ -1,19 +1,14 @@
 'use client'
 
-// force-dynamic prevents Next.js from statically prerendering this page.
-// useSearchParams() requires dynamic rendering.
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams }               from 'next/navigation'
 import dynamic_import                    from 'next/dynamic'
 import { SlidersHorizontal }             from 'lucide-react'
-import { apiFetch }                      from '@/lib/api/fetch'
 import ProductsGrid                      from '@/components/products/ProductsGrid'
 import ProductsSkeleton                  from '@/components/products/ProductsSkeleton'
 
-// ssr:false — FilterSidebar & FilterBottomSheet use router hooks that
-// throw during server-side rendering.
 const FilterSidebar     = dynamic_import(
   () => import('@/components/products/FilterSidebar'),
   { ssr: false }
@@ -34,6 +29,21 @@ interface Product {
 }
 interface Category { id: string; name: string }
 
+// Public fetch — no auth header needed for product catalogue
+async function publicFetch(path: string): Promise<any> {
+  const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+  const url  = `${base}/api${path.startsWith('/') ? path : '/' + path}`
+  const res  = await fetch(url, {
+    method:      'GET',
+    credentials: 'include',   // send cookies for session if present
+    headers:     { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`)
+  const body = await res.json()
+  // Unwrap { data: [...] } or return raw array
+  return Array.isArray(body) ? body : (body?.data ?? body)
+}
+
 function ProductsContent() {
   const params = useSearchParams()
   const [products,   setProducts]   = useState<Product[]>([])
@@ -53,19 +63,16 @@ function ProductsContent() {
     setError(null)
 
     Promise.all([
-      apiFetch<any>(`/products${qs ? `?${qs}` : ''}`),
-      apiFetch<any>('/categories'),
+      publicFetch(`/products${qs ? `?${qs}` : ''}`),
+      publicFetch('/categories'),
     ])
-      .then(([pRes, cRes]) => {
-        // apiFetch already unwraps .data — handle both shapes
-        const prods = Array.isArray(pRes) ? pRes : (pRes?.data ?? [])
-        const cats  = Array.isArray(cRes) ? cRes : (cRes?.data ?? [])
-        setProducts(prods)
-        setCategories(cats)
+      .then(([prods, cats]) => {
+        setProducts(Array.isArray(prods) ? prods : [])
+        setCategories(Array.isArray(cats) ? cats : [])
       })
       .catch(err => {
-        console.error('[ProductsPage] fetch error:', err)
-        setError('Failed to load products. Please try again.')
+        console.error('[ProductsPage]', err)
+        setError(`Failed to load products: ${err.message}`)
       })
       .finally(() => setLoading(false))
   }, [params])
@@ -82,60 +89,41 @@ function ProductsContent() {
         }}>
           TACSFON Merch
         </p>
-
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
           <h1 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 6vw, 64px)',
-            lineHeight: 1, letterSpacing: '0.04em',
-            color: 'var(--text-primary)', margin: 0,
+            lineHeight: 1, letterSpacing: '0.04em', color: 'var(--text-primary)', margin: 0,
           }}>
             ALL PRODUCTS
           </h1>
-
-          <button
-            onClick={() => setSheetOpen(true)}
-            className="filter-trigger"
-            aria-label="Open filters"
-            style={{
+          <button onClick={() => setSheetOpen(true)} className="filter-trigger"
+            aria-label="Open filters" style={{
               display: 'none', alignItems: 'center', gap: '8px',
               fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600,
               letterSpacing: '0.1em', textTransform: 'uppercase',
               color: 'var(--text-primary)', background: 'var(--bg-surface)',
               border: '1px solid var(--border)', padding: '10px 16px',
               cursor: 'pointer', minHeight: '44px', whiteSpace: 'nowrap',
-            }}
-          >
+            }}>
             <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
             Filter
           </button>
         </div>
-
         <div aria-hidden="true" style={{
-          height: '1px',
-          background: 'linear-gradient(90deg, var(--accent), transparent)',
+          height: '1px', background: 'linear-gradient(90deg, var(--accent), transparent)',
           marginTop: '14px', maxWidth: '200px',
         }} />
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{
-          padding: '48px 0', textAlign: 'center',
-          fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--danger)',
-        }}>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--danger)' }}>
           <p style={{ marginBottom: '16px' }}>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              background: 'none', border: '1px solid var(--border)',
-              color: 'var(--text-muted)', padding: '10px 24px',
-              fontFamily: 'var(--font-body)', fontSize: '12px',
-              letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
-            }}
-          >
+          <button onClick={() => window.location.reload()} style={{
+            background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)',
+            padding: '10px 24px', fontFamily: 'var(--font-body)', fontSize: '12px',
+            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          }}>
             Try Again
           </button>
         </div>
