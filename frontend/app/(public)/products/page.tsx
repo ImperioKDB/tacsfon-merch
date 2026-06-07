@@ -38,7 +38,6 @@ function ProductsContent() {
   const [sheetOpen,  setSheetOpen]  = useState(false)
 
   useEffect(() => {
-    // Build query params for filtering
     const query = new URLSearchParams()
     if (params.get('category')) query.set('category_id', params.get('category')!)
     if (params.get('sort'))     query.set('sort',        params.get('sort')!)
@@ -48,16 +47,21 @@ function ProductsContent() {
     setLoading(true)
     setError(null)
 
-    // Call our same-domain Next.js proxy routes — no CORS
     Promise.all([
       fetch(`/api/proxy/products${qs ? `?${qs}` : ''}`).then(r => r.json()),
       fetch('/api/proxy/categories').then(r => r.json()),
     ])
       .then(([pRes, cRes]) => {
-        const prods = Array.isArray(pRes) ? pRes : (pRes?.data ?? [])
-        const cats  = Array.isArray(cRes) ? cRes : (cRes?.data ?? [])
-        setProducts(prods)
-        setCategories(cats)
+        // Products response shape:
+        //   { success: true, data: { products: [...], total: N } }
+        const prods = pRes?.data?.products ?? pRes?.data ?? pRes ?? []
+
+        // Categories response shape:
+        //   { success: true, data: [...] }
+        const cats = cRes?.data?.categories ?? cRes?.data ?? cRes ?? []
+
+        setProducts(Array.isArray(prods) ? prods : [])
+        setCategories(Array.isArray(cats) ? cats : [])
       })
       .catch(err => {
         console.error('[ProductsPage]', err)
@@ -72,48 +76,94 @@ function ProductsContent() {
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
-          fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600,
-          letterSpacing: '0.22em', textTransform: 'uppercase',
-          color: 'var(--accent)', marginBottom: '6px',
+          fontFamily:    'var(--font-body)',
+          fontSize:      '11px',
+          fontWeight:    600,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color:         'var(--accent)',
+          marginBottom:  '6px',
         }}>
           TACSFON Merch
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+
+        <div style={{
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'space-between',
+          gap:            '12px',
+          flexWrap:       'wrap',
+        }}>
           <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 6vw, 64px)',
-            lineHeight: 1, letterSpacing: '0.04em', color: 'var(--text-primary)', margin: 0,
+            fontFamily:    'var(--font-display)',
+            fontSize:      'clamp(36px, 6vw, 64px)',
+            lineHeight:    1,
+            letterSpacing: '0.04em',
+            color:         'var(--text-primary)',
+            margin:        0,
           }}>
             ALL PRODUCTS
           </h1>
-          <button onClick={() => setSheetOpen(true)} className="filter-trigger"
-            aria-label="Open filters" style={{
-              display: 'none', alignItems: 'center', gap: '8px',
-              fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: 'var(--text-primary)', background: 'var(--bg-surface)',
-              border: '1px solid var(--border)', padding: '10px 16px',
-              cursor: 'pointer', minHeight: '44px', whiteSpace: 'nowrap',
-            }}>
+
+          <button
+            onClick={() => setSheetOpen(true)}
+            className="filter-trigger"
+            aria-label="Open filters"
+            style={{
+              display:       'none',
+              alignItems:    'center',
+              gap:           '8px',
+              fontFamily:    'var(--font-body)',
+              fontSize:      '12px',
+              fontWeight:    600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color:         'var(--text-primary)',
+              background:    'var(--bg-surface)',
+              border:        '1px solid var(--border)',
+              padding:       '10px 16px',
+              cursor:        'pointer',
+              minHeight:     '44px',
+              whiteSpace:    'nowrap',
+            }}
+          >
             <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
             Filter
           </button>
         </div>
+
         <div aria-hidden="true" style={{
-          height: '1px',
+          height:     '1px',
           background: 'linear-gradient(90deg, var(--accent), transparent)',
-          marginTop: '14px', maxWidth: '200px',
+          marginTop:  '14px',
+          maxWidth:   '200px',
         }} />
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--danger)' }}>
+        <div style={{
+          padding:    '48px 0',
+          textAlign:  'center',
+          fontFamily: 'var(--font-body)',
+          fontSize:   '14px',
+          color:      'var(--danger)',
+        }}>
           <p style={{ marginBottom: '16px' }}>{error}</p>
-          <button onClick={() => window.location.reload()} style={{
-            background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)',
-            padding: '10px 24px', fontFamily: 'var(--font-body)', fontSize: '12px',
-            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
-          }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background:    'none',
+              border:        '1px solid var(--border)',
+              color:         'var(--text-muted)',
+              padding:       '10px 24px',
+              fontFamily:    'var(--font-body)',
+              fontSize:      '12px',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor:        'pointer',
+            }}
+          >
             Try Again
           </button>
         </div>
