@@ -1,70 +1,107 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { apiFetch, ApiError } from '@/lib/api/fetch'
-import { formatDate } from '@/lib/utils/formatters'
-import { createBrowserClient } from '@/lib/supabase/browser'
-import ConfirmDialog from '@/components/admin/ConfirmDialog'
-import AdminTable, { type Column } from '@/components/admin/AdminTable'
-interface AP { id: string; full_name: string; email: string; created_at: string }
+
+import { useEffect, useState, useCallback } from 'react'
+import { Trash2, UserPlus, Users, Loader2, ShieldCheck } from 'lucide-react'
+import { toast }                             from 'sonner'
+import { apiFetch }                          from '@/lib/api/fetch'
+import ConfirmDialog                         from '@/components/admin/ConfirmDialog'
+
+const A = '#5B8CFF'
+
 export default function AdminsPage() {
-  const [admins, setAdmins]   = useState<AP[]>([])
-  const [loading, setLoad]    = useState(true)
-  const [myId, setMyId]       = useState<string|null>(null)
-  const [modal, setModal]     = useState(false)
-  const [form, setForm]       = useState({email:'',full_name:'',password:''})
-  const [saving, setSaving]   = useState(false)
-  const [del, setDel]         = useState<AP|null>(null)
-  useEffect(() => {
-    async function load() {
-      const sb = createBrowserClient()
-      const { data: { session } } = await sb.auth.getSession()
-      setMyId(session?.user.id??null)
-      const { data, error } = await sb.from('profiles').select('id,full_name,email,created_at').eq('role','admin').order('created_at',{ascending:false})
-      if (error) toast.error('Failed.'); else setAdmins(data as AP[])
-      setLoad(false)
-    }
-    load()
+  const [admins,  setAdmins]  = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [email,   setEmail]   = useState('')
+  const [adding,  setAdding]  = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try { const d = await apiFetch<any>('/admin/admins'); setAdmins(d.admins ?? d.data ?? []) }
+    catch { toast.error('Failed to load admins') }
+    finally { setLoading(false) }
   }, [])
-  async function add() {
-    if (!form.email.trim()||!form.full_name.trim()||form.password.length<8) { toast.error('All fields required. Password min 8 chars.'); return }
-    setSaving(true)
-    try { const a = await apiFetch<AP>('/admin/admins',{method:'POST',body:JSON.stringify(form)}); setAdmins(p=>[a,...p]); setModal(false); setForm({email:'',full_name:'',password:''}); toast.success('Admin created.') }
-    catch (err) { toast.error(err instanceof ApiError ? err.message : 'Failed.') } finally { setSaving(false) }
+  useEffect(() => { load() }, [load])
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setAdding(true)
+    try {
+      await apiFetch('/admin/admins', { method: 'POST', body: JSON.stringify({ email: email.trim() }) })
+      toast.success('Admin added')
+      setEmail('')
+      load()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setAdding(false) }
   }
-  async function remove() {
-    if (!del) return
-    try { await apiFetch(`/admin/admins/${del.id}`,{method:'DELETE'}); setAdmins(p=>p.filter(a=>a.id!==del.id)); toast.success('Deleted.') }
-    catch (err) { toast.error(err instanceof ApiError ? err.message : 'Failed.') } finally { setDel(null) }
+
+  async function handleRemove() {
+    if (!deleteId) return
+    try {
+      await apiFetch(`/admin/admins/${deleteId}`, { method: 'DELETE' })
+      toast.success('Admin removed')
+      setDeleteId(null)
+      load()
+    } catch (err: any) { toast.error(err.message) }
   }
-  const iS: React.CSSProperties = {width:'100%',padding:'9px 12px',background:'var(--bg-base)',border:'1px solid var(--border)',color:'var(--text-primary)',fontSize:'0.875rem',fontFamily:'var(--font-body)',outline:'none',boxSizing:'border-box',marginTop:'5px'}
-  const columns: Column<AP>[] = [
-    {key:'name', label:'Name',   render: r => r.full_name},
-    {key:'email',label:'Email',  render: r => r.email},
-    {key:'date', label:'Joined', render: r => formatDate(r.created_at)},
-    {key:'act',  label:'',       render: r => <button onClick={()=>setDel(r)} disabled={r.id===myId} title={r.id===myId?'Cannot delete own account':'Delete'} style={{background:'none',border:'none',cursor:r.id===myId?'not-allowed':'pointer',color:r.id===myId?'var(--text-muted)':'var(--danger)',display:'flex',padding:'4px'}}><Trash2 size={15} strokeWidth={1.5}/></button>},
-  ]
+
   return (
-    <div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px'}}>
-        <h1 style={{fontSize:'1.375rem',fontWeight:700,fontFamily:'var(--font-body)',color:'var(--text-primary)'}}>Admins</h1>
-        <button onClick={()=>setModal(true)} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',background:'var(--accent)',color:'#0A0A0F',border:'none',cursor:'pointer',fontSize:'0.8125rem',fontWeight:600,fontFamily:'var(--font-body)'}}><Plus size={15} strokeWidth={2}/>Add Admin</button>
+    <div style={{ padding: '24px 16px 80px', maxWidth: '600px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontFamily: 'var(--font-display)', fontSize: 'clamp(22px,5vw,32px)', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', lineHeight: 1 }}>Admins</h1>
+        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.2em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Manage admin access</p>
+        <div style={{ height: '2px', background: `linear-gradient(90deg, ${A}, transparent)`, marginTop: '14px', maxWidth: '200px' }} />
       </div>
-      <AdminTable columns={columns} rows={admins} loading={loading} emptyMessage="No admins." />
-      {modal && (
-        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)'}} onClick={()=>setModal(false)}/>
-          <div style={{position:'relative',width:'400px',maxWidth:'95vw',background:'var(--bg-surface)',border:'1px solid var(--border)',padding:'24px',zIndex:1}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}><h2 style={{fontSize:'1.125rem',fontWeight:700,fontFamily:'var(--font-body)',color:'var(--text-primary)'}}>Add Admin</h2><button onClick={()=>setModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',display:'flex'}}><X size={18} strokeWidth={1.5}/></button></div>
-            <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-              {[{l:'Full Name',k:'full_name',t:'text'},{l:'Email',k:'email',t:'email'},{l:'Password (min 8 chars)',k:'password',t:'password'}].map(({l,k,t})=><div key={k}><label style={{fontSize:'0.6875rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--text-muted)',fontFamily:'var(--font-body)'}}>{l}</label><input type={t} style={iS} value={(form as any)[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></div>)}
-              <button onClick={add} disabled={saving} style={{padding:'10px',background:saving?'var(--bg-elevated)':'var(--accent)',color:saving?'var(--text-muted)':'#0A0A0F',border:'none',cursor:saving?'not-allowed':'pointer',fontWeight:600,fontSize:'0.875rem',fontFamily:'var(--font-body)',marginTop:'4px'}}>{saving?'Creating…':'Create Admin'}</button>
+
+      {/* Add form */}
+      <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@email.com" required
+          style={{ flex: 1, padding: '12px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', borderRadius: 0 }}
+          onFocus={e => (e.target.style.borderColor = A)} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+        <button type="submit" disabled={adding} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '12px 20px', background: A, border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: adding ? 'not-allowed' : 'pointer', opacity: adding ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+          {adding ? <Loader2 size={13} style={{ animation: 'admin-spin 0.8s linear infinite' }} /> : <UserPlus size={13} />}
+          Add
+        </button>
+      </form>
+
+      {/* List */}
+      {loading ? (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {[1,2].map(i => <div key={i} style={{ height: '64px', background: 'var(--bg-surface)', border: '1px solid var(--border)', animation: 'admin-pulse 1.4s infinite' }} />)}
+        </div>
+      ) : admins.length === 0 ? (
+        <div style={{ padding: '48px 20px', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <Users size={28} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>No admins found</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '2px', background: 'var(--border)' }}>
+          {admins.map((a: any) => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', background: 'var(--bg-surface)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${A}20`, border: `1px solid ${A}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 700, color: A }}>{(a.full_name || a.email || 'A').charAt(0).toUpperCase()}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: '0 0 2px', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{a.full_name || '—'}</p>
+                <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{a.email}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: `${A}12`, border: `1px solid ${A}30`, color: A, fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  <ShieldCheck size={9} /> Admin
+                </span>
+                <button onClick={() => setDeleteId(a.id)} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'rgba(224,82,82,0.08)', border: '1px solid rgba(224,82,82,0.3)', color: 'var(--danger)', fontFamily: 'var(--font-body)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  <Trash2 size={10} /> Remove
+                </button>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       )}
-      {del && <ConfirmDialog title="Delete Admin?" message={`${del.full_name}'s admin access will be removed.`} confirmLabel="Delete Admin" variant="danger" onConfirm={remove} onCancel={()=>setDel(null)}/>}
+      {deleteId && (
+        <ConfirmDialog title="Remove Admin" message="This will revoke admin access. The user will no longer be able to access the admin dashboard." confirmLabel="Remove" variant="danger" onConfirm={handleRemove} onCancel={() => setDeleteId(null)} />
+      )}
+      <style>{`@keyframes admin-pulse{0%,100%{opacity:1}50%{opacity:.5}} @keyframes admin-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
