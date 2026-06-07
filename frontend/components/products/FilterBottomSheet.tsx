@@ -1,15 +1,12 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useCallback, useEffect }                  from 'react'
-import { X, SlidersHorizontal }                    from 'lucide-react'
+import { useCallback }                              from 'react'
+import { SlidersHorizontal, X }                    from 'lucide-react'
 
-interface Category {
-  id:   string
-  name: string
-}
+interface Category { id: string; name: string }
 
-interface FilterBottomSheetProps {
+interface Props {
   categories: Category[]
   open:       boolean
   onClose:    () => void
@@ -28,7 +25,7 @@ const STOCK_OPTIONS = [
   { value: 'preorder', label: 'Pre-order' },
 ]
 
-export default function FilterBottomSheet({ categories, open, onClose }: FilterBottomSheetProps) {
+export default function FilterBottomSheet({ categories, open, onClose }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
   const params   = useSearchParams()
@@ -36,19 +33,6 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
   const activeCategory = params.get('category') ?? 'all'
   const activeSort     = params.get('sort')     ?? 'newest'
   const activeStock    = params.get('stock')    ?? 'all'
-
-  // Lock body scroll when open
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [open])
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
 
   const update = useCallback((key: string, value: string) => {
     const next = new URLSearchParams(params.toString())
@@ -58,141 +42,113 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
       next.set(key, value)
     }
     router.push(`${pathname}?${next.toString()}`)
-  }, [params, pathname, router])
-
-  const clearAll = () => {
-    router.push(pathname)
     onClose()
-  }
+  }, [params, pathname, router, onClose])
 
+  const clearAll = () => { router.push(pathname); onClose() }
   const hasFilters = params.has('category') || params.has('sort') || params.has('stock')
+
+  if (!open) return null
 
   return (
     <>
       {/* Backdrop */}
       <div
         onClick={onClose}
-        aria-hidden="true"
         style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 40,
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'opacity 250ms ease',
+          position:   'fixed',
+          inset:      0,
+          zIndex:     200,
+          background: 'rgba(10,10,10,0.6)',
+          backdropFilter: 'blur(2px)',
         }}
       />
 
       {/* Sheet */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Filter products"
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          background: 'var(--bg-surface)',
-          borderTop: '1px solid var(--border)',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
-          maxHeight: '80dvh',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: '12px 12px 0 0',
-        }}
-      >
+      <div style={{
+        position:      'fixed',
+        bottom:        0,
+        left:          0,
+        right:         0,
+        zIndex:        201,
+        background:    'var(--bg-surface)',
+        borderTop:     '1px solid var(--border)',
+        borderRadius:  '16px 16px 0 0',
+        maxHeight:     '80dvh',
+        overflowY:     'auto',
+        /* Critical: pad bottom so content clears the 62px BottomNav */
+        paddingBottom: '80px',
+      }}>
         {/* Handle */}
-        <div
-          aria-hidden="true"
-          style={{
-            width: '36px',
-            height: '4px',
+        <div style={{
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          paddingTop:     '12px',
+          paddingBottom:  '4px',
+        }}>
+          <div style={{
+            width:        '36px',
+            height:       '4px',
             borderRadius: '2px',
-            background: 'var(--bg-elevated)',
-            margin: '12px auto 0',
-            flexShrink: 0,
-          }}
-        />
+            background:   'var(--border)',
+          }} />
+        </div>
 
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border)',
-            flexShrink: 0,
-          }}
-        >
+        <div style={{
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'space-between',
+          padding:        '12px 20px 16px',
+          borderBottom:   '1px solid var(--border)',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SlidersHorizontal size={14} style={{ color: '#3DBA6F' }} />
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '12px',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--text-primary)',
-              }}
-            >
+            <SlidersHorizontal size={15} style={{ color: 'var(--accent)' }} />
+            <span style={{
+              fontFamily:    'var(--font-body)',
+              fontSize:      '13px',
+              fontWeight:    700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color:         'var(--text-primary)',
+            }}>
               Filter &amp; Sort
             </span>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {hasFilters && (
-              <button
-                onClick={clearAll}
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '12px',
-                  color: '#3DBA6F',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  padding: 0,
-                  minHeight: '44px',
-                }}
-              >
-                Clear All
+              <button onClick={clearAll} style={{
+                fontFamily:     'var(--font-body)',
+                fontSize:       '11px',
+                color:          'var(--accent)',
+                background:     'none',
+                border:         'none',
+                cursor:         'pointer',
+                letterSpacing:  '0.08em',
+                textDecoration: 'underline',
+                padding:        0,
+              }}>
+                Clear
               </button>
             )}
-            <button
-              onClick={onClose}
-              aria-label="Close filter sheet"
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: '44px',
-                minHeight: '44px',
-              }}
-            >
+            <button onClick={onClose} style={{
+              background: 'none', border: 'none',
+              color: 'var(--text-muted)', cursor: 'pointer',
+              display: 'flex', padding: '4px',
+            }}>
               <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div style={{ overflowY: 'auto', padding: '20px', flex: 1 }}>
+        <div style={{ padding: '20px' }}>
 
-          {/* ── Category ── */}
-          <SheetSection label="Category">
+          {/* Category */}
+          <FilterSection label="Category">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {[{ id: 'all', name: 'All' }, ...categories].map((cat) => (
-                <Chip
+              {[{ id: 'all', name: 'All' }, ...categories].map(cat => (
+                <FilterChip
                   key={cat.id}
                   label={cat.name}
                   active={cat.id === activeCategory}
@@ -200,13 +156,13 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
                 />
               ))}
             </div>
-          </SheetSection>
+          </FilterSection>
 
-          {/* ── Sort ── */}
-          <SheetSection label="Sort By">
+          {/* Sort */}
+          <FilterSection label="Sort By">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {SORT_OPTIONS.map((opt) => (
-                <Chip
+              {SORT_OPTIONS.map(opt => (
+                <FilterChip
                   key={opt.value}
                   label={opt.label}
                   active={opt.value === activeSort}
@@ -214,13 +170,13 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
                 />
               ))}
             </div>
-          </SheetSection>
+          </FilterSection>
 
-          {/* ── Availability ── */}
-          <SheetSection label="Availability">
+          {/* Availability */}
+          <FilterSection label="Availability">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {STOCK_OPTIONS.map((opt) => (
-                <Chip
+              {STOCK_OPTIONS.map(opt => (
+                <FilterChip
                   key={opt.value}
                   label={opt.label}
                   active={opt.value === activeStock}
@@ -228,59 +184,26 @@ export default function FilterBottomSheet({ categories, open, onClose }: FilterB
                 />
               ))}
             </div>
-          </SheetSection>
-        </div>
+          </FilterSection>
 
-        {/* Done button */}
-        <div
-          style={{
-            padding: '16px 20px',
-            borderTop: '1px solid var(--border)',
-            flexShrink: 0,
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              width: '100%',
-              background: '#3DBA6F',
-              color: '#000',
-              border: 'none',
-              fontFamily: 'var(--font-body)',
-              fontSize: '13px',
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              padding: '16px',
-              cursor: 'pointer',
-              minHeight: '52px',
-              transition: 'background 150ms ease',
-            }}
-          >
-            View Results
-          </button>
         </div>
       </div>
     </>
   )
 }
 
-/* ── Sub-components ── */
-
-function SheetSection({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: '28px' }}>
-      <p
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: '10px',
-          fontWeight: 600,
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-          color: 'var(--text-muted)',
-          marginBottom: '12px',
-        }}
-      >
+    <div style={{ marginBottom: '24px' }}>
+      <p style={{
+        fontFamily:    'var(--font-body)',
+        fontSize:      '10px',
+        fontWeight:    600,
+        letterSpacing: '0.22em',
+        textTransform: 'uppercase',
+        color:         'var(--text-muted)',
+        marginBottom:  '12px',
+      }}>
         {label}
       </p>
       {children}
@@ -288,23 +211,22 @@ function SheetSection({ label, children }: { label: string; children: React.Reac
   )
 }
 
-function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       style={{
-        fontFamily: 'var(--font-body)',
-        fontSize: '12px',
-        fontWeight: active ? 600 : 400,
-        letterSpacing: '0.06em',
-        color: active ? '#000' : 'var(--text-muted)',
-        background: active ? '#3DBA6F' : 'var(--bg-elevated)',
-        border: active ? '1px solid #3DBA6F' : '1px solid var(--border)',
-        padding: '8px 16px',
-        cursor: 'pointer',
-        minHeight: '44px',
-        transition: 'background 150ms ease, color 150ms ease, border-color 150ms ease',
-        borderRadius: '2px',
+        padding:       '8px 16px',
+        fontFamily:    'var(--font-body)',
+        fontSize:      '13px',
+        fontWeight:    active ? 700 : 400,
+        background:    active ? 'var(--accent)'    : 'var(--bg-elevated)',
+        color:         active ? '#0A0A0A'           : 'var(--text-primary)',
+        border:        active ? '1px solid var(--accent)' : '1px solid var(--border)',
+        cursor:        'pointer',
+        transition:    'all 150ms ease',
+        whiteSpace:    'nowrap',
+        borderRadius:  '4px',
       }}
     >
       {label}
