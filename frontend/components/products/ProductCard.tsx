@@ -1,13 +1,13 @@
 'use client'
 
-import { useState }           from 'react'
-import Image                  from 'next/image'
-import Link                   from 'next/link'
-import { ShoppingBag, Loader2, Plus, Minus } from 'lucide-react'
-import { toast }              from 'sonner'
-import { resolveImageUrl }    from '@/lib/utils/formatters'
-import { useCartStore }       from '@/store/cart'
-import { apiFetch }           from '@/lib/api/fetch'
+import { useState }        from 'react'
+import Image               from 'next/image'
+import Link                from 'next/link'
+import { ShoppingBag, Loader2 } from 'lucide-react'
+import { toast }           from 'sonner'
+import { resolveImageUrl } from '@/lib/utils/formatters'
+import { useCartStore }    from '@/store/cart'
+import { apiFetch }        from '@/lib/api/fetch'
 
 interface Variant {
   id:             string
@@ -29,7 +29,6 @@ interface Product {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
-  const [qty,    setQty]    = useState(1)
   const [adding, setAdding] = useState(false)
   const increment = useCartStore(s => s.increment)
 
@@ -52,18 +51,22 @@ export default function ProductCard({ product }: { product: Product }) {
     : totalQty === 0                    ? { label: 'Sold Out',  color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.05)' }
     : null
 
-  const handleAdd = async (e: React.MouseEvent) => {
+  async function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    if (!firstVariant) return toast.error('Select a variant on the product page')
+    if (soldOut) return
+    if (!firstVariant) {
+      toast.error('Choose a variant on the product page')
+      return
+    }
     setAdding(true)
     try {
       await apiFetch('/cart/items', {
         method: 'POST',
-        body:   JSON.stringify({ variant_id: firstVariant.id, quantity: qty }),
+        body:   JSON.stringify({ variant_id: firstVariant.id, quantity: 1 }),
       })
-      increment(qty)
-      toast.success(`${product.name} \u00d7${qty} added to cart`)
+      increment(1)
+      toast.success(`${product.name} added to cart`)
     } catch (err: any) {
       toast.error(err.message || 'Sign in to add to cart')
     } finally {
@@ -71,29 +74,23 @@ export default function ProductCard({ product }: { product: Product }) {
     }
   }
 
-  const changeQty = (delta: number, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setQty(q => Math.max(1, Math.min(10, q + delta)))
-  }
-
   return (
     <div style={{
-      display:        'flex',
-      flexDirection:  'column',
-      background:     'var(--bg-surface)',
-      border:         '1px solid var(--border)',
-      overflow:       'hidden',
-      transition:     'border-color 200ms ease',
+      display:       'flex',
+      flexDirection: 'column',
+      background:    'var(--bg-surface)',
+      border:        '1px solid var(--border)',
+      overflow:      'hidden',
+      transition:    'border-color 200ms ease',
+      height:        '100%',
     }}
-    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
     >
-
-      {/* ── Image — tap navigates to product detail ── */}
+      {/* Image — tap goes to product detail */}
       <Link
         href={`/products/${product.id}`}
-        style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}
+        style={{ display: 'block', position: 'relative', aspectRatio: '3/4', overflow: 'hidden', flexShrink: 0 }}
         aria-label={`View ${product.name}`}
       >
         {img ? (
@@ -109,12 +106,9 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         ) : (
           <div style={{
-            width:           '100%',
-            height:          '100%',
-            background:      'var(--bg-elevated)',
-            display:         'flex',
-            alignItems:      'center',
-            justifyContent:  'center',
+            width: '100%', height: '100%',
+            background: 'var(--bg-elevated)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <ShoppingBag size={28} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
           </div>
@@ -141,12 +135,12 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
       </Link>
 
-      {/* ── Static label — always visible, no hover required ── */}
+      {/* Name + price label — always visible */}
       <div style={{
-        padding:       '10px 12px 8px',
-        borderTop:     '1px solid var(--border)',
-        borderBottom:  '1px solid var(--border)',
-        background:    'var(--bg-surface)',
+        padding:      '10px 12px 8px',
+        borderTop:    '1px solid var(--border)',
+        background:   'var(--bg-surface)',
+        flexShrink:   0,
       }}>
         <p style={{
           margin:        '0 0 3px',
@@ -173,109 +167,56 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
       </div>
 
-      {/* ── Action bar: qty stepper + Add to Cart ── */}
-      <div style={{
-        display:    'flex',
-        alignItems: 'center',
-        height:     '44px',
-        flexShrink: 0,
-      }}>
-        {/* Minus */}
-        <button
-          onClick={e => changeQty(-1, e)}
-          disabled={qty <= 1 || soldOut}
-          aria-label="Decrease quantity"
-          style={{
-            width:          '36px',
-            height:         '100%',
-            background:     'none',
-            border:         'none',
-            borderRight:    '1px solid var(--border)',
-            color:          qty <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
-            cursor:         qty <= 1 || soldOut ? 'default' : 'pointer',
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            flexShrink:     0,
-            opacity:        soldOut ? 0.35 : 1,
-            transition:     'color 120ms',
-          }}
-        >
-          <Minus size={11} strokeWidth={2} />
-        </button>
+      {/* Add to Cart button — full width, no stepper */}
+      <button
+        onClick={handleAdd}
+        disabled={adding || soldOut}
+        aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
+        style={{
+          width:         '100%',
+          height:        '44px',
+          flexShrink:    0,
+          background:    soldOut
+            ? 'var(--bg-elevated)'
+            : adding
+              ? '#2A9E5A'
+              : '#3DBA6F',
+          border:        'none',
+          borderTop:     '1px solid var(--border)',
+          color:         soldOut ? 'var(--text-muted)' : '#0A0A0A',
+          fontFamily:    'var(--font-body)',
+          fontSize:      '11px',
+          fontWeight:    700,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          cursor:        soldOut || adding ? 'not-allowed' : 'pointer',
+          display:       'flex',
+          alignItems:    'center',
+          justifyContent:'center',
+          gap:           '7px',
+          transition:    'background 150ms ease',
+          whiteSpace:    'nowrap',
+        }}
+        onMouseEnter={e => {
+          if (!soldOut && !adding)
+            (e.currentTarget as HTMLButtonElement).style.background = '#2A9E5A'
+        }}
+        onMouseLeave={e => {
+          if (!soldOut && !adding)
+            (e.currentTarget as HTMLButtonElement).style.background = '#3DBA6F'
+        }}
+      >
+        {adding ? (
+          <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+        ) : (
+          <ShoppingBag size={13} strokeWidth={2} />
+        )}
+        {soldOut ? 'Sold Out' : adding ? 'Adding…' : 'Add to Cart'}
+      </button>
 
-        {/* Qty */}
-        <span style={{
-          width:      '28px',
-          textAlign:  'center',
-          fontFamily: 'var(--font-body)',
-          fontSize:   '12px',
-          fontWeight: 700,
-          color:      soldOut ? 'var(--text-muted)' : 'var(--text-primary)',
-          flexShrink: 0,
-          opacity:    soldOut ? 0.35 : 1,
-        }}>
-          {qty}
-        </span>
-
-        {/* Plus */}
-        <button
-          onClick={e => changeQty(1, e)}
-          disabled={qty >= 10 || soldOut}
-          aria-label="Increase quantity"
-          style={{
-            width:          '36px',
-            height:         '100%',
-            background:     'none',
-            border:         'none',
-            borderRight:    '1px solid var(--border)',
-            color:          qty >= 10 ? 'var(--text-muted)' : 'var(--text-primary)',
-            cursor:         qty >= 10 || soldOut ? 'default' : 'pointer',
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            flexShrink:     0,
-            opacity:        soldOut ? 0.35 : 1,
-            transition:     'color 120ms',
-          }}
-        >
-          <Plus size={11} strokeWidth={2} />
-        </button>
-
-        {/* Add to cart — fills remaining space */}
-        <button
-          onClick={handleAdd}
-          disabled={adding || soldOut}
-          aria-label={soldOut ? 'Sold out' : `Add ${product.name} to cart`}
-          style={{
-            flex:           1,
-            height:         '100%',
-            background:     soldOut ? 'transparent' : adding ? 'var(--accent-hover)' : 'var(--accent)',
-            border:         'none',
-            color:          soldOut ? 'var(--text-muted)' : '#0A0A0A',
-            fontFamily:     'var(--font-body)',
-            fontSize:       '10px',
-            fontWeight:     700,
-            letterSpacing:  '0.1em',
-            textTransform:  'uppercase',
-            cursor:         soldOut || adding ? 'not-allowed' : 'pointer',
-            opacity:        soldOut ? 0.4 : 1,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            gap:            '5px',
-            whiteSpace:     'nowrap',
-            transition:     'background 150ms, opacity 150ms',
-          }}
-        >
-          {adding
-            ? <Loader2 size={11} className="animate-spin" />
-            : <ShoppingBag size={11} strokeWidth={2} />
-          }
-          {soldOut ? 'Sold Out' : adding ? 'Adding…' : 'Add to Cart'}
-        </button>
-      </div>
-
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
