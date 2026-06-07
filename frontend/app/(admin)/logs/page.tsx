@@ -1,54 +1,122 @@
 'use client'
+
 import { useEffect, useState, useCallback } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { toast } from 'sonner'
+import { ChevronDown, ChevronRight, Activity } from 'lucide-react'
+import { toast }   from 'sonner'
 import { apiFetch } from '@/lib/api/fetch'
-import { formatDateTime } from '@/lib/utils/formatters'
-interface LR { id: string; action: string; details: Record<string,unknown>; created_at: string; admin: { full_name: string; email: string } | null }
-interface PM { page: number; total_pages: number }
+import { formatDate } from '@/lib/utils/formatters'
+
+const A = '#5B8CFF'
+
+function formatDateTime(s: string) {
+  if (!s) return '—'
+  return new Date(s).toLocaleString('en-NG', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+interface LR { id: string; action: string; created_at: string; admin?: { full_name: string }; details?: any }
+interface PM { total_pages: number; page: number }
+
 export default function LogsPage() {
-  const [logs, setLogs]     = useState<LR[]>([])
-  const [loading, setLoad]  = useState(true)
-  const [filter, setFilter] = useState('')
-  const [page, setPage]     = useState(1)
-  const [meta, setMeta]     = useState<PM|null>(null)
-  const [exp, setExp]       = useState<string|null>(null)
+  const [logs,    setLogs]    = useState<LR[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter,  setFilter]  = useState('')
+  const [page,    setPage]    = useState(1)
+  const [meta,    setMeta]    = useState<PM | null>(null)
+  const [exp,     setExp]     = useState<string | null>(null)
+
   const load = useCallback(async (p = 1) => {
-    setLoad(true)
-    try { const q = new URLSearchParams({page:String(p),limit:'50'}); if (filter.trim()) q.set('action',filter.trim()); const d = await apiFetch<{logs:LR[];pagination:PM}>(`/admin/logs?${q}`); setLogs(d.logs); setMeta(d.pagination); setPage(p) }
-    catch { toast.error('Failed.') } finally { setLoad(false) }
+    setLoading(true)
+    try {
+      const q = new URLSearchParams({ page: String(p), limit: '50' })
+      if (filter.trim()) q.set('action', filter.trim())
+      const d = await apiFetch<{ logs: LR[]; pagination: PM }>(`/admin/logs?${q}`)
+      setLogs(d.logs ?? [])
+      setMeta(d.pagination ?? null)
+      setPage(p)
+    } catch { toast.error('Failed to load logs') }
+    finally { setLoading(false) }
   }, [filter])
+
   useEffect(() => { load(1) }, [load])
-  const th: React.CSSProperties = {padding:'10px 14px',textAlign:'left',fontSize:'0.6875rem',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--text-muted)',borderBottom:'1px solid var(--border)',whiteSpace:'nowrap'}
+
   return (
-    <div>
-      <h1 style={{fontSize:'1.375rem',fontWeight:700,fontFamily:'var(--font-body)',color:'var(--text-primary)',marginBottom:'20px'}}>Audit Logs</h1>
-      <div style={{marginBottom:'20px'}}>
-        <input placeholder="Filter by action (e.g. UPDATE_PAYMENT_STATUS)…" value={filter} onChange={e=>setFilter(e.target.value)} onKeyDown={e=>e.key==='Enter'&&load(1)} style={{width:'340px',padding:'9px 12px',background:'var(--bg-surface)',border:'1px solid var(--border)',color:'var(--text-primary)',fontSize:'0.875rem',fontFamily:'var(--font-body)',outline:'none',boxSizing:'border-box'}}/>
+    <div style={{ padding: '24px 16px 80px', maxWidth: '900px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontFamily: 'var(--font-display)', fontSize: 'clamp(22px,5vw,32px)', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', lineHeight: 1 }}>Audit Logs</h1>
+        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.2em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Admin action trail</p>
+        <div style={{ height: '2px', background: `linear-gradient(90deg, ${A}, transparent)`, marginTop: '14px', maxWidth: '200px' }} />
       </div>
-      <div style={{border:'1px solid var(--border)',overflowX:'auto'}}>
-        <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.8125rem',fontFamily:'var(--font-body)'}}>
-          <thead><tr style={{background:'var(--bg-elevated)'}}>{['Admin','Action','Date','Details'].map(h=><th key={h} style={th}>{h}</th>)}</tr></thead>
-          <tbody>
-            {loading ? Array.from({length:8},(_,i)=><tr key={i}><td colSpan={4} style={{padding:'12px 14px'}}><div className="animate-pulse" style={{height:'16px',background:'var(--bg-elevated)',width:'70%'}}/></td></tr>)
-             : logs.length===0 ? <tr><td colSpan={4} style={{padding:'32px',textAlign:'center',color:'var(--text-muted)'}}>No logs found.</td></tr>
-             : logs.flatMap(log => [
-               <tr key={log.id} style={{borderBottom:'1px solid var(--border)',background:'var(--bg-surface)'}}>
-                 <td style={{padding:'10px 14px',color:'var(--text-primary)'}}>{log.admin?.full_name??'—'}</td>
-                 <td style={{padding:'10px 14px',color:'var(--accent)',fontWeight:500}}>{log.action}</td>
-                 <td style={{padding:'10px 14px',color:'var(--text-muted)',whiteSpace:'nowrap'}}>{formatDateTime(log.created_at)}</td>
-                 <td style={{padding:'10px 14px'}}><button onClick={()=>setExp(p=>p===log.id?null:log.id)} style={{display:'flex',alignItems:'center',gap:'4px',background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:'0.75rem',fontFamily:'var(--font-body)',padding:0}}>{exp===log.id?<ChevronDown size={13}/>:<ChevronRight size={13}/>}{exp===log.id?'Hide':'Show'}</button></td>
-               </tr>,
-               ...(exp===log.id ? [<tr key={`${log.id}-d`} style={{background:'var(--bg-base)'}}><td colSpan={4} style={{padding:'0 14px 12px'}}><pre style={{fontSize:'0.75rem',color:'var(--text-muted)',fontFamily:'monospace',whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0,paddingTop:'8px'}}>{JSON.stringify(log.details,null,2)}</pre></td></tr>] : [])
-             ])}
-          </tbody>
-        </table>
+
+      {/* Filter */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <input
+          placeholder="Filter by action (e.g. UPDATE_PAYMENT_STATUS)…"
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && load(1)}
+          style={{ flex: 1, maxWidth: '400px', padding: '10px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', borderRadius: 0 }}
+          onFocus={e => (e.target.style.borderColor = A)}
+          onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+        />
+        <button onClick={() => load(1)} style={{ padding: '10px 20px', background: A, border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
+          Search
+        </button>
       </div>
-      {meta && meta.total_pages > 1 && (
-        <div style={{display:'flex',gap:'8px',justifyContent:'center',marginTop:'20px'}}>
-          {Array.from({length:Math.min(meta.total_pages,10)},(_,i)=>i+1).map(p=><button key={p} onClick={()=>load(p)} style={{width:'36px',height:'36px',border:'1px solid',borderColor:p===page?'var(--accent)':'var(--border)',background:p===page?'rgba(61,186,111,0.10)':'transparent',color:p===page?'var(--accent)':'var(--text-muted)',cursor:'pointer',fontFamily:'var(--font-body)',fontSize:'0.875rem'}}>{p}</button>)}
+
+      {loading ? (
+        <div style={{ display: 'grid', gap: '4px' }}>
+          {[1,2,3,4,5].map(i => <div key={i} style={{ height: '48px', background: 'var(--bg-surface)', border: '1px solid var(--border)', animation: 'admin-pulse 1.4s infinite', opacity: 1 - i * 0.1 }} />)}
+        </div>
+      ) : logs.length === 0 ? (
+        <div style={{ padding: '56px 20px', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <Activity size={28} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>No logs found</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '2px', background: 'var(--border)' }}>
+          {logs.map(log => (
+            <div key={log.id}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--bg-surface)', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {formatDateTime(log.created_at)}
+                </span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flexShrink: 0 }}>
+                  {log.admin?.full_name ?? '—'}
+                </span>
+                <span style={{ flex: 1, padding: '2px 8px', background: `${A}12`, border: `1px solid ${A}30`, color: A, fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', display: 'inline-block', whiteSpace: 'nowrap' }}>
+                  {log.action}
+                </span>
+                {log.details && (
+                  <button onClick={() => setExp(p => p === log.id ? null : log.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '11px', padding: 0, flexShrink: 0 }}>
+                    {exp === log.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    Details
+                  </button>
+                )}
+              </div>
+              {exp === log.id && log.details && (
+                <div style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}>
+                  <pre style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', margin: 0, lineHeight: 1.5 }}>
+                    {JSON.stringify(log.details, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Pagination */}
+      {meta && meta.total_pages > 1 && (
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+          {Array.from({ length: Math.min(meta.total_pages, 10) }, (_, i) => i + 1).map(p => (
+            <button key={p} onClick={() => load(p)} style={{ width: '36px', height: '36px', border: `1px solid ${p === page ? A : 'var(--border)'}`, background: p === page ? `${A}15` : 'transparent', color: p === page ? A : 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', transition: 'all 150ms' }}>
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+      <style>{`@keyframes admin-pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
     </div>
   )
 }
