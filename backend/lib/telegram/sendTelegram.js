@@ -9,17 +9,13 @@
  * Env vars required:
  *   TELEGRAM_BOT_TOKEN
  *   TELEGRAM_ADMIN_CHAT_ID_1
- *   TELEGRAM_ADMIN_CHAT_ID_2
+ *   TELEGRAM_ADMIN_CHAT_ID_2  (optional second admin)
  */
 
 const TELEGRAM_API = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`
 
 /**
  * Sends a text message to a single Telegram chat.
- *
- * @param {string|number} chatId
- * @param {string}        text
- * @param {string}        parseMode  - 'HTML' | 'Markdown' (default: 'HTML')
  */
 export async function sendTelegramMessage(chatId, text, parseMode = 'HTML') {
   try {
@@ -30,6 +26,7 @@ export async function sendTelegramMessage(chatId, text, parseMode = 'HTML') {
         chat_id:    chatId,
         text,
         parse_mode: parseMode,
+        disable_web_page_preview: true,
       }),
     })
 
@@ -37,10 +34,10 @@ export async function sendTelegramMessage(chatId, text, parseMode = 'HTML') {
 
     if (!result.ok) {
       console.error(JSON.stringify({
-        level:   'error',
-        event:   'telegram_send_failed',
+        level:  'error',
+        event:  'telegram_send_failed',
         chatId,
-        reason:  result.description,
+        reason: result.description,
       }))
     } else {
       console.log(JSON.stringify({
@@ -60,18 +57,25 @@ export async function sendTelegramMessage(chatId, text, parseMode = 'HTML') {
 }
 
 /**
- * Broadcasts a message to both admin Telegram chats.
- * Fires both concurrently, non-blocking.
- *
- * @param {string} text
+ * Broadcasts a message to all configured admin chat IDs.
+ * Reads TELEGRAM_ADMIN_CHAT_ID_1 and TELEGRAM_ADMIN_CHAT_ID_2 from env.
+ * Safe to call fire-and-forget — never throws.
  */
-export function notifyAdmins(text) {
+export async function notifyAdmins(text, parseMode = 'HTML') {
   const chatIds = [
     process.env.TELEGRAM_ADMIN_CHAT_ID_1,
     process.env.TELEGRAM_ADMIN_CHAT_ID_2,
   ].filter(Boolean)
 
-  for (const chatId of chatIds) {
-    sendTelegramMessage(chatId, text).catch(() => {})
+  if (chatIds.length === 0) {
+    console.warn(JSON.stringify({
+      level: 'warn',
+      event: 'telegram_no_admin_chat_ids',
+    }))
+    return
   }
+
+  await Promise.all(
+    chatIds.map(id => sendTelegramMessage(id, text, parseMode))
+  )
 }
