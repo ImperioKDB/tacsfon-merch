@@ -1,89 +1,110 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { Plus, Trash2, RefreshCw, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { apiFetch } from '@/lib/api/fetch'
+
+import { useEffect, useState, useCallback } from 'react'
+import { Plus, Trash2, Tag, Loader2 }       from 'lucide-react'
+import { toast }                             from 'sonner'
+import { apiFetch }                          from '@/lib/api/fetch'
+import ConfirmDialog                         from '@/components/admin/ConfirmDialog'
+
+const A = '#5B8CFF'
 
 export default function CategoriesPage() {
-  const [cats, setCats] = useState<any[]>([])
-  const [name, setName] = useState('')
+  const [cats,    setCats]    = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [isAdding, setIsAdding] = useState(false)
+  const [name,    setName]    = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
+    setLoading(true)
+    try { const d = await apiFetch<any>('/admin/categories'); setCats(d.categories ?? d.data ?? []) }
+    catch { toast.error('Failed to load categories') }
+    finally { setLoading(false) }
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim()) return
+    setSaving(true)
     try {
-      const data = await apiFetch<any>('/categories')
-      setCats(data.categories || [])
-    } catch (e) { 
-      console.error(e);
-    } finally { 
-      setLoading(false); 
-    }
+      await apiFetch('/admin/categories', { method: 'POST', body: JSON.stringify({ name: name.trim() }) })
+      toast.success('Category added')
+      setName('')
+      load()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setSaving(false) }
   }
 
-  useEffect(() => { load() }, [])
-
-  const handleAdd = async () => {
-    if (!name.trim() || isAdding) return;
-    
-    setIsAdding(true);
+  async function handleDelete() {
+    if (!deleteId) return
     try {
-      await apiFetch('/admin/categories', {
-        method: 'POST',
-        body: JSON.stringify({ name: name.trim() })
-      })
-      toast.success("Category Added");
-      setName('');
-      await load();
-    } catch (e: any) { 
-      toast.error(e.message || "Failed to add category"); 
-    } finally { 
-      setIsAdding(false); 
-    }
+      await apiFetch(`/admin/categories/${deleteId}`, { method: 'DELETE' })
+      toast.success('Category deleted')
+      setDeleteId(null)
+      load()
+    } catch (err: any) { toast.error(err.message) }
   }
 
   return (
-    <div className="max-w-xl space-y-8 animate-fadeIn">
-      <div>
-        <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">Categories</h1>
-        <p className="text-zinc-500 text-[10px] font-black tracking-[0.4em] uppercase mt-2">Product Classification</p>
-      </div>
-      
-      <div className="flex gap-2">
-        <input 
-          placeholder="New Category Name..." 
-          className="flex-1 bg-zinc-900 border border-zinc-800 p-4 text-white focus:border-gold outline-none font-bold placeholder:text-zinc-700"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-          disabled={isAdding}
-        />
-        <button 
-          onClick={handleAdd} 
-          disabled={isAdding || !name.trim()}
-          className="bg-gold text-black px-8 font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-white transition-all disabled:opacity-50"
-        >
-          {isAdding ? <Loader2 className="animate-spin" size={16}/> : <Plus size={16} strokeWidth={3}/>}
-          {isAdding ? 'Adding...' : 'Add'}
-        </button>
+    <div style={{ padding: '24px 16px 80px', maxWidth: '600px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px', fontFamily: 'var(--font-display)', fontSize: 'clamp(22px,5vw,32px)', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', lineHeight: 1 }}>
+          Categories
+        </h1>
+        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.2em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          Manage product categories
+        </p>
+        <div style={{ height: '2px', background: `linear-gradient(90deg, ${A}, transparent)`, marginTop: '14px', maxWidth: '200px' }} />
       </div>
 
-      <div className="space-y-2 border-t border-zinc-900 pt-8">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <RefreshCw className="animate-spin text-zinc-800" size={32}/>
-          </div>
-        ) : cats.length === 0 ? (
-          <p className="text-zinc-600 text-center italic text-sm py-12">No categories found in system.</p>
-        ) : cats.map(c => (
-          <div key={c.id} className="bg-zinc-950 border border-zinc-900 p-5 flex justify-between items-center group hover:border-zinc-700 transition-colors">
-            <span className="font-black text-zinc-300 uppercase tracking-widest text-sm italic">{c.name}</span>
-            <button className="text-zinc-800 group-hover:text-red-500 transition-colors p-2">
-              <Trash2 size={18}/>
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* Add form */}
+      <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Category name…"
+          required
+          style={{ flex: 1, padding: '12px 14px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '13px', outline: 'none', borderRadius: 0 }}
+          onFocus={e => (e.target.style.borderColor = A)}
+          onBlur={e  => (e.target.style.borderColor = 'var(--border)')}
+        />
+        <button type="submit" disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '12px 20px', background: A, border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+          {saving ? <Loader2 size={13} style={{ animation: 'admin-spin 0.8s linear infinite' }} /> : <Plus size={13} />}
+          Add
+        </button>
+      </form>
+
+      {/* List */}
+      {loading ? (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {[1,2,3].map(i => <div key={i} style={{ height: '52px', background: 'var(--bg-surface)', border: '1px solid var(--border)', animation: 'admin-pulse 1.4s infinite' }} />)}
+        </div>
+      ) : cats.length === 0 ? (
+        <div style={{ padding: '48px 20px', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <Tag size={28} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>No categories yet</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '2px', background: 'var(--border)' }}>
+          {cats.map((c: any) => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--bg-surface)', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Tag size={14} style={{ color: A, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+              </div>
+              <button onClick={() => setDeleteId(c.id)} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', background: 'rgba(224,82,82,0.08)', border: '1px solid rgba(224,82,82,0.3)', color: 'var(--danger)', fontFamily: 'var(--font-body)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                <Trash2 size={10} /> Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {deleteId && (
+        <ConfirmDialog title="Delete Category" message="Deleting this category may affect products assigned to it." confirmLabel="Delete" variant="danger" onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
+      )}
+      <style>{`@keyframes admin-pulse{0%,100%{opacity:1}50%{opacity:.5}} @keyframes admin-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
