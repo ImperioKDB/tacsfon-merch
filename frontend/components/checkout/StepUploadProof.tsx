@@ -1,18 +1,17 @@
 'use client'
 
 /**
- * StepUploadProof — Phase 7
+ * StepUploadProof — Phase 7 fixed
  *
- * Checkout step 3: student uploads payment screenshot / receipt.
- * - Drag-and-drop zone: dashed border turns gold on drag-over
- * - File thumbnail preview after selection
- * - Client-side size/type validation before submit
- * - Inline CSS only — no Tailwind utility classes
+ * Uploads payment screenshot to backend.
+ * Uses Supabase session token for Authorization.
+ * On success → redirects to /orders.
  */
 
 import { useState, useCallback, useRef } from 'react'
-import { UploadCloud, FileImage, X, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { UploadCloud, X, CheckCircle2, Loader2 } from 'lucide-react'
+import { toast }                    from 'sonner'
+import { createBrowserClient }      from '@/lib/supabase/browser'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_MB        = 5
@@ -56,42 +55,59 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
   const handleSubmit = async () => {
     if (!file) return
     setUploading(true)
+
     try {
-      const API    = process.env.NEXT_PUBLIC_API_URL ?? ''
-      const form   = new FormData()
+      // 1. Get the current session token
+      const supabase = createBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('You must be signed in to submit an order. Please sign in and try again.')
+      }
+
+      // 2. Upload the proof image
+      const API  = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
+      const form = new FormData()
       form.append('proof', file)
 
-      // Use native fetch for multipart so the browser sets the correct
-      // Content-Type boundary automatically (apiFetch would force JSON headers).
       const res = await fetch(`${API}/api/orders/${orderId}/proof`, {
-        method:      'POST',
-        body:        form,
-        credentials: 'include',
+        method:  'POST',
+        body:    form,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          // Do NOT set Content-Type here — browser sets multipart boundary automatically
+        },
       })
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.message ?? `Upload failed (${res.status})`)
+        const body = await res.json().catch(() => ({}))
+        throw new Error(
+          body?.error?.message ??
+          body?.message ??
+          `Upload failed (${res.status})`
+        )
       }
 
       setUploaded(true)
-      toast.success('Payment proof uploaded successfully!')
+      toast.success('Order submitted! We will verify your payment shortly.')
     } catch (e: any) {
+      console.error('[StepUploadProof] submit error:', e)
       toast.error(e.message || 'Upload failed. Please try again.')
     } finally {
       setUploading(false)
     }
   }
 
+  /* ── Success state ── */
   if (uploaded) {
     return (
       <div style={{
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        gap:            '24px',
-        padding:        '48px 0',
-        textAlign:      'center',
+        display:       'flex',
+        flexDirection: 'column',
+        alignItems:    'center',
+        gap:           '24px',
+        padding:       '48px 0',
+        textAlign:     'center',
       }}>
         <CheckCircle2 size={56} style={{ color: 'var(--success)' }} strokeWidth={1.5} />
         <div>
@@ -100,21 +116,21 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             fontSize:      '32px',
             letterSpacing: '0.04em',
             color:         'var(--text-primary)',
-            margin:        '0 0 8px 0',
+            margin:        '0 0 8px',
             textTransform: 'uppercase',
           }}>
             Order Placed!
           </h2>
           <p style={{
-            fontFamily:  'var(--font-body)',
-            fontSize:    '14px',
-            color:       'var(--text-muted)',
-            lineHeight:  1.6,
-            maxWidth:    '320px',
-            margin:      '0 auto',
+            fontFamily: 'var(--font-body)',
+            fontSize:   '14px',
+            color:      'var(--text-muted)',
+            lineHeight: 1.6,
+            maxWidth:   '320px',
+            margin:     '0 auto',
           }}>
-            Your order has been submitted. The TACSFON team will confirm your
-            payment shortly and you'll receive a notification.
+            Your payment proof has been submitted. The TACSFON team will
+            verify it shortly and you'll be notified.
           </p>
         </div>
         <button
@@ -122,7 +138,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
           style={{
             minHeight:     '52px',
             padding:       '0 40px',
-            background:    '#3DBA6F',
+            background:    'var(--accent)',
             border:        'none',
             color:         '#0A0A0A',
             fontFamily:    'var(--font-body)',
@@ -139,8 +155,26 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     )
   }
 
+  /* ── Upload form ── */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Instruction */}
+      <div style={{
+        padding:    '14px 16px',
+        background: 'var(--accent-dim)',
+        border:     '1px solid var(--accent)',
+      }}>
+        <p style={{
+          fontFamily:  'var(--font-body)',
+          fontSize:    '13px',
+          color:       'var(--text-primary)',
+          margin:      0,
+          lineHeight:  1.5,
+        }}>
+          Take a screenshot of your bank transfer confirmation and upload it below.
+        </p>
+      </div>
 
       {/* Drop zone */}
       <div
@@ -149,8 +183,8 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         onDrop={onDrop}
         onClick={() => !file && inputRef.current?.click()}
         style={{
-          border:         `2px dashed ${dragging ? '#3DBA6F' : 'var(--border)'}`,
-          background:     dragging ? 'rgba(201,168,76,0.06)' : 'var(--bg-surface)',
+          border:         `2px dashed ${dragging ? 'var(--accent)' : 'var(--border)'}`,
+          background:     dragging ? 'var(--accent-dim)' : 'var(--bg-surface)',
           padding:        '40px 24px',
           display:        'flex',
           flexDirection:  'column',
@@ -159,7 +193,6 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
           gap:            '16px',
           cursor:         file ? 'default' : 'pointer',
           transition:     'border-color 150ms, background 150ms',
-          position:       'relative',
           textAlign:      'center',
         }}
       >
@@ -201,37 +234,46 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
                 <X size={12} />
               </button>
             </div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize:   '12px',
+              color:      'var(--text-muted)',
+              margin:     0,
+            }}>
               {file?.name}
             </p>
           </>
         ) : (
           <>
-            <div style={{ color: dragging ? '#3DBA6F' : 'var(--text-muted)', transition: 'color 150ms' }}>
-              {dragging
-                ? <UploadCloud size={40} strokeWidth={1.2} />
-                : <FileImage  size={40} strokeWidth={1.2} />
-              }
-            </div>
+            <UploadCloud
+              size={40}
+              strokeWidth={1.2}
+              style={{ color: dragging ? 'var(--accent)' : 'var(--text-muted)', transition: 'color 150ms' }}
+            />
             <div>
               <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize:   '14px',
-                color:      dragging ? '#3DBA6F' : 'var(--text-primary)',
-                fontWeight: 600,
-                margin:     '0 0 4px 0',
-                transition: 'color 150ms',
+                fontFamily:  'var(--font-body)',
+                fontSize:    '14px',
+                fontWeight:  600,
+                color:       'var(--text-primary)',
+                margin:      '0 0 4px',
               }}>
-                {dragging ? 'Drop it here' : 'Upload your payment screenshot'}
+                Tap to upload or drag here
               </p>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                Drag & drop or click to browse · JPG, PNG, WebP · Max {MAX_MB} MB
+              <p style={{
+                fontFamily: 'var(--font-body)',
+                fontSize:   '12px',
+                color:      'var(--text-muted)',
+                margin:     0,
+              }}>
+                JPG, PNG or WebP · Max {MAX_MB} MB
               </p>
             </div>
           </>
         )}
       </div>
 
+      {/* Action buttons */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
           onClick={onBack}
@@ -254,6 +296,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         >
           ← Back
         </button>
+
         <button
           onClick={handleSubmit}
           disabled={!file || uploading}
@@ -263,23 +306,33 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
-            gap:            '10px',
-            background:     file && !uploading ? '#3DBA6F' : 'var(--bg-elevated)',
+            gap:            '8px',
+            background:     !file
+              ? 'var(--bg-elevated)'
+              : uploading
+                ? 'var(--accent-hover)'
+                : 'var(--accent)',
             border:         'none',
-            color:          file && !uploading ? '#0A0A0A' : 'var(--text-muted)',
+            color:          !file ? 'var(--text-muted)' : '#0A0A0A',
             fontFamily:     'var(--font-body)',
             fontSize:       '13px',
             fontWeight:     700,
             letterSpacing:  '0.15em',
             textTransform:  'uppercase',
-            cursor:         file && !uploading ? 'pointer' : 'not-allowed',
-            transition:     'background 200ms, color 200ms',
+            cursor:         !file || uploading ? 'not-allowed' : 'pointer',
+            transition:     'background 200ms',
           }}
         >
-          <UploadCloud size={16} />
-          {uploading ? 'Uploading…' : 'Submit Order'}
+          {uploading
+            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</>
+            : 'Submit Order'
+          }
         </button>
       </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
