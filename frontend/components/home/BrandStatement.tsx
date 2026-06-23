@@ -5,112 +5,26 @@ export default function BrandStatement() {
   return (
     <section
       aria-labelledby="brand-heading"
-      style={{
-        background: 'var(--bg-surface)',
-        borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-surface)', padding: '40px 24px', margin: '16px 0', boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
-        ,
-        padding: '100px 24px',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      className="relative overflow-hidden bg-bg-surface border border-border rounded-3xl mx-4 sm:mx-8 my-12 p-8 sm:p-16 lg:p-24 shadow-sm"
     >
-      {/* Background glow */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
+      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
 
-      {/* Corner marks */}
-      {([
-        { top: '24px',    left: '24px',  borderTop: '1px solid', borderLeft: '1px solid',  borderBottom: 'none', borderRight: 'none' },
-        { top: '24px',    right: '24px', borderTop: '1px solid', borderRight: '1px solid', borderBottom: 'none', borderLeft: 'none'  },
-        { bottom: '24px', left: '24px',  borderBottom: '1px solid', borderLeft: '1px solid',  borderTop: 'none', borderRight: 'none' },
-        { bottom: '24px', right: '24px', borderBottom: '1px solid', borderRight: '1px solid', borderTop: 'none', borderLeft: 'none'  },
-      ] as const).map((style, i) => (
-        <div
-          key={i}
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            width: '20px',
-            height: '20px',
-            borderColor: 'rgba(201,168,76,0.3)',
-            borderStyle: 'solid',
-            ...style,
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      <div style={{ maxWidth: '720px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <span
-          style={{
-            display: 'block',
-            fontFamily: 'var(--font-body)',
-            fontSize: '10px',
-            fontWeight: 600,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
-            color: '#3DBA6F',
-            marginBottom: '28px',
-          }}
-        >
+      <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center">
+        <span className="font-body text-xs font-semibold tracking-widest uppercase text-accent mb-6 bg-accent/10 px-4 py-1.5 rounded-full">
           Who We Are
         </span>
 
         <h2
           id="brand-heading"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 6vw, 72px)',
-            lineHeight: 1,
-            letterSpacing: '0.04em',
-            color: 'var(--text-primary)',
-            marginBottom: '8px',
-          }}
+          className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none tracking-tight text-text-primary mb-2"
         >
           PREMIUM MERCH.
         </h2>
-        <h2
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 6vw, 72px)',
-            lineHeight: 1,
-            letterSpacing: '0.04em',
-            color: '#3DBA6F',
-            marginBottom: '36px',
-          }}
-        >
+        <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none tracking-tight text-accent mb-8">
           FELLOWSHIP SPIRIT.
         </h2>
 
-        {/* Gold rule */}
-        <div
-          aria-hidden="true"
-          style={{
-            width: '48px',
-            height: '2px',
-            background: '#3DBA6F',
-            margin: '0 auto 32px',
-          }}
-        />
-
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'clamp(15px, 1.5vw, 17px)',
-            color: 'var(--text-muted)',
-            lineHeight: 1.8,
-            maxWidth: '520px',
-            margin: '0 auto 40px',
-          }}
-        >
+        <p className="font-body text-base sm:text-lg text-text-muted leading-relaxed max-w-xl mb-10">
           TACSFON Merch exists to outfit the community with quality that reflects
           our values. Every piece is designed with intention — because what you
           wear says who you are.
@@ -118,24 +32,9 @@ export default function BrandStatement() {
 
         <Link
           href="/about"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontFamily: 'var(--font-body)',
-            fontSize: '12px',
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
-            padding: '14px 28px',
-            textDecoration: 'none',
-            transition: 'border-color 150ms ease, color 150ms ease',
-          }}
-          className="hover:border-[#3DBA6F] hover:text-[#3DBA6F]"
+          className="inline-flex items-center gap-2 font-body text-sm font-medium tracking-wide uppercase text-bg-base bg-text-primary px-8 py-4 rounded-full transition-all hover:bg-accent hover:text-white"
         >
-          Our Story <ArrowRight size={13} strokeWidth={2} />
+          Our Story <ArrowRight size={16} strokeWidth={2} />
         </Link>
       </div>
     </section>
