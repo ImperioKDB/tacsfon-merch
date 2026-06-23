@@ -41,7 +41,7 @@ export default function ContactPage() {
               <MessageCircle size={24} strokeWidth={1.5} style={{ color: '#0A0A0F' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-primary)', marginBottom: '4px' }}>Chat on WhatsApp</p>
+              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '1.125rem', color: '#ffffff', marginBottom: '4px' }}>Chat on WhatsApp</p>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>The fastest way to reach us. We typically respond within a few hours.</p>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)', flexShrink: 0 }}>
