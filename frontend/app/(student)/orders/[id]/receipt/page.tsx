@@ -81,7 +81,7 @@ export default function ReceiptPage() {
       await navigator.clipboard.writeText(receipt.receipt_url);
       setCopied(true);
       toast.success('Share link copied to clipboard!');
-      setTimeout(() => setCopied(false), 3000);
+      
     } catch {
       toast.error('Could not copy link. Please try again.');
     }
