@@ -7,8 +7,8 @@ export default function BrandStatement() {
       aria-labelledby="brand-heading"
       style={{
         background: 'var(--bg-surface)',
-        borderTop: '1px solid var(--border)',
-        borderBottom: '1px solid var(--border)',
+        borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-surface)', padding: '40px 24px', margin: '16px 0', boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
+        ,
         padding: '100px 24px',
         textAlign: 'center',
         position: 'relative',
