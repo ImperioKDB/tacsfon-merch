@@ -1,20 +1,27 @@
 'use client'
 
 /**
- * StepUploadProof — Phase 7 fixed
+ * StepUploadProof
  *
- * Uploads payment screenshot to backend.
- * Uses Supabase session token for Authorization.
- * On success → redirects to /orders.
+ * Architecture:
+ *   1. Browser uploads the proof image DIRECTLY to Supabase Storage
+ *      (bucket: proof-uploads / path: {orderId}/{timestamp}.{ext})
+ *   2. Frontend PATCHes the backend with the resulting storagePath as proof_url
+ *
+ * Bugs fixed vs previous version:
+ *   - fetch method was POST  -> backend expects PATCH  (was returning 405)
+ *   - body was raw FormData  -> backend expects JSON { proof_url: string }
+ *   - file was proxied through Render -> now uploaded directly to Supabase Storage
  */
 
 import { useState, useCallback, useRef } from 'react'
 import { UploadCloud, X, CheckCircle2, Loader2 } from 'lucide-react'
-import { toast }                    from 'sonner'
-import { createBrowserClient }      from '@/lib/supabase/browser'
+import { toast }               from 'sonner'
+import { createBrowserClient } from '@/lib/supabase/browser'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_MB        = 5
+const PROOF_BUCKET  = 'proof-uploads'
 
 interface Props {
   orderId: string
@@ -57,7 +64,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     setUploading(true)
 
     try {
-      // 1. Get the current session token
+      // 1. Get the current session - needed for both Storage and backend
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
 
@@ -65,26 +72,44 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         throw new Error('You must be signed in to submit an order. Please sign in and try again.')
       }
 
-      // 2. Upload the proof image
-      const API  = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
-      const form = new FormData()
-      form.append('proof', file)
+      // 2. Upload proof image DIRECTLY to Supabase Storage from the browser
+      const ext         = file.name.split('.').pop() ?? 'jpg'
+      const storagePath = `${orderId}/${Date.now()}.${ext}`
+
+      const { error: storageError } = await supabase.storage
+        .from(PROOF_BUCKET)
+        .upload(storagePath, file, {
+          contentType: file.type,
+          upsert:      false,
+        })
+
+      if (storageError) {
+        throw new Error(`Image upload failed: ${storageError.message}`)
+      }
+
+      // 3. PATCH the backend with the storage path as proof_url
+      //    Backend validates order ownership, updates status to payment_submitted,
+      //    and fires Telegram + in-app notifications
+      const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
       const res = await fetch(`${API}/api/orders/${orderId}/proof`, {
-        method:  'POST',
-        body:    form,
+        method:  'PATCH',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          // Do NOT set Content-Type here — browser sets multipart boundary automatically
+          'Content-Type':  'application/json',
         },
+        body: JSON.stringify({ proof_url: storagePath }),
       })
 
       if (!res.ok) {
+        // Clean up the orphaned storage file since the backend update failed
+        await supabase.storage.from(PROOF_BUCKET).remove([storagePath]).catch(() => {})
+
         const body = await res.json().catch(() => ({}))
         throw new Error(
           body?.error?.message ??
           body?.message ??
-          `Upload failed (${res.status})`
+          `Submission failed (${res.status})`
         )
       }
 
@@ -98,7 +123,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     }
   }
 
-  /* ── Success state ── */
+  /* -- Success state -- */
   if (uploaded) {
     return (
       <div style={{
@@ -130,7 +155,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             margin:     '0 auto',
           }}>
             Your payment proof has been submitted. The TACSFON team will
-            verify it shortly and you'll be notified.
+            verify it shortly and you will be notified.
           </p>
         </div>
         <button
@@ -155,7 +180,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     )
   }
 
-  /* ── Upload form ── */
+  /* -- Upload form -- */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -166,11 +191,11 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         border:     '1px solid var(--accent)',
       }}>
         <p style={{
-          fontFamily:  'var(--font-body)',
-          fontSize:    '13px',
-          color:       'var(--text-primary)',
-          margin:      0,
-          lineHeight:  1.5,
+          fontFamily: 'var(--font-body)',
+          fontSize:   '13px',
+          color:      'var(--text-primary)',
+          margin:     0,
+          lineHeight: 1.5,
         }}>
           Take a screenshot of your bank transfer confirmation and upload it below.
         </p>
@@ -252,13 +277,13 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             />
             <div>
               <p style={{
-                fontFamily:  'var(--font-body)',
-                fontSize:    '14px',
-                fontWeight:  600,
-                color:       'var(--text-primary)',
-                margin:      '0 0 4px',
+                fontFamily: 'var(--font-body)',
+                fontSize:   '14px',
+                fontWeight: 600,
+                color:      'var(--text-primary)',
+                margin:     '0 0 4px',
               }}>
-                Tap to upload or drag here
+                Tap to select or drop your screenshot
               </p>
               <p style={{
                 fontFamily: 'var(--font-body)',
@@ -266,7 +291,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
                 color:      'var(--text-muted)',
                 margin:     0,
               }}>
-                JPG, PNG or WebP · Max {MAX_MB} MB
+                JPG, PNG or WebP - max {MAX_MB} MB
               </p>
             </div>
           </>
@@ -284,17 +309,16 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             padding:       '0 24px',
             background:    'var(--bg-surface)',
             border:        '1px solid var(--border)',
-            color:         'var(--text-muted)',
+            color:         uploading ? 'var(--border)' : 'var(--text-muted)',
             fontFamily:    'var(--font-body)',
             fontSize:      '12px',
             fontWeight:    700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
             cursor:        uploading ? 'not-allowed' : 'pointer',
-            opacity:       uploading ? 0.5 : 1,
           }}
         >
-          ← Back
+          Back
         </button>
 
         <button
@@ -307,32 +331,29 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
             alignItems:     'center',
             justifyContent: 'center',
             gap:            '8px',
-            background:     !file
-              ? 'var(--bg-elevated)'
-              : uploading
-                ? 'var(--accent-hover)'
-                : 'var(--accent)',
+            background:     !file || uploading ? 'var(--bg-elevated)' : '#3DBA6F',
             border:         'none',
-            color:          !file ? 'var(--text-muted)' : '#0A0A0A',
+            color:          !file || uploading ? 'var(--text-muted)' : '#0A0A0A',
             fontFamily:     'var(--font-body)',
             fontSize:       '13px',
             fontWeight:     700,
             letterSpacing:  '0.15em',
             textTransform:  'uppercase',
             cursor:         !file || uploading ? 'not-allowed' : 'pointer',
-            transition:     'background 200ms',
+            transition:     'background 150ms, color 150ms',
           }}
         >
-          {uploading
-            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</>
-            : 'Submit Order'
-          }
+          {uploading ? (
+            <>
+              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              Uploading...
+            </>
+          ) : (
+            'Submit Proof'
+          )}
         </button>
       </div>
 
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   )
 }
