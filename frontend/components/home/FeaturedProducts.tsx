@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import HomeProductCard from './ProductCard'
 import type { Product } from '@/types'
 import { PackageOpen, ArrowRight } from 'lucide-react'
@@ -46,8 +49,11 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
         padding: '80px 24px',
       }}
     >
-      {/* Section header */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.5 }}
         style={{
           display: 'flex',
           alignItems: 'flex-end',
@@ -100,13 +106,10 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
         >
           View All <ArrowRight size={12} strokeWidth={2} />
         </Link>
-      </div>
+      </motion.div>
 
-      {/* Gold divider */}
       <div className="divider-gold" style={{ marginBottom: '40px' }} />
 
-      {/* ── Asymmetric editorial grid ── */}
-      {/* Desktop: large hero left + stacked right. Mobile: single column. */}
       <div
         style={{
           display: 'grid',
@@ -115,19 +118,29 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
         }}
         className="featured-grid"
       >
-        {/* Hero product — takes up 2 rows on desktop */}
         {hero && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
             className="featured-hero"
             style={{ gridRow: 'span 1' }}
           >
             <HomeProductCard product={hero} priority />
-          </div>
+          </motion.div>
         )}
 
-        {/* Remaining products */}
-        {rest.map((p) => (
-          <HomeProductCard key={p.id} product={p} />
+        {rest.map((p, idx) => (
+          <motion.div
+            key={p.id}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: idx * 0.1 }}
+          >
+            <HomeProductCard product={p} />
+          </motion.div>
         ))}
       </div>
 
