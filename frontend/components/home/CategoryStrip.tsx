@@ -9,7 +9,6 @@ interface CategoryStripProps {
 }
 
 export default function CategoryStrip({ categories }: CategoryStripProps) {
-  // ── Hooks must always be called before any early return ──
   const searchParams   = useSearchParams()
   const activeCategory = searchParams.get('category') ?? 'all'
 
@@ -19,63 +18,28 @@ export default function CategoryStrip({ categories }: CategoryStripProps) {
 
   return (
     <section aria-label="Shop by category">
-      {/* Gold top rule */}
-      <div
-        aria-hidden="true"
-        style={{
-          height: '1px',
-          background: 'linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent)',
-        }}
-      />
+      <div className="bg-bg-surface border-b border-border shadow-sm sticky top-[64px] z-40 backdrop-blur-md bg-opacity-80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center space-x-2 sm:space-x-8 overflow-x-auto no-scrollbar py-1">
+            {all.map((cat) => {
+              const isActive = cat.id === activeCategory
+              const href = cat.id === 'all' ? '/products' : `/products?category=${cat.id}`
 
-      <div
-        style={{
-          background: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1280px',
-            margin: '0 auto',
-            padding: '0 24px',
-            display: 'flex',
-            alignItems: 'center',
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            gap: '0',
-          }}
-        >
-          {all.map((cat, idx) => {
-            const isActive = cat.id === activeCategory
-            const href = cat.id === 'all' ? '/products' : `/products?category=${cat.id}`
-
-            return (
-              <Link
-                key={cat.id}
-                href={href}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  padding: '18px 24px',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '11px',
-                  fontWeight: isActive ? 600 : 500,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: isActive ? '#3DBA6F' : 'var(--text-muted)',
-                  textDecoration: 'none',
-                  borderRight: idx < all.length - 1 ? '1px solid var(--border)' : 'none',
-                  borderBottom: isActive ? '2px solid #3DBA6F' : '2px solid transparent',
-                  transition: 'color 150ms ease, border-color 150ms ease',
-                }}
-              >
-                {cat.name}
-              </Link>
-            )
-          })}
+              return (
+                <Link
+                  key={cat.id}
+                  href={href}
+                  className={`inline-flex items-center whitespace-nowrap px-4 py-4 font-body text-xs sm:text-sm font-medium tracking-wide transition-colors uppercase select-none ${
+                    isActive
+                      ? 'text-accent border-b-2 border-accent'
+                      : 'text-text-muted border-b-2 border-transparent hover:text-text-primary'
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
