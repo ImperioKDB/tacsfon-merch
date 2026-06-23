@@ -9,29 +9,9 @@ import { PackageOpen, ArrowRight } from 'lucide-react'
 export default function FeaturedProducts({ products }: { products: Product[] }) {
   if (!products || products.length === 0) {
     return (
-      <section
-        style={{
-          padding: '96px 24px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderTop: '1px solid var(--border)',
-          borderBottom: '1px solid var(--border)',
-          gap: '16px',
-        }}
-      >
-        <PackageOpen size={48} strokeWidth={1} style={{ color: 'var(--text-muted)' }} />
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-          }}
-        >
+      <section className="py-24 px-6 flex flex-col items-center justify-center gap-4 bg-bg-surface/50 border-y border-border">
+        <PackageOpen size={48} strokeWidth={1} className="text-text-muted opacity-50" />
+        <p className="font-body text-xs font-semibold tracking-[0.2em] uppercase text-text-muted">
           New Collection Loading
         </p>
       </section>
@@ -41,91 +21,39 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
   const [hero, ...rest] = products
 
   return (
-    <section
-      aria-labelledby="featured-heading"
-      style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: '80px 24px',
-      }}
-    >
+    <section aria-labelledby="featured-heading" className="max-w-7xl mx-auto py-24 px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.5 }}
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          marginBottom: '40px',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}
+        className="flex items-end justify-between mb-12 flex-wrap gap-6"
       >
         <div>
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.22em',
-              textTransform: 'uppercase',
-              color: '#3DBA6F',
-              marginBottom: '8px',
-            }}
-          >
+          <p className="font-body text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-3">
             Just Dropped
           </p>
-          <h2
-            id="featured-heading"
-            className="section-title"
-          >
+          <h2 id="featured-heading" className="font-display text-4xl sm:text-5xl text-text-primary tracking-tight">
             New Arrivals
           </h2>
         </div>
 
         <Link
           href="/products"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontFamily: 'var(--font-body)',
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#3DBA6F',
-            textDecoration: 'none',
-            borderBottom: '1px solid #3DBA6F',
-            paddingBottom: '2px',
-            transition: 'color 150ms ease',
-            whiteSpace: 'nowrap',
-          }}
+          className="inline-flex items-center gap-2 font-body text-sm font-semibold tracking-wider uppercase text-bg-surface bg-text-primary px-6 py-3 rounded-full hover:bg-accent hover:text-white transition-all shadow-sm"
         >
-          View All <ArrowRight size={12} strokeWidth={2} />
+          View All <ArrowRight size={14} strokeWidth={2} />
         </Link>
       </motion.div>
 
-      <div className="divider-gold" style={{ marginBottom: '40px' }} />
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-          gap: '16px',
-        }}
-        className="featured-grid"
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8">
         {hero && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="featured-hero"
-            style={{ gridRow: 'span 1' }}
+            className="sm:col-span-2 sm:row-span-2 h-full min-h-[400px]"
           >
             <HomeProductCard product={hero} priority />
           </motion.div>
@@ -138,24 +66,12 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: idx * 0.1 }}
+            className="h-full min-h-[300px]"
           >
             <HomeProductCard product={p} />
           </motion.div>
         ))}
       </div>
-
-      <style>{`
-        @media (min-width: 768px) {
-          .featured-grid {
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            grid-template-rows: auto auto;
-          }
-          .featured-hero {
-            grid-column: span 2;
-            grid-row: span 2;
-          }
-        }
-      `}</style>
     </section>
   )
 }
