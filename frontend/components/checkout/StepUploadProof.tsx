@@ -191,7 +191,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
         <p style={{
           fontFamily: 'var(--font-body)',
           fontSize:   '13px',
-          color:      'var(--text-primary)',
+          color:      '#ffffff',
           margin:     0,
           lineHeight: 1.5,
         }}>
