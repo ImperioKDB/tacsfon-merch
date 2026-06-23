@@ -66,8 +66,8 @@ export default function OrderDetailClient({ orderId }: Props) {
   const [showReceived, setShowReceived] = useState(false)
 
   useEffect(() => {
-    apiFetch<{ data: Order }>(`/orders/${orderId}`)
-      .then(res => setOrder(res.data))
+    apiFetch<Order>(`/orders/${orderId}`)
+      .then(res => setOrder(res))
       .catch(err => setError(err.message || 'Failed to load order.'))
       .finally(() => setLoading(false))
   }, [orderId])
