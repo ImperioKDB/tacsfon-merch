@@ -194,7 +194,7 @@ export default function Navbar() {
           {/* Hamburger */}
           <button onClick={() => setDrawerOpen(v => !v)}
             aria-label="Open menu" aria-expanded={drawerOpen}
-            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}>
             {drawerOpen ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
