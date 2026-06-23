@@ -64,7 +64,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
     setUploading(true)
 
     try {
-      // 1. Get the current session - needed for both Storage and backend
+      // 1. Get the current session
       const supabase = createBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
 
@@ -88,8 +88,6 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
       }
 
       // 3. PATCH the backend with the storage path as proof_url
-      //    Backend validates order ownership, updates status to payment_submitted,
-      //    and fires Telegram + in-app notifications
       const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
       const res = await fetch(`${API}/api/orders/${orderId}/proof`, {
@@ -291,7 +289,7 @@ export default function StepUploadProof({ orderId, onDone, onBack }: Props) {
                 color:      'var(--text-muted)',
                 margin:     0,
               }}>
-                JPG, PNG or WebP - max {MAX_MB} MB
+                JPG, PNG or WebP — max {MAX_MB} MB
               </p>
             </div>
           </>
