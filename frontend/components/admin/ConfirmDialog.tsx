@@ -14,22 +14,63 @@ export default function ConfirmDialog({ title, message, confirmLabel, onConfirm,
   const isDanger = variant === 'danger'
   
   return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-      <div className="w-full max-w-sm bg-[#0A0A0A] border border-white/10 p-8 shadow-2xl">
-        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-600 mb-6 italic">System_Confirmation_Required</p>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '24px', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(12px)',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: '400px', background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.1)',
+        padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+      }}>
+        <p style={{
+          fontSize: '9px', fontFamily: 'var(--font-body)', fontWeight: 900, textTransform: 'uppercase',
+          letterSpacing: '0.4em', color: 'var(--text-muted)', marginBottom: '24px', fontStyle: 'italic',
+        }}>
+          System_Confirmation_Required
+        </p>
         
-        <h3 className="font-display text-2xl text-white uppercase leading-none mb-3 italic">{title}</h3>
-        <p className="font-body text-[13px] text-zinc-400 leading-relaxed mb-8">{message}</p>
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: '24px', color: '#ffffff', textTransform: 'uppercase',
+          lineHeight: 1, marginBottom: '12px', fontStyle: 'italic',
+        }}>
+          {title}
+        </h3>
+        
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)',
+          lineHeight: 1.6, marginBottom: '32px',
+        }}>
+          {message}
+        </p>
 
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 border border-white/10 text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={onCancel}
+            style={{
+              flex: 1, padding: '12px 0', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--text-muted)', fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 900,
+              textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', transition: 'color 150ms',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+          >
             Cancel
           </button>
           <button 
             onClick={onConfirm} 
-            className={`flex-1 py-3 font-black text-[10px] uppercase tracking-widest transition-all ${
-              isDanger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-[#3DBA6F] text-black hover:bg-white'
-            }`}
+            style={{
+              flex: 1, padding: '12px 0', background: isDanger ? 'var(--danger)' : 'var(--accent)', border: 'none',
+              color: isDanger ? '#ffffff' : '#0A0A0A', fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 900,
+              textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', transition: 'background 150ms',
+            }}
+            onMouseEnter={e => {
+              if (isDanger) e.currentTarget.style.background = '#c93030'
+              else e.currentTarget.style.background = '#ffffff'
+            }}
+            onMouseLeave={e => {
+              if (isDanger) e.currentTarget.style.background = 'var(--danger)'
+              else e.currentTarget.style.background = 'var(--accent)'
+            }}
           >
             {confirmLabel}
           </button>
