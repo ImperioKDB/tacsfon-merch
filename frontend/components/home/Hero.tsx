@@ -12,6 +12,7 @@
 
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function Hero() {
   return (
@@ -91,52 +92,24 @@ export default function Hero() {
         }}
       >
         {/* Eyebrow */}
-        <p
-          className="animate-fade-in"
-          style={{
-            fontFamily:     'var(--font-body)',
-            fontSize:       '11px',
-            fontWeight:     600,
-            letterSpacing:  '0.28em',
-            textTransform:  'uppercase',
-            color:          'var(--accent)',
-            marginBottom:   '28px',
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            gap:            '12px',
-          }}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="font-body text-xs sm:text-sm font-bold tracking-[0.25em] uppercase text-accent mb-8 flex items-center justify-center gap-4 py-2 px-6 rounded-full bg-accent/10 w-max mx-auto shadow-sm"
         >
-          <span
-            aria-hidden="true"
-            style={{
-              display:    'inline-block',
-              width:      '32px',
-              height:     '1px',
-              background: 'var(--accent)',
-            }}
-          />
           TACSFON Community Merch
-          <span
-            aria-hidden="true"
-            style={{
-              display:    'inline-block',
-              width:      '32px',
-              height:     '1px',
-              background: 'var(--accent)',
-            }}
-          />
-        </p>
+        </motion.p>
 
         {/* Headline */}
         <h1
           className="animate-fade-in stagger-1"
           style={{
             fontFamily:    'var(--font-display)',
-            fontSize:      'clamp(64px, 12vw, 128px)',
+            fontSize:      'clamp(56px, 11vw, 128px)',
             lineHeight:    0.92,
-            letterSpacing: '0.03em',
-            color:         '#ffffff',
+            letterSpacing: '0.01em',
+            color:         'var(--text-primary)',
             marginBottom:  0,
           }}
         >
@@ -146,9 +119,9 @@ export default function Hero() {
           className="animate-fade-in stagger-2"
           style={{
             fontFamily:    'var(--font-display)',
-            fontSize:      'clamp(64px, 12vw, 128px)',
+            fontSize:      'clamp(56px, 11vw, 128px)',
             lineHeight:    0.92,
-            letterSpacing: '0.03em',
+            letterSpacing: '0.01em',
             color:         'var(--accent)',
             marginBottom:  '32px',
           }}
@@ -158,97 +131,25 @@ export default function Hero() {
 
         {/* Sub */}
         <p
-          className="animate-fade-in stagger-3"
-          style={{
-            fontFamily:  'var(--font-body)',
-            fontSize:    'clamp(15px, 2vw, 18px)',
-            color:       'var(--text-muted)',
-            lineHeight:  1.7,
-            maxWidth:    '520px',
-            margin:      '0 auto 48px',
-          }}
+          className="animate-fade-in stagger-3 font-body text-base sm:text-lg lg:text-xl text-text-muted leading-relaxed max-w-2xl mx-auto mb-14"
         >
-          Premium community merchandise designed for the TACSFON family
-          at UNIBEN. Quality that reflects who we are.
+          Premium community merchandise designed for the TACSFON family.
+          Quality that reflects who we are.
         </p>
 
         {/* CTAs */}
-        <div
-          className="animate-fade-in stagger-4"
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            gap:            '16px',
-            flexWrap:       'wrap',
-          }}
-        >
+        <div className="animate-fade-in stagger-4 flex items-center justify-center gap-4 flex-col sm:flex-row w-full sm:w-auto px-4">
           <Link
             href="/products"
-            style={{
-              display:        'inline-flex',
-              alignItems:     'center',
-              gap:            '10px',
-              fontFamily:     'var(--font-body)',
-              fontSize:       '12px',
-              fontWeight:     600,
-              letterSpacing:  '0.12em',
-              textTransform:  'uppercase',
-              color:          '#fff',
-              background:     'var(--accent)',
-              padding:        '16px 36px',
-              textDecoration: 'none',
-              transition:     'background 200ms ease, transform 150ms ease',
-              minHeight:      '52px',
-              boxShadow:      '0 4px 24px rgba(61,186,111,0.35)',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.background  = 'var(--accent-hover)'
-              el.style.transform   = 'translateY(-2px)'
-              el.style.boxShadow   = '0 8px 32px rgba(61,186,111,0.45)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.background = 'var(--accent)'
-              el.style.transform  = 'translateY(0)'
-              el.style.boxShadow  = '0 4px 24px rgba(61,186,111,0.35)'
-            }}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-3 font-body text-sm font-bold tracking-widest uppercase text-bg-base bg-accent px-8 py-4 sm:px-10 rounded-full hover:bg-accent-hover hover:scale-105 transition-all shadow-[0_8px_30px_rgba(61,186,111,0.3)] hover:shadow-[0_8px_40px_rgba(61,186,111,0.5)]"
           >
             Explore Store
-            <ArrowRight size={14} />
+            <ArrowRight size={16} strokeWidth={2.5} />
           </Link>
 
           <Link
             href="/signup"
-            style={{
-              display:        'inline-flex',
-              alignItems:     'center',
-              fontFamily:     'var(--font-body)',
-              fontSize:       '12px',
-              fontWeight:     600,
-              letterSpacing:  '0.12em',
-              textTransform:  'uppercase',
-              color:          '#ffffff',
-              background:     'transparent',
-              border:         '1px solid var(--border)',
-              padding:        '16px 36px',
-              textDecoration: 'none',
-              transition:     'border-color 200ms ease, color 200ms ease, transform 150ms ease',
-              minHeight:      '52px',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.borderColor = 'var(--accent)'
-              el.style.color       = 'var(--accent)'
-              el.style.transform   = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.borderColor = 'var(--border)'
-              el.style.color       = 'var(--text-primary)'
-              el.style.transform   = 'translateY(0)'
-            }}
+            className="w-full sm:w-auto inline-flex items-center justify-center font-body text-sm font-bold tracking-widest uppercase text-text-primary bg-bg-surface border border-border px-8 py-4 sm:px-10 rounded-full hover:border-accent hover:text-accent transition-colors"
           >
             Join Us
           </Link>
