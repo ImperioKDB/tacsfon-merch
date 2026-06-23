@@ -61,7 +61,7 @@ export default function NotificationBell() {
     if (pulseKey === prevPulseKey.current) return;
     prevPulseKey.current = pulseKey;
     setIsShaking(true);
-    const t = 
+    const t = setTimeout(() => setIsShaking(false), 600);
     return () => clearTimeout(t);
   }, [pulseKey]);
 
