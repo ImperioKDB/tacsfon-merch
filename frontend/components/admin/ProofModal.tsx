@@ -1,13 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { X, ZoomIn } from 'lucide-react'
+import { X } from 'lucide-react'
 import { apiFetch } from '@/lib/api/fetch'
 
 interface ProofModalProps {
   orderId: string
   onClose: () => void
-  src?:    string | null // MADE OPTIONAL TO FIX BUILD ERROR
+  src?:    string | null
 }
 
 export default function ProofModal({ src: propSrc, orderId, onClose }: ProofModalProps) {
@@ -23,19 +23,38 @@ export default function ProofModal({ src: propSrc, orderId, onClose }: ProofModa
   }, [orderId, propSrc])
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-      <div className="relative max-w-lg w-full bg-[#0D0D0D] border border-white/5">
-        <div className="flex justify-between items-center p-4 border-b border-white/5">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">PROOFS // {orderId.slice(0,8)}</p>
-          <button onClick={onClose} className="text-white hover:text-[#3DBA6F] transition-colors"><X size={16}/></button>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '24px', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)',
+    }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '512px', background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <p style={{
+            fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 900, textTransform: 'uppercase',
+            letterSpacing: '0.3em', color: 'var(--text-muted)', margin: 0
+          }}>
+            PROOFS // {orderId.slice(0,8)}
+          </p>
+          <button 
+            onClick={onClose} 
+            style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', display: 'flex', padding: 0 }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+            onMouseLeave={e => e.currentTarget.style.color = '#ffffff'}
+          >
+            <X size={16}/>
+          </button>
         </div>
-        <div className="aspect-[3/4] relative bg-black flex items-center justify-center">
+        <div style={{ position: 'relative', aspectRatio: '3/4', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {loading ? (
-            <div className="animate-pulse text-[10px] font-black text-zinc-800 uppercase tracking-widest">WAKING_RENDER...</div>
+            <div style={{ fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+              LOADING...
+            </div>
           ) : url ? (
-            <Image src={url} alt="Proof" fill className="object-contain" unoptimized />
+            <Image src={url} alt="Proof" fill style={{ objectFit: 'contain' }} unoptimized />
           ) : (
-            <div className="text-[10px] font-black text-red-900 uppercase">LOAD_FAILED</div>
+            <div style={{ fontSize: '10px', fontFamily: 'var(--font-body)', fontWeight: 900, color: 'var(--danger)', textTransform: 'uppercase' }}>
+              LOAD_FAILED
+            </div>
           )}
         </div>
       </div>
