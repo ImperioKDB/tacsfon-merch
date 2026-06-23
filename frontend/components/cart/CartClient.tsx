@@ -117,14 +117,14 @@ export default function CartClient() {
   if (loading) {
     return (
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 24px' }}>
-        <div style={{ height: '32px', width: '160px', background: 'var(--bg-surface)', marginBottom: '32px', animation: 'pulse 1.4s ease infinite' }} />
+        <div style={{ height: '32px', width: '160px', background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', marginBottom: '32px', animation: 'pulse 1.4s ease infinite' }} />
         {[1, 2, 3].map(i => (
           <div key={i} style={{ display: 'flex', gap: '16px', paddingBottom: '24px', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
-            <div style={{ width: '80px', height: '96px', background: 'var(--bg-surface)', flexShrink: 0, animation: 'pulse 1.4s ease infinite' }} />
+            <div style={{ width: '80px', height: '96px', background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', flexShrink: 0, animation: 'pulse 1.4s ease infinite' }} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ height: '20px', width: '70%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
-              <div style={{ height: '14px', width: '40%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
-              <div style={{ height: '18px', width: '30%', background: 'var(--bg-surface)', animation: 'pulse 1.4s ease infinite' }} />
+              <div style={{ height: '20px', width: '70%', background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', animation: 'pulse 1.4s ease infinite' }} />
+              <div style={{ height: '14px', width: '40%', background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', animation: 'pulse 1.4s ease infinite' }} />
+              <div style={{ height: '18px', width: '30%', background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', animation: 'pulse 1.4s ease infinite' }} />
             </div>
           </div>
         ))}
