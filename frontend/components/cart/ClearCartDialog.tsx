@@ -19,7 +19,7 @@ export default function ClearCartDialog({ onConfirm, onCancel }: ClearCartDialog
       <style>{`@keyframes cfFadeIn { from { opacity:0 } to { opacity:1 } }`}</style>
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', border: '1px solid var(--border)', padding: '32px 28px', width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '32px 28px', width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
