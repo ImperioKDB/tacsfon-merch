@@ -2,21 +2,12 @@
  * envCheck — Startup environment variable validator
  *
  * Validates that every required env var is present before the app starts.
- * - In production:   throws a hard error → Vercel marks the deployment failed
- * - In development:  console.error only → lets you iterate without full config
+ * - In production:  throws a hard error → Vercel marks the deployment failed
+ * - In development: console.error only → lets you iterate without full config
  *
- * Optional variables emit a console.warn; the app still starts.
- *
- * Call once, server-side only:
- *
- *   // app/layout.tsx  (or middleware.ts)
- *   import { checkEnv } from '@/lib/startup/envCheck'
- *   checkEnv()
- *
+ * Call once, server-side only, from app/layout.tsx or middleware.ts.
  * NEVER log the actual values — only the variable names.
  */
-
-// ── Variable lists ───────────────────────────────────────────────────────────
 
 interface EnvVar {
   key:         string
@@ -24,53 +15,41 @@ interface EnvVar {
 }
 
 const REQUIRED: EnvVar[] = [
-  // Supabase
+  // Supabase (public keys only — service role key lives on the backend/Render)
   { key: 'NEXT_PUBLIC_SUPABASE_URL',      description: 'Supabase project URL'             },
   { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', description: 'Supabase anon (public) key'       },
-  { key: 'SUPABASE_SERVICE_ROLE_KEY',     description: 'Supabase service-role key (secret)' },
 
   // App
   { key: 'NEXT_PUBLIC_APP_URL',           description: 'Deployed app URL (e.g. https://tacsfon-merch.vercel.app)' },
+  { key: 'NEXT_PUBLIC_API_URL',           description: 'Backend API URL (Render service)'  },
 
-  // Telegram
-  { key: 'TELEGRAM_BOT_TOKEN',            description: 'Telegram bot token'               },
-  { key: 'TELEGRAM_ADMIN_CHAT_ID_1',      description: 'Primary admin Telegram chat ID'   },
-
-  // Bank
-  { key: 'BANK_NAME',                     description: 'Bank name for payment instructions' },
-  { key: 'BANK_ACCOUNT_NUMBER',           description: 'Bank account number'               },
-  { key: 'BANK_ACCOUNT_NAME',             description: 'Bank account name'                 },
+  // Bank — MUST match exactly what bank.ts reads (baked in at build time)
+  { key: 'NEXT_PUBLIC_BANK_NAME',         description: 'Bank name shown on checkout page'  },
+  { key: 'NEXT_PUBLIC_ACCOUNT_NUMBER',    description: 'Account number shown on checkout'  },
+  { key: 'NEXT_PUBLIC_ACCOUNT_NAME',      description: 'Account name shown on checkout'    },
 ]
 
 const OPTIONAL: EnvVar[] = [
-  { key: 'TELEGRAM_ADMIN_CHAT_ID_2', description: 'Secondary admin Telegram chat ID' },
-  { key: 'GOOGLE_CLIENT_ID',         description: 'Google OAuth client ID'           },
-  { key: 'GOOGLE_CLIENT_SECRET',     description: 'Google OAuth client secret'       },
+  { key: 'NEXT_PUBLIC_WHATSAPP_NUMBER',  description: 'WhatsApp contact number (contact page)' },
 ]
-
-// ── Validation ───────────────────────────────────────────────────────────────
 
 function isMissing(key: string): boolean {
   const value = process.env[key]
   return !value || value.trim() === ''
 }
 
-/**
- * Run environment variable validation.
- *
- * Call this once at application startup (server-side only).
- * Safe to call multiple times — idempotent.
- */
+let _checked = false
+
 export function checkEnv(): void {
-  // Server-side only — do nothing in the browser
-  if (typeof window !== 'undefined') return
+  if (typeof window !== 'undefined') return   // browser — nothing to check
+  if (_checked) return                         // idempotent
+  _checked = true
 
   const isProd = process.env.NODE_ENV === 'production'
 
   const missingRequired = REQUIRED.filter(v => isMissing(v.key))
   const missingOptional = OPTIONAL.filter(v => isMissing(v.key))
 
-  // Optional — warn but allow startup
   if (missingOptional.length > 0) {
     const lines = missingOptional.map(v => `  • ${v.key} — ${v.description}`)
     console.warn(
@@ -79,20 +58,19 @@ export function checkEnv(): void {
     )
   }
 
-  // Required — hard fail in production
   if (missingRequired.length > 0) {
     const lines = missingRequired.map(v => `  • ${v.key} — ${v.description}`)
     const message =
       '[TACSFON] ❌ Missing required environment variables:\n' +
       lines.join('\n') + '\n' +
-      '  Add these to .env.local (development) or your Vercel/Render dashboard (production).'
+      '  Add these to .env.local (dev) or Vercel → Settings → Environment Variables (prod).\n' +
+      '  NOTE: NEXT_PUBLIC_* vars are baked in at BUILD TIME — redeploy after changing them.'
 
     if (isProd) {
-      throw new Error(message)   // Prevents the app from serving traffic
+      throw new Error(message)
     } else {
       console.error(message)
     }
-
     return
   }
 
