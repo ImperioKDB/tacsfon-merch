@@ -136,7 +136,7 @@ export default function Hero() {
             fontSize:      'clamp(64px, 12vw, 128px)',
             lineHeight:    0.92,
             letterSpacing: '0.03em',
-            color:         'var(--text-primary)',
+            color:         '#ffffff',
             marginBottom:  0,
           }}
         >
@@ -229,7 +229,7 @@ export default function Hero() {
               fontWeight:     600,
               letterSpacing:  '0.12em',
               textTransform:  'uppercase',
-              color:          'var(--text-primary)',
+              color:          '#ffffff',
               background:     'transparent',
               border:         '1px solid var(--border)',
               padding:        '16px 36px',
