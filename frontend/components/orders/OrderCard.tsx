@@ -7,29 +7,52 @@ import type { Order } from '@/types'
 
 export default function OrderCard({ order }: { order: Order }) {
   const shortId = order.id.slice(0, 8).toUpperCase()
-  const firstItem = order.items?.[0]
-  const img = resolveImageUrl(firstItem?.variant?.product?.image_url)
+  const firstItem = order.items?.[0] || (order as any).order_items?.[0]
+  const img = resolveImageUrl(firstItem?.variant?.product?.image_url || firstItem?.product_variant?.product?.image_url)
+  const name = firstItem?.variant?.product?.name || firstItem?.product_variant?.product?.name || 'TACSFON ITEM'
 
   return (
-    <Link href={`/orders/${order.id}`} className="group block bg-[#080808] border border-white/5 hover:border-[#3DBA6F]/20 transition-all duration-700">
-      <div className="flex items-center p-3 gap-5">
-        <div className="relative w-12 h-16 bg-[#111] overflow-hidden shrink-0 border border-white/5">
-          {img && <Image src={img} alt="item" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-1000" unoptimized />}
+    <Link 
+      href={`/orders/${order.id}`} 
+      style={{
+        display: 'block', background: '#080808', border: '1px solid rgba(255,255,255,0.05)',
+        textDecoration: 'none', transition: 'all 300ms ease',
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(61,186,111,0.2)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', padding: '12px', gap: '20px' }}>
+        <div style={{ position: 'relative', width: '48px', height: '64px', background: '#111111', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.05)' }}>
+          {img && <Image src={img} alt="item" fill style={{ objectFit: 'cover' }} unoptimized />}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-mono text-[9px] text-zinc-700">#{shortId}</span>
-            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[#3DBA6F] border border-[#3DBA6F]/20 px-1">
+        
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)' }}>
+              #{shortId}
+            </span>
+            <span style={{
+              fontSize: '7px', fontFamily: 'var(--font-body)', fontWeight: 900, textTransform: 'uppercase',
+              letterSpacing: '0.3em', color: 'var(--accent)', border: '1px solid rgba(61,186,111,0.2)', padding: '2px 4px',
+            }}>
               {order.status.replace('_', ' ')}
             </span>
           </div>
-          <p className="font-display text-sm text-[#F5F0E8] leading-none uppercase tracking-wide truncate">
-            {firstItem?.variant?.product?.name || 'TACSFON_ITEM'}
+          <p style={{
+            fontFamily: 'var(--font-display)', fontSize: '14px', color: '#F5F0E8', lineHeight: 1,
+            textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {name}
           </p>
         </div>
-        <div className="text-right shrink-0 pr-2">
-          <p className="font-body text-[11px] font-black text-[#F5F0E8]">₦{order.total.toLocaleString()}</p>
-          <ChevronRight size={10} className="text-zinc-800 ml-auto mt-1 transition-transform group-hover:translate-x-1" />
+        
+        <div style={{ textAlign: 'right', flexShrink: 0, paddingRight: '8px' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 900, color: '#F5F0E8', margin: 0 }}>
+            ₦{order.total?.toLocaleString() ?? '0'}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <ChevronRight size={12} style={{ color: 'var(--text-muted)' }} />
+          </div>
         </div>
       </div>
     </Link>
