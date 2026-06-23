@@ -4,7 +4,13 @@
  * OrdersClient
  *
  * Fetches and lists all orders for the authenticated student.
- * Renders a grid of OrderCard components.
+ *
+ * FIX: apiFetch already unwraps the { success, data } envelope and returns
+ * body.data ?? body. The backend GET /api/orders returns the orders array
+ * directly inside `data`, so after unwrapping we receive Order[] directly.
+ * The previous code typed the return as { data: Order[] } and accessed
+ * .data on it — which is undefined on an array — so the list was always
+ * empty regardless of what the server returned.
  */
 
 import { useState, useEffect } from 'react'
@@ -18,8 +24,11 @@ export default function OrdersClient() {
   const [error,   setError]   = useState<string | null>(null)
 
   useEffect(() => {
-    apiFetch<{ data: Order[] }>('/orders')
-      .then(res => setOrders(res.data ?? []))
+    // apiFetch unwraps { success, data } → returns the payload directly.
+    // Backend sends: { success: true, data: Order[] }
+    // After unwrap:  Order[]
+    apiFetch<Order[]>('/orders')
+      .then(res => setOrders(Array.isArray(res) ? res : []))
       .catch(err => setError(err.message || 'Failed to load orders.'))
       .finally(() => setLoading(false))
   }, [])
@@ -45,11 +54,11 @@ export default function OrdersClient() {
   if (error) {
     return (
       <div style={{
-        padding:        '48px 16px',
-        textAlign:      'center',
-        fontFamily:     'var(--font-body)',
-        fontSize:       '14px',
-        color:          'var(--danger)',
+        padding:    '48px 16px',
+        textAlign:  'center',
+        fontFamily: 'var(--font-body)',
+        fontSize:   '14px',
+        color:      'var(--danger)',
       }}>
         {error}
       </div>
@@ -69,7 +78,6 @@ export default function OrdersClient() {
         fontFamily:     'var(--font-body)',
         textAlign:      'center',
       }}>
-        {/* Icon */}
         <div style={{
           width:      '56px',
           height:     '56px',
@@ -78,27 +86,30 @@ export default function OrdersClient() {
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
-            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--text-muted)' }}>
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
             <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 0 1-8 0"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
           </svg>
         </div>
         <div>
           <p style={{
-            margin:        '0 0 6px',
             fontFamily:    'var(--font-display)',
             fontSize:      '20px',
-            letterSpacing: '0.08em',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
             color:         'var(--text-primary)',
+            margin:        '0 0 8px',
           }}>
-            NO ORDERS YET
+            No Orders Yet
           </p>
           <p style={{
-            margin:     0,
-            fontSize:   '13px',
+            fontFamily: 'var(--font-body)',
+            fontSize:   '14px',
             color:      'var(--text-muted)',
-            lineHeight: 1.5,
+            margin:     0,
+            lineHeight: 1.6,
           }}>
             Your order history will appear here once you place your first order.
           </p>
@@ -108,14 +119,16 @@ export default function OrdersClient() {
           style={{
             display:       'inline-block',
             padding:       '13px 32px',
-            background:    '#3DBA6F',
+            background:    'var(--accent)',
+            border:        'none',
             color:         '#0A0A0A',
             fontFamily:    'var(--font-body)',
             fontSize:      '12px',
             fontWeight:    700,
             letterSpacing: '0.15em',
             textTransform: 'uppercase',
-            textDecoration: 'none',
+            textDecoration:'none',
+            cursor:        'pointer',
           }}
         >
           Shop Now
@@ -124,9 +137,9 @@ export default function OrdersClient() {
     )
   }
 
-  /* ── List ── */
+  /* ── Orders list ── */
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {orders.map(order => (
         <OrderCard key={order.id} order={order} />
       ))}
