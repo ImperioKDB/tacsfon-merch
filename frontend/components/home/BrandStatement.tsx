@@ -7,49 +7,44 @@ export default function BrandStatement() {
       aria-labelledby="brand-heading"
       style={{
         background: 'var(--bg-surface)',
-        borderRadius: '24px', border: '1px solid var(--border)', background: 'var(--bg-surface)', padding: '40px 24px', margin: '16px 0', boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
-        ,
+        borderRadius: '24px',
+        border: '1px solid var(--border)',
         padding: '100px 24px',
+        margin: '16px 0',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* Background glow */}
+      {/* Ambient glow */}
       <div
         aria-hidden="true"
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(61,186,111,0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Corner marks */}
-      {([
-        { top: '24px',    left: '24px',  borderTop: '1px solid', borderLeft: '1px solid',  borderBottom: 'none', borderRight: 'none' },
-        { top: '24px',    right: '24px', borderTop: '1px solid', borderRight: '1px solid', borderBottom: 'none', borderLeft: 'none'  },
-        { bottom: '24px', left: '24px',  borderBottom: '1px solid', borderLeft: '1px solid',  borderTop: 'none', borderRight: 'none' },
-        { bottom: '24px', right: '24px', borderBottom: '1px solid', borderRight: '1px solid', borderTop: 'none', borderLeft: 'none'  },
-      ] as const).map((style, i) => (
-        <div
-          key={i}
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            width: '20px',
-            height: '20px',
-            borderColor: 'rgba(201,168,76,0.3)',
-            borderStyle: 'solid',
-            ...style,
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
+      {/* Top accent line — replaces corner marks */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '80px',
+          height: '2px',
+          background: 'linear-gradient(90deg, transparent, var(--accent), transparent)',
+        }}
+      />
 
       <div style={{ maxWidth: '720px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
         <span
+          className="animate-fade-in stagger-1"
           style={{
             display: 'block',
             fontFamily: 'var(--font-body)',
@@ -57,7 +52,7 @@ export default function BrandStatement() {
             fontWeight: 600,
             letterSpacing: '0.28em',
             textTransform: 'uppercase',
-            color: '#3DBA6F',
+            color: 'var(--accent)',
             marginBottom: '28px',
           }}
         >
@@ -66,6 +61,7 @@ export default function BrandStatement() {
 
         <h2
           id="brand-heading"
+          className="animate-fade-in stagger-2"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(36px, 6vw, 72px)',
@@ -77,31 +73,34 @@ export default function BrandStatement() {
         >
           PREMIUM MERCH.
         </h2>
+
         <h2
+          className="animate-fade-in stagger-2"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(36px, 6vw, 72px)',
             lineHeight: 1,
             letterSpacing: '0.04em',
-            color: '#3DBA6F',
+            color: 'var(--accent)',
             marginBottom: '36px',
           }}
         >
           FELLOWSHIP SPIRIT.
         </h2>
 
-        {/* Gold rule */}
         <div
           aria-hidden="true"
+          className="animate-fade-in stagger-3"
           style={{
             width: '48px',
             height: '2px',
-            background: '#3DBA6F',
+            background: 'var(--accent)',
             margin: '0 auto 32px',
           }}
         />
 
         <p
+          className="animate-fade-in stagger-4"
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 'clamp(15px, 1.5vw, 17px)',
@@ -118,6 +117,7 @@ export default function BrandStatement() {
 
         <Link
           href="/about"
+          className="animate-fade-in stagger-5 hover:border-[#3DBA6F] hover:text-[#3DBA6F]"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -133,10 +133,10 @@ export default function BrandStatement() {
             textDecoration: 'none',
             transition: 'border-color 150ms ease, color 150ms ease',
           }}
-          className="hover:border-[#3DBA6F] hover:text-[#3DBA6F]"
         >
           Our Story <ArrowRight size={13} strokeWidth={2} />
         </Link>
+
       </div>
     </section>
   )
