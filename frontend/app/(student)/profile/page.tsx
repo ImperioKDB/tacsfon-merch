@@ -201,7 +201,7 @@ export default function ProfilePage() {
       setSaveMsg('Failed to save')
     } finally {
       setIsSaving(false)
-      setTimeout(() => setSaveMsg(null), 3000)
+      
     }
   }
 
@@ -284,7 +284,7 @@ export default function ProfilePage() {
     padding:      '12px 14px',
     background:   'var(--bg-elevated)',
     border:       '1px solid var(--border)',
-    color:        'var(--text-primary)',
+    color:        '#ffffff',
     fontFamily:   'var(--font-body)',
     fontSize:     '13px',
     outline:      'none',
@@ -752,7 +752,7 @@ export default function ProfilePage() {
               <p style={{
                 fontFamily:    'var(--font-body)',
                 fontSize:      '13px',
-                color:         'var(--text-primary)',
+                color:         '#ffffff',
                 wordBreak:     'break-all',
               }}>
                 {user?.email ?? '—'}
