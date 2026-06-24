@@ -16,35 +16,42 @@ export default function BrandStatement() {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient glow */}
+      {/* Ambient drifting orb — GPU only, infinite */}
       <div
         aria-hidden="true"
+        className="brand-orb"
         style={{
           position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(61,186,111,0.06) 0%, transparent 70%)',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(61,186,111,0.09) 0%, transparent 70%)',
+          top: '50%',
+          left: '50%',
           pointerEvents: 'none',
+          willChange: 'transform',
         }}
       />
 
-      {/* Top accent line — replaces corner marks */}
+      {/* Top accent line — scale reveal from center */}
       <div
         aria-hidden="true"
+        className="brand-top-line"
         style={{
           position: 'absolute',
           top: 0,
           left: '50%',
-          transform: 'translateX(-50%)',
           width: '80px',
           height: '2px',
           background: 'linear-gradient(90deg, transparent, var(--accent), transparent)',
+          transformOrigin: 'center',
         }}
       />
 
       <div style={{ maxWidth: '720px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         <span
-          className="animate-fade-in stagger-1"
+          className="brand-label"
           style={{
             display: 'block',
             fontFamily: 'var(--font-body)',
@@ -61,10 +68,10 @@ export default function BrandStatement() {
 
         <h2
           id="brand-heading"
-          className="animate-fade-in stagger-2"
+          className="brand-h1"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 6vw, 72px)',
+            fontSize: 'clamp(40px, 7vw, 80px)',
             lineHeight: 1,
             letterSpacing: '0.04em',
             color: 'var(--text-primary)',
@@ -75,10 +82,10 @@ export default function BrandStatement() {
         </h2>
 
         <h2
-          className="animate-fade-in stagger-2"
+          className="brand-h2"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 6vw, 72px)',
+            fontSize: 'clamp(40px, 7vw, 80px)',
             lineHeight: 1,
             letterSpacing: '0.04em',
             color: 'var(--accent)',
@@ -90,17 +97,18 @@ export default function BrandStatement() {
 
         <div
           aria-hidden="true"
-          className="animate-fade-in stagger-3"
+          className="brand-rule"
           style={{
-            width: '48px',
             height: '2px',
             background: 'var(--accent)',
             margin: '0 auto 32px',
+            width: '48px',
+            transformOrigin: 'center',
           }}
         />
 
         <p
-          className="animate-fade-in stagger-4"
+          className="brand-body"
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 'clamp(15px, 1.5vw, 17px)',
@@ -117,7 +125,7 @@ export default function BrandStatement() {
 
         <Link
           href="/about"
-          className="animate-fade-in stagger-5 hover:border-[#3DBA6F] hover:text-[#3DBA6F]"
+          className="brand-cta"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -131,7 +139,9 @@ export default function BrandStatement() {
             border: '1px solid var(--border)',
             padding: '14px 28px',
             textDecoration: 'none',
-            transition: 'border-color 150ms ease, color 150ms ease',
+            position: 'relative',
+            overflow: 'hidden',
+            isolation: 'isolate',
           }}
         >
           Our Story <ArrowRight size={13} strokeWidth={2} />
