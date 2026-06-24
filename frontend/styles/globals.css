@@ -185,6 +185,77 @@ html {
 .stagger-4 { animation-delay: 0.5s; }
 .stagger-5 { animation-delay: 0.65s; }
 
+
+/* ── BrandStatement motion ── */
+@keyframes driftOrb {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33%       { transform: translate(calc(-50% + 40px), calc(-50% - 25px)) scale(1.08); }
+  66%       { transform: translate(calc(-50% - 25px), calc(-50% + 20px)) scale(0.94); }
+}
+
+@keyframes scaleReveal {
+  from { transform: translateX(-50%) scaleX(0); }
+  to   { transform: translateX(-50%) scaleX(1); }
+}
+
+@keyframes ruleReveal {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes slideUpBold {
+  from { opacity: 0; transform: translateY(48px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes labelFade {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.brand-orb {
+  animation: driftOrb 12s ease-in-out infinite;
+}
+.brand-top-line {
+  transform: translateX(-50%) scaleX(0);
+  animation: scaleReveal 1s 0.1s ease forwards;
+}
+.brand-label {
+  opacity: 0;
+  animation: labelFade 0.6s 0.15s ease forwards;
+}
+.brand-h1 {
+  opacity: 0;
+  animation: slideUpBold 0.7s 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.brand-h2 {
+  opacity: 0;
+  animation: slideUpBold 0.7s 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.brand-rule {
+  transform: scaleX(0);
+  animation: ruleReveal 0.6s 0.52s ease forwards;
+}
+.brand-body {
+  opacity: 0;
+  animation: fadeIn 0.6s 0.6s ease forwards;
+}
+.brand-cta {
+  opacity: 0;
+  animation: fadeIn 0.5s 0.72s ease forwards;
+}
+.brand-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: translateX(-101%);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.brand-cta:hover::before  { transform: translateX(0); }
+.brand-cta:hover          { color: #fff; border-color: var(--accent); }
+
 /* ── Bottom nav safe area ── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   nav[aria-label="Mobile navigation"] {
