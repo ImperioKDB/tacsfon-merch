@@ -56,7 +56,7 @@ export default function NotificationBell() {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevPulseKey = useRef(pulseKey);
 
-  // Bell shake on new realtime notification — verified fix
+  // Bell shake on new realtime notification — verified fix — verified fix
   useEffect(() => {
     if (pulseKey === prevPulseKey.current) return;
     prevPulseKey.current = pulseKey;
